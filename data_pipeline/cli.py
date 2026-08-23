@@ -8,6 +8,8 @@
     python -m data_pipeline.cli full90 1 --gw 1
     python -m data_pipeline.cli resolve-points 1 --gw 1 --threshold 5
     python -m data_pipeline.cli resolve-full90 1 --gw 1
+    python -m data_pipeline.cli gw-status 1
+    python -m data_pipeline.cli resolve-gameweek --gw 1
 
 The `fetch-*` commands need outbound access to fantasy.premierleague.com
 and must be run from an environment that has it. The rest only read
@@ -28,7 +30,12 @@ import sys
 
 from . import cache
 from .players import top_expensive_players
-from .resolution import resolve_full90, resolve_points_threshold
+from .resolution import (
+    is_gameweek_finished,
+    resolve_full90,
+    resolve_gameweek_points_markets,
+    resolve_points_threshold,
+)
 from .settlement import (
     PRIMARY_POINTS_THRESHOLD,
     SECONDARY_POINTS_THRESHOLD,
@@ -99,6 +106,23 @@ def cmd_resolve_full90(args: argparse.Namespace) -> None:
     print(f"Player {args.player_id}, GW{args.gw}, full 90: {outcome.value}")
 
 
+def cmd_gw_status(args: argparse.Namespace) -> None:
+    finished = is_gameweek_finished(args.gw)
+    print(f"GW{args.gw}: {'finished -- ready to resolve points markets' if finished else 'not finished yet'}")
+
+
+def cmd_resolve_gameweek(args: argparse.Namespace) -> None:
+    bootstrap = cache.load_latest_bootstrap_static()
+    players = top_expensive_players(bootstrap, n=args.n)
+    finished = is_gameweek_finished(args.gw)
+    print(f"GW{args.gw}: {'finished -- resolving' if finished else 'not finished yet -- everything below is PENDING'}")
+    outcomes = resolve_gameweek_points_markets([p.id for p in players], args.gw)
+    for player in players:
+        primary = outcomes[(player.id, PRIMARY_POINTS_THRESHOLD)].value
+        secondary = outcomes[(player.id, SECONDARY_POINTS_THRESHOLD)].value
+        print(f"  {player.web_name:<20} over {PRIMARY_POINTS_THRESHOLD}: {primary:<8} over {SECONDARY_POINTS_THRESHOLD}: {secondary}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="data_pipeline", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -142,6 +166,17 @@ def build_parser() -> argparse.ArgumentParser:
     resolve_full90_parser.add_argument("player_id", type=int)
     resolve_full90_parser.add_argument("--gw", type=int, required=True)
     resolve_full90_parser.set_defaults(func=cmd_resolve_full90)
+
+    gw_status = sub.add_parser("gw-status", help="Whether every fixture in a gameweek has finished")
+    gw_status.add_argument("gw", type=int)
+    gw_status.set_defaults(func=cmd_gw_status)
+
+    resolve_gameweek = sub.add_parser(
+        "resolve-gameweek", help="Resolve the points market for every top-N player in one gameweek at once"
+    )
+    resolve_gameweek.add_argument("--gw", type=int, required=True)
+    resolve_gameweek.add_argument("--n", type=int, default=20)
+    resolve_gameweek.set_defaults(func=cmd_resolve_gameweek)
 
     return parser
 

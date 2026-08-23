@@ -8,7 +8,9 @@ from data_pipeline.resolution import (
     FixtureStatus,
     MarketOutcome,
     fixture_status_for_player,
+    is_gameweek_finished,
     resolve_full90,
+    resolve_gameweek_points_markets,
     resolve_points_threshold,
 )
 
@@ -83,3 +85,41 @@ def test_resolve_points_threshold_no_when_under(populated_cache):
     # Salah: 6 pts in GW1 -- clears the primary (5) line but not secondary (10).
     assert resolve_points_threshold(2, gw=1, threshold=5, cache_dir=populated_cache) == MarketOutcome.YES
     assert resolve_points_threshold(2, gw=1, threshold=10, cache_dir=populated_cache) == MarketOutcome.NO
+
+
+def test_is_gameweek_finished_true_when_every_fixture_done(populated_cache):
+    # GW1 has 3 fixtures cached, all finished.
+    assert is_gameweek_finished(1, cache_dir=populated_cache) is True
+
+
+def test_is_gameweek_finished_false_when_any_fixture_still_going(populated_cache):
+    # GW3 has 2 fixtures: Haaland's team's is finished, Isak's team's isn't.
+    assert is_gameweek_finished(3, cache_dir=populated_cache) is False
+
+
+def test_is_gameweek_finished_false_when_no_fixtures_cached(populated_cache):
+    assert is_gameweek_finished(999, cache_dir=populated_cache) is False
+
+
+def test_resolve_points_threshold_pending_until_whole_gameweek_done(populated_cache):
+    # This is the key behavioral difference from full-90's per-fixture gate:
+    # Haaland's OWN match in GW3 is finished, but another fixture in that
+    # same gameweek (Isak's team) is still in progress -- the points market
+    # must stay PENDING for everyone until the whole gameweek wraps, not
+    # resolve player-by-player as their own match ends.
+    assert resolve_points_threshold(1, gw=3, threshold=5, cache_dir=populated_cache) == MarketOutcome.PENDING
+
+
+def test_resolve_gameweek_points_markets_resolves_everyone_at_once(populated_cache):
+    outcomes = resolve_gameweek_points_markets([1, 2], gw=1, cache_dir=populated_cache)
+    assert outcomes == {
+        (1, 5): MarketOutcome.YES,   # Haaland: 12 pts
+        (1, 10): MarketOutcome.YES,
+        (2, 5): MarketOutcome.YES,   # Salah: 6 pts
+        (2, 10): MarketOutcome.NO,
+    }
+
+
+def test_resolve_gameweek_points_markets_all_pending_before_gameweek_finished(populated_cache):
+    outcomes = resolve_gameweek_points_markets([1], gw=3, cache_dir=populated_cache)
+    assert outcomes == {(1, 5): MarketOutcome.PENDING, (1, 10): MarketOutcome.PENDING}

@@ -39,13 +39,29 @@ that hasn't finalized yet.
 
 `resolution.py` is the fix: every market resolves through
 `resolve_points_threshold()` / `resolve_full90()`, which return one of
-`PENDING` / `YES` / `NO` and only ever return YES/NO once the fixture
-behind that player's gameweek is confirmed `finished` in the cached
-fixtures data. Until then — mid-match, or a finished match we haven't
-fetched live data for yet — the answer is PENDING, full stop. This is
-also where a blank or double gameweek (a player's team has zero or two
-fixtures in a given gameweek) surfaces as PENDING rather than silently
-guessing which fixture to use; neither case is otherwise handled in v0.
+`PENDING` / `YES` / `NO`. The two markets are gated differently:
+
+- **Points market** gates on the whole *gameweek* being finished —
+  `is_gameweek_finished(gw)` is only True once every fixture in that
+  gameweek has finished, not just the player's own match. This is the
+  concrete shape of "auto-resolve after the last match of the
+  gameweek": one trigger point per gameweek resolves every player's
+  points market at once (`resolve_gameweek_points_markets()`), rather
+  than each player resolving on their own match's schedule. It also
+  makes blank/double gameweeks a non-issue for this market: a player
+  whose team didn't play just has 0 points that week and correctly
+  resolves NO; a player whose team played twice already has both
+  matches summed into one `total_points` by FPL's own live endpoint.
+- **Full-90 market** still gates per-player, on that specific player's
+  own fixture being finished (`fixture_status_for_player()`) — left
+  as-is for now, not revisited when the points market was reworked.
+  This is also where a blank or double gameweek for a specific player
+  surfaces as PENDING (`FixtureStatus.NOT_FOUND`) rather than silently
+  guessing which of zero or two fixtures to use.
+
+Either way, until the gate is satisfied — mid-match, or a finished
+match we haven't fetched live data for yet — the answer is PENDING,
+full stop.
 
 **The stoppage-time question:** does a player who gets substituted late
 in second-half stoppage time (e.g. 90+3') wrongly resolve to "no" for
