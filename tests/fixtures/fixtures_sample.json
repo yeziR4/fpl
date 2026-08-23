@@ -1,0 +1,6 @@
+[
+  {"id": 1, "event": 1, "team_h": 11, "team_a": 99, "finished": true, "finished_provisional": true},
+  {"id": 2, "event": 2, "team_h": 11, "team_a": 99, "finished": false, "finished_provisional": false},
+  {"id": 3, "event": 1, "team_h": 10, "team_a": 98, "finished": true, "finished_provisional": true},
+  {"id": 4, "event": 1, "team_h": 1, "team_a": 97, "finished": true, "finished_provisional": true}
+]

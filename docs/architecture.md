@@ -29,6 +29,40 @@ enough to ship something, without pretending it's the final scope.
 Expected to expand (more players, more stat types, maybe assists/
 clean-sheets/cards) once the mechanism is proven.
 
+## Market resolution: don't trust a snapshot until the fixture is finished
+
+A cached live snapshot can exist mid-match — `minutes` and `total_points`
+are still moving, and even right at full time FPL keeps recalculating
+bonus points for up to about an hour afterwards. Resolving a market
+straight off `settlement.py`'s raw numbers risks paying out on a value
+that hasn't finalized yet.
+
+`resolution.py` is the fix: every market resolves through
+`resolve_points_threshold()` / `resolve_full90()`, which return one of
+`PENDING` / `YES` / `NO` and only ever return YES/NO once the fixture
+behind that player's gameweek is confirmed `finished` in the cached
+fixtures data. Until then — mid-match, or a finished match we haven't
+fetched live data for yet — the answer is PENDING, full stop. This is
+also where a blank or double gameweek (a player's team has zero or two
+fixtures in a given gameweek) surfaces as PENDING rather than silently
+guessing which fixture to use; neither case is otherwise handled in v0.
+
+**The stoppage-time question:** does a player who gets substituted late
+in second-half stoppage time (e.g. 90+3') wrongly resolve to "no" for
+full 90, even though they were on the pitch until nearly the final
+whistle? As best we've been able to confirm, no — FPL's `minutes` stat
+doesn't separately tally stoppage time on top of the normal 90-minute
+frame of a match, so a player subbed at 90+3' and a player who plays
+every second of stoppage time without being subbed both show
+`minutes == 90` in the data. Both resolve YES under our `>= 90` rule.
+**This has not been verified against live data** — this sandbox can't
+reach the FPL API (see below) — so treat it as the current working
+assumption, not confirmed fact. Concrete to-do before real money is on
+this market: pull a known match with a documented stoppage-time
+substitution and check the actual cached `minutes` value. If it turns
+out FPL does report minutes above 90 in that case, the fix is a one-line
+threshold change in `resolution.py`'s docstring/logic, not a redesign.
+
 ## Market mechanism: parimutuel, not a sportsbook
 
 Explicitly **not** fixed-odds — we are not the house and don't want to
@@ -96,12 +130,21 @@ A small, dependency-light Python package:
   later.
 - `players.py` — `top_expensive_players()`: the top-N by current price,
   tie-broken by season points then id.
-- `settlement.py` — the facts markets actually resolve against, both for
-  a single gameweek: `points_result()` (that gameweek's points, plus
-  `.over(5)` / `.over(10)` for the two market lines) and
-  `full90_result()` (minutes + played-full-90 boolean).
+- `settlement.py` — the *raw* facts for a single gameweek:
+  `points_result()` (that gameweek's points, plus `.over(5)` /
+  `.over(10)` for the two market lines) and `full90_result()` (minutes
+  + played-full-90 boolean). These read whatever snapshot is cached,
+  even mid-match — they do not know whether the match is actually over.
+- `resolution.py` — the payout-safe layer on top: `resolve_points_threshold()`
+  and `resolve_full90()` return `PENDING` / `YES` / `NO`, and never
+  return YES/NO until the underlying fixture is confirmed `finished` in
+  the cached fixtures data (cross-referenced by player → team → fixture
+  for that gameweek). See "Market resolution" below — this is where the
+  full-90 / stoppage-time question lives.
 - `cli.py` — `fetch-bootstrap` / `fetch-fixtures` / `fetch-live <gw>` to
-  populate the cache, `top20` / `points` / `full90` to read it back.
+  populate the cache; `top20` / `points` / `full90` to read the raw
+  cached stats; `resolve-points` / `resolve-full90` to get the
+  payout-safe PENDING/YES/NO a market should actually act on.
 
 Deliberately **not** built yet: a real database (JSON files are fine at
 this scale and are trivially inspectable/diffable), any market or

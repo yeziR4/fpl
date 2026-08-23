@@ -6,11 +6,19 @@
     python -m data_pipeline.cli top20
     python -m data_pipeline.cli points 1 --gw 1
     python -m data_pipeline.cli full90 1 --gw 1
+    python -m data_pipeline.cli resolve-points 1 --gw 1 --threshold 5
+    python -m data_pipeline.cli resolve-full90 1 --gw 1
 
 The `fetch-*` commands need outbound access to fantasy.premierleague.com
-and must be run from an environment that has it. The rest (`top20`,
-`points`, `full90`) only read whatever has already been cached locally
-under data/cache/.
+and must be run from an environment that has it. The rest only read
+whatever has already been cached locally under data/cache/.
+
+`points` / `full90` show the raw stat for a gameweek as soon as *any*
+snapshot is cached for it, even mid-match -- useful for sanity-checking
+the pipeline. `resolve-points` / `resolve-full90` are what a market
+should actually call to decide a payout: they return PENDING until the
+underlying fixture is confirmed finished, never a premature YES/NO off
+a partial or provisional snapshot. See data_pipeline/resolution.py.
 """
 
 from __future__ import annotations
@@ -20,6 +28,7 @@ import sys
 
 from . import cache
 from .players import top_expensive_players
+from .resolution import resolve_full90, resolve_points_threshold
 from .settlement import (
     PRIMARY_POINTS_THRESHOLD,
     SECONDARY_POINTS_THRESHOLD,
@@ -80,6 +89,16 @@ def cmd_full90(args: argparse.Namespace) -> None:
     print(f"Player {args.player_id}, GW{args.gw}: {result.minutes} min -> full 90: {outcome}")
 
 
+def cmd_resolve_points(args: argparse.Namespace) -> None:
+    outcome = resolve_points_threshold(args.player_id, args.gw, args.threshold)
+    print(f"Player {args.player_id}, GW{args.gw}, over {args.threshold}: {outcome.value}")
+
+
+def cmd_resolve_full90(args: argparse.Namespace) -> None:
+    outcome = resolve_full90(args.player_id, args.gw)
+    print(f"Player {args.player_id}, GW{args.gw}, full 90: {outcome.value}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="data_pipeline", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -108,6 +127,21 @@ def build_parser() -> argparse.ArgumentParser:
     full90.add_argument("player_id", type=int)
     full90.add_argument("--gw", type=int, required=True)
     full90.set_defaults(func=cmd_full90)
+
+    resolve_points = sub.add_parser(
+        "resolve-points", help="Payout-safe outcome (PENDING/YES/NO) for the points-threshold market"
+    )
+    resolve_points.add_argument("player_id", type=int)
+    resolve_points.add_argument("--gw", type=int, required=True)
+    resolve_points.add_argument("--threshold", type=int, required=True)
+    resolve_points.set_defaults(func=cmd_resolve_points)
+
+    resolve_full90_parser = sub.add_parser(
+        "resolve-full90", help="Payout-safe outcome (PENDING/YES/NO) for the full-90 market"
+    )
+    resolve_full90_parser.add_argument("player_id", type=int)
+    resolve_full90_parser.add_argument("--gw", type=int, required=True)
+    resolve_full90_parser.set_defaults(func=cmd_resolve_full90)
 
     return parser
 
