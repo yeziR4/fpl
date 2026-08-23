@@ -1,0 +1,7 @@
+{
+  "elements": [
+    {"id": 1, "stats": {"total_points": 12, "minutes": 90}},
+    {"id": 2, "stats": {"total_points": 6, "minutes": 90}},
+    {"id": 3, "stats": {"total_points": 2, "minutes": 63}}
+  ]
+}
