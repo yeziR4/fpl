@@ -7,14 +7,20 @@ decision below changes, and add to it as new layers get designed.
 ## The idea
 
 A prediction market on Fantasy Premier League outcomes. Both AI models and
-humans can take positions. Two seed markets, more layers later:
+humans can take positions. Two seed markets, more layers later. Both are
+evaluated **per single gameweek (one match)** — nothing here accumulates
+across gameweeks, every market resets each week:
 
-1. **Points tally** — how many FPL points a player scores over a
-   gameweek window. Two variants on the same underlying number:
-   - **Primary market**: next 5 gameweeks
-   - **Secondary market**: next 10 gameweeks
+1. **Points threshold** — did the player score at least N points in
+   *that one match*? Two lines on the same underlying number:
+   - **Primary market**: over/under **5** points
+   - **Secondary market**: over/under **10** points (rarer, higher bar)
 2. **Full 90** — yes/no, did the player play all 90 minutes, evaluated
    per gameweek.
+
+(Earlier draft of this doc described the points market as summed over a
+5- or 10-gameweek rolling window — that was a misreading and has been
+corrected. It's a single-match threshold, not an accumulation.)
 
 **Player pool (v0):** the 20 most expensive players by current FPL
 price, for both markets. Expensive players are the ones with public
@@ -28,22 +34,20 @@ clean-sheets/cards) once the mechanism is proven.
 Explicitly **not** fixed-odds — we are not the house and don't want to
 carry the other side of every bet. Mechanism is **parimutuel pooling**:
 
-- Bettors stake into buckets for a given market (e.g. "Haaland scores
-  0–5 / 6–10 / 11+ points over GW10–14").
+- Bettors stake into one of two buckets for a given market (e.g. "Haaland
+  over/under 5 points in GW12" — a yes bucket and a no bucket).
 - The pool per bucket determines the implied odds — there is no admin-set
   price, the crowd's stake distribution *is* the price.
-- After the window resolves (using the settlement facts from the data
-  pipeline), the losing buckets' stakes are redistributed pro-rata to the
+- After the match resolves (using the settlement facts from the data
+  pipeline), the losing bucket's stakes are redistributed pro-rata to the
   winning bucket, minus whatever protocol fee we decide on.
 - No liquidity provider needed, no house risk, and resolution is
   objective — it comes from real match data, not a model's opinion.
 
-**Open question, not yet decided:** how buckets are defined for the
-points-tally market (fixed thresholds set in advance vs. a continuous/
-pari-mutuel-over-a-distribution design) still needs to be worked out. The
-data pipeline is deliberately decoupled from this choice — it just
-produces "player X scored N points over gameweeks [a, b)", and whatever
-bucket scheme we land on consumes that number.
+Since both point lines (5 and 10) are fixed in advance rather than
+dynamic thresholds, each market is a simple two-sided (yes/no) pool —
+there's no open bucket-design question left here the way an earlier
+draft of this doc implied.
 
 ## Chain: Vara Network
 
@@ -92,12 +96,12 @@ A small, dependency-light Python package:
   later.
 - `players.py` — `top_expensive_players()`: the top-N by current price,
   tie-broken by season points then id.
-- `settlement.py` — the facts markets actually resolve against:
-  `points_tally()` (sum of points over a gameweek window, flagged
-  `is_complete` iff every gameweek in the window has been cached) and
-  `full90_results()` (per-gameweek minutes + played-full-90 boolean).
+- `settlement.py` — the facts markets actually resolve against, both for
+  a single gameweek: `points_result()` (that gameweek's points, plus
+  `.over(5)` / `.over(10)` for the two market lines) and
+  `full90_result()` (minutes + played-full-90 boolean).
 - `cli.py` — `fetch-bootstrap` / `fetch-fixtures` / `fetch-live <gw>` to
-  populate the cache, `top20` / `tally` / `full90` to read it back.
+  populate the cache, `top20` / `points` / `full90` to read it back.
 
 Deliberately **not** built yet: a real database (JSON files are fine at
 this scale and are trivially inspectable/diffable), any market or
@@ -115,7 +119,6 @@ normal server) before trusting live data end-to-end.
 
 ## Open items (not yet decided)
 
-- **Bucket/threshold design** for the points-tally market.
 - **Fee structure** for the parimutuel pool.
 - **Oracle trust model**: who/what pushes the settlement facts on-chain,
   and how is that trusted/verified? (This is the actual crux of "off-chain

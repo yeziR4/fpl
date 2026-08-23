@@ -4,12 +4,12 @@
     python -m data_pipeline.cli fetch-fixtures
     python -m data_pipeline.cli fetch-live 4
     python -m data_pipeline.cli top20
-    python -m data_pipeline.cli tally 1 --from-gw 1 --window 5
-    python -m data_pipeline.cli full90 1 --from-gw 1 --window 5
+    python -m data_pipeline.cli points 1 --gw 1
+    python -m data_pipeline.cli full90 1 --gw 1
 
 The `fetch-*` commands need outbound access to fantasy.premierleague.com
 and must be run from an environment that has it. The rest (`top20`,
-`tally`, `full90`) only read whatever has already been cached locally
+`points`, `full90`) only read whatever has already been cached locally
 under data/cache/.
 """
 
@@ -20,7 +20,12 @@ import sys
 
 from . import cache
 from .players import top_expensive_players
-from .settlement import full90_results, points_tally
+from .settlement import (
+    PRIMARY_POINTS_THRESHOLD,
+    SECONDARY_POINTS_THRESHOLD,
+    full90_result,
+    points_result,
+)
 
 
 def cmd_fetch_bootstrap(_args: argparse.Namespace) -> None:
@@ -54,23 +59,25 @@ def cmd_top20(args: argparse.Namespace) -> None:
         print(f"{rank:>2}. {player.web_name:<20} £{player.price_millions:.1f}m  id={player.id}")
 
 
-def cmd_tally(args: argparse.Namespace) -> None:
-    result = points_tally(args.player_id, args.from_gw, args.window)
-    status = "complete" if result.is_complete else "INCOMPLETE (missing gameweeks)"
-    print(f"Player {args.player_id}, GW{args.from_gw}-{args.from_gw + args.window - 1} ({status})")
-    for gw, points in sorted(result.per_gw_points.items()):
-        print(f"  GW{gw}: {points} pts")
-    print(f"  Total: {result.total} pts")
+def cmd_points(args: argparse.Namespace) -> None:
+    result = points_result(args.player_id, args.gw)
+    if result is None:
+        print(f"GW{args.gw} not yet cached for player {args.player_id}")
+        return
+    over_primary = "YES" if result.over(PRIMARY_POINTS_THRESHOLD) else "no"
+    over_secondary = "YES" if result.over(SECONDARY_POINTS_THRESHOLD) else "no"
+    print(f"Player {args.player_id}, GW{args.gw}: {result.points} pts")
+    print(f"  over {PRIMARY_POINTS_THRESHOLD} (primary):   {over_primary}")
+    print(f"  over {SECONDARY_POINTS_THRESHOLD} (secondary): {over_secondary}")
 
 
 def cmd_full90(args: argparse.Namespace) -> None:
-    results = full90_results(args.player_id, args.from_gw, args.window)
-    print(f"Player {args.player_id}, GW{args.from_gw}-{args.from_gw + args.window - 1}")
-    for r in results:
-        outcome = "YES" if r.played_full_90 else "no"
-        print(f"  GW{r.gw}: {r.minutes} min -> full 90: {outcome}")
-    if len(results) < args.window:
-        print(f"  ({args.window - len(results)} gameweek(s) not yet cached)")
+    result = full90_result(args.player_id, args.gw)
+    if result is None:
+        print(f"GW{args.gw} not yet cached for player {args.player_id}")
+        return
+    outcome = "YES" if result.played_full_90 else "no"
+    print(f"Player {args.player_id}, GW{args.gw}: {result.minutes} min -> full 90: {outcome}")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -92,16 +99,14 @@ def build_parser() -> argparse.ArgumentParser:
     top20.add_argument("--n", type=int, default=20)
     top20.set_defaults(func=cmd_top20)
 
-    tally = sub.add_parser("tally", help="Points tally for a player over a gameweek window")
-    tally.add_argument("player_id", type=int)
-    tally.add_argument("--from-gw", type=int, required=True)
-    tally.add_argument("--window", type=int, required=True)
-    tally.set_defaults(func=cmd_tally)
+    points = sub.add_parser("points", help="Points result (+ over-5/over-10 verdicts) for a player in one gameweek")
+    points.add_argument("player_id", type=int)
+    points.add_argument("--gw", type=int, required=True)
+    points.set_defaults(func=cmd_points)
 
-    full90 = sub.add_parser("full90", help="Full-90-minutes outcomes for a player over a gameweek window")
+    full90 = sub.add_parser("full90", help="Full-90-minutes outcome for a player in one gameweek")
     full90.add_argument("player_id", type=int)
-    full90.add_argument("--from-gw", type=int, required=True)
-    full90.add_argument("--window", type=int, required=True)
+    full90.add_argument("--gw", type=int, required=True)
     full90.set_defaults(func=cmd_full90)
 
     return parser

@@ -1,25 +1,21 @@
 """Settlement-ready facts, derived from cached event-live snapshots.
 
 Everything here answers a question a market needs an objective, later
-answer to:
+answer to, for one specific gameweek (one match) at a time -- these
+markets do not accumulate across gameweeks, they reset every week:
 
-  * "How many points did player X score across gameweeks [a, a+w)?"
-    -> the primary (5-GW window) and secondary (10-GW window) points
-       markets both reduce to this, just with a different `window`.
-
-  * "Did player X play the full 90 minutes in gameweek g?"
-    -> the full-90 yes/no market for gameweek g.
+  * "Did player X score >= 5 points in gameweek g?" -> the primary
+    points market for that gameweek.
+  * "Did player X score >= 10 points in gameweek g?" -> the secondary
+    points market for that gameweek (same underlying number, higher
+    bar).
+  * "Did player X play the full 90 minutes in gameweek g?" -> the
+    full-90 yes/no market for that gameweek.
 
 Nothing here decides how a market prices or pays out -- that's the
 staking/settlement layer, on top of these facts. Keeping this
 boundary means the same facts can back a parimutuel pool today and a
 different mechanism later without re-deriving anything.
-
-A window is "incomplete" if we don't have a cached snapshot for one
-of its gameweeks yet (either it hasn't been played, or we haven't
-fetched it). Callers must check `is_complete` before treating a tally
-as final -- an in-progress gameweek's live snapshot is provisional
-until FPL marks it finished.
 """
 
 from __future__ import annotations
@@ -28,18 +24,22 @@ from dataclasses import dataclass
 
 from . import cache
 
+# The two point lines the points markets are settled against. Both are
+# evaluated against a single gameweek's return, not summed across
+# multiple gameweeks.
+PRIMARY_POINTS_THRESHOLD = 5
+SECONDARY_POINTS_THRESHOLD = 10
+
 
 @dataclass(frozen=True)
-class PointsTally:
+class PointsResult:
     player_id: int
-    start_gw: int
-    window: int
-    per_gw_points: dict[int, int]  # only the gameweeks we actually had data for
-    is_complete: bool  # True iff every gw in the window was available
+    gw: int
+    points: int
 
-    @property
-    def total(self) -> int:
-        return sum(self.per_gw_points.values())
+    def over(self, threshold: int) -> bool:
+        """Whether this gameweek's points clear the given line (>=)."""
+        return self.points >= threshold
 
 
 @dataclass(frozen=True)
@@ -64,34 +64,17 @@ def _player_stats_for_gw(event_id: int, player_id: int, *, cache_dir=None) -> di
     return None
 
 
-def points_tally(player_id: int, start_gw: int, window: int, *, cache_dir=None) -> PointsTally:
-    per_gw_points: dict[int, int] = {}
-    for gw in range(start_gw, start_gw + window):
-        stats = _player_stats_for_gw(gw, player_id, cache_dir=cache_dir)
-        if stats is not None:
-            per_gw_points[gw] = stats["total_points"]
-
-    return PointsTally(
-        player_id=player_id,
-        start_gw=start_gw,
-        window=window,
-        per_gw_points=per_gw_points,
-        is_complete=len(per_gw_points) == window,
-    )
+def points_result(player_id: int, gw: int, *, cache_dir=None) -> PointsResult | None:
+    """A player's points for a single gameweek, or None if not cached yet."""
+    stats = _player_stats_for_gw(gw, player_id, cache_dir=cache_dir)
+    if stats is None:
+        return None
+    return PointsResult(player_id=player_id, gw=gw, points=stats["total_points"])
 
 
-def full90_results(
-    player_id: int, start_gw: int, window: int, *, cache_dir=None
-) -> list[Full90Result]:
-    """Per-gameweek full-90 facts for every gameweek we have data for.
-
-    Gameweeks with no cached snapshot yet are simply absent from the
-    result -- callers deciding whether a window is "settleable" should
-    compare `len(result)` to `window`.
-    """
-    results = []
-    for gw in range(start_gw, start_gw + window):
-        stats = _player_stats_for_gw(gw, player_id, cache_dir=cache_dir)
-        if stats is not None:
-            results.append(Full90Result(player_id=player_id, gw=gw, minutes=stats["minutes"]))
-    return results
+def full90_result(player_id: int, gw: int, *, cache_dir=None) -> Full90Result | None:
+    """A player's full-90 outcome for a single gameweek, or None if not cached yet."""
+    stats = _player_stats_for_gw(gw, player_id, cache_dir=cache_dir)
+    if stats is None:
+        return None
+    return Full90Result(player_id=player_id, gw=gw, minutes=stats["minutes"])

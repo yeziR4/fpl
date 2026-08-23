@@ -8,9 +8,9 @@ Vara Network. Full context and open decisions: [`docs/architecture.md`](docs/arc
 This repo currently contains the first building block: an **off-chain
 data pipeline** that pulls FPL data, snapshots it locally over time (the
 FPL API only exposes current state, so history has to be captured as it
-happens), and derives the settlement facts a market needs — points
-scored over a gameweek window, and whether a player played the full 90
-minutes.
+happens), and derives the settlement facts a market needs — for a single
+gameweek, whether a player scored 5+/10+ points in that match, and
+whether they played the full 90 minutes.
 
 ## Quickstart
 
@@ -23,8 +23,8 @@ python -m data_pipeline.cli fetch-live 1
 
 # Read it back
 python -m data_pipeline.cli top20
-python -m data_pipeline.cli tally 1 --from-gw 1 --window 5
-python -m data_pipeline.cli full90 1 --from-gw 1 --window 5
+python -m data_pipeline.cli points 1 --gw 1
+python -m data_pipeline.cli full90 1 --gw 1
 ```
 
 ## Tests
