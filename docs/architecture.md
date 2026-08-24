@@ -268,6 +268,39 @@ themselves could not be verified end-to-end here since FPL is
 unreachable — that needs checking from an environment with real
 internet before this is trusted in production.
 
+### Hosting: GitHub Pages via Actions
+
+`.github/workflows/deploy-web.yml` builds `web/` as a static export and
+publishes it to GitHub Pages on every push that touches `web/`. Chosen
+over Vercel (the more natural fit for Next.js) purely because it needed
+no new account or credentials to set up from this sandbox — GitHub was
+already available, Vercel's API is blocked by the same egress policy
+that blocks the FPL API.
+
+This is also the first real end-to-end check of the FPL image URLs:
+GitHub's own Actions runners have normal internet access, unlike this
+dev sandbox, so a successful deploy run is the confirmation
+`src/lib/fpl.ts`'s CDN URL pattern was missing until now (see "Player
+photos and team badges" above).
+
+Static export means some real tradeoffs vs. a normal Next.js
+deployment, gated behind a `GITHUB_PAGES` env var in `next.config.ts`
+so local dev and a plain `npm run build` are unaffected:
+
+- `output: "export"` — no server at runtime, so player/market data is
+  fetched once at *build* time, not per request. It only updates on
+  the next push (or a manual workflow run) — not truly live.
+- `basePath: "/fpl"` — GitHub Pages project sites serve at
+  `<owner>.github.io/<repo>/`, not the domain root.
+- `images.unoptimized: true` — no server means no image optimization
+  API; `next/image` still works, just serves the source CDN URL
+  directly rather than a resized/re-encoded one.
+
+None of this is the intended production setup — it's the fastest path
+to a real, live, inspectable URL without new infrastructure. Revisit
+once real hosting (Vercel, or wherever the eventual backend lives) is
+set up for real, since that removes all three tradeoffs above.
+
 ## Open items (not yet decided)
 
 - **Fee structure** for the parimutuel pool.
