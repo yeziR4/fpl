@@ -327,17 +327,31 @@ but not a genuinely outdated upstream photo.
 
 ### Opponent context in the markets grid
 
-Each market card shows who the player's team is playing this
-gameweek — badge + short name + home ("vs") or away ("@") — since
-that's directly relevant to whether they'll clear a points threshold,
-not just decoration. `relevantGameweekId()` picks the in-progress
-gameweek if there is one, else the next upcoming one
-(`bootstrap-static`'s `events[].is_current` / `is_next`); `opponentFor()`
-looks up that team's fixture for that gameweek. A blank gameweek (team
-has no fixture) or a double gameweek (more than one) both resolve to
-`null` — shown honestly as "No fixture" rather than guessing which
-match to show, same simplification `data_pipeline/resolution.py`
-already makes on the Python side for the same reason.
+Each market card shows who the player's team is playing next — badge
++ short name + home ("vs") or away ("@") — since that's directly
+relevant to whether they'll clear a points threshold, not just
+decoration.
+
+This is deliberately **per-team, not tied to one shared "current
+gameweek"**. The first version picked one gameweek for the whole page
+(`bootstrap-static`'s `events[].is_current`, falling back to
+`is_next`) and looked up every team's fixture within it — which is a
+real bug, not just a stale-photo complaint: `is_current` stays true
+for an *entire* gameweek until every match in it has finished, but
+teams play on different days within it (Friday through Monday). A team
+whose match had already been played kept showing that finished match
+as their "opponent" until every other team's match that gameweek also
+wrapped up, days later. `nextFixtureForTeam()` fixes this by looking
+up each team's own earliest not-yet-finished fixture directly (sorted
+by kickoff time) — it self-corrects the moment that team's match ends,
+independent of what any other team is doing. Verified against the
+exact bug scenario (a team with a finished match earlier in the
+current gameweek and a scheduled one next gameweek) with a standalone
+test before shipping.
+
+A team with no unplayed fixture in the data at all (end of season, or
+next gameweek's fixtures not yet published) resolves to `null` —
+shown honestly as "No fixture" rather than guessing.
 
 ## Open items (not yet decided)
 

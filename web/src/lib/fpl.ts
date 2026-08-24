@@ -58,6 +58,7 @@ export interface Fixture {
   team_h: number;
   team_a: number;
   finished: boolean;
+  kickoff_time: string | null; // ISO 8601, null if not yet scheduled
 }
 
 export interface Player {
@@ -103,39 +104,44 @@ export async function fetchFixtures(): Promise<Fixture[]> {
   return res.json();
 }
 
-/** The gameweek to show markets/opponents for: the current one if a
- * gameweek is in progress, otherwise the next upcoming one. Null if
- * bootstrap-static has neither flagged (shouldn't happen in-season). */
-export function relevantGameweekId(bootstrap: BootstrapStatic): number | null {
-  const current = bootstrap.events.find((e) => e.is_current);
-  if (current) return current.id;
-  const next = bootstrap.events.find((e) => e.is_next);
-  return next ? next.id : null;
-}
-
 export interface Opponent {
   teamId: number;
   isHome: boolean;
+  gw: number | null;
 }
 
 /**
- * The opponent a player's team faces in a given gameweek, from the
- * fixture list.
+ * The next fixture a team has yet to play -- the earliest not-yet-
+ * finished match, by kickoff time. Deliberately per-team rather than
+ * pinned to one shared "current gameweek": a gameweek's `is_current`
+ * flag in bootstrap-static stays true until every match in it is
+ * finished, but individual teams within it play on different days
+ * (Friday through Monday). Looking up "team X's fixture in the
+ * current gameweek" meant a team whose match had already been played
+ * kept showing that finished match as their upcoming opponent until
+ * every OTHER team's match that gameweek had also wrapped up -- a
+ * real bug, not just a stale-photo complaint. This self-corrects:
+ * once a team's match finishes, their next fixture is automatically
+ * whichever one (this gameweek or next) comes first chronologically.
  *
- * Returns null for a blank gameweek (team has no fixture that week)
- * or a double gameweek (more than one) -- neither is resolved to a
- * single answer here, same simplification as
- * data_pipeline/resolution.py's fixture_status_for_player on the
- * Python side.
+ * Returns null if the team has no unplayed fixture in the data at all
+ * (end of season, or fixtures not yet scheduled that far out).
+ * Fixtures without a kickoff_time (postponed, not yet scheduled) sort
+ * last rather than being treated as "next".
  */
-export function opponentFor(teamId: number, gw: number, fixtures: Fixture[]): Opponent | null {
-  const teamFixtures = fixtures.filter(
-    (f) => f.event === gw && (f.team_h === teamId || f.team_a === teamId),
-  );
-  if (teamFixtures.length !== 1) return null;
-  const fixture = teamFixtures[0];
+export function nextFixtureForTeam(teamId: number, fixtures: Fixture[]): Opponent | null {
+  const upcoming = fixtures
+    .filter((f) => !f.finished && (f.team_h === teamId || f.team_a === teamId))
+    .sort((a, b) => {
+      if (!a.kickoff_time && !b.kickoff_time) return 0;
+      if (!a.kickoff_time) return 1;
+      if (!b.kickoff_time) return -1;
+      return a.kickoff_time.localeCompare(b.kickoff_time);
+    });
+  const fixture = upcoming[0];
+  if (!fixture) return null;
   const isHome = fixture.team_h === teamId;
-  return { teamId: isHome ? fixture.team_a : fixture.team_h, isHome };
+  return { teamId: isHome ? fixture.team_a : fixture.team_h, isHome, gw: fixture.event };
 }
 
 /**
