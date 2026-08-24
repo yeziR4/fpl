@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+:root {
+  /* Vara-brand palette (see the "Overline" hero design direction) --
+     near-black background, mint-teal accent, no purple. */
+  --background: #05080a;
+  --foreground: #f4f7f6;
+  --accent: #2bffc0;
+  --accent-dim: #123b34;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-dim: var(--accent-dim);
+  --font-sans: var(--font-space-grotesk);
+  --font-display: var(--font-big-shoulders);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}

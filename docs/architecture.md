@@ -167,7 +167,8 @@ A small, dependency-light Python package:
   separately once this is running for real, or point it at a proper store
   later.
 - `players.py` — `top_expensive_players()`: the top-N by current price,
-  tie-broken by season points then id.
+  tie-broken by season points then id. `Player.photo_url` gives each
+  one's CDN photo URL (see "Player photos and team badges" above).
 - `settlement.py` — the *raw* facts for a single gameweek:
   `points_result()` (that gameweek's points, plus `.over(5)` /
   `.over(10)` for the two market lines) and `full90_result()` (minutes
@@ -197,6 +198,51 @@ tested against realistic fixture data in `tests/fixtures/`, but the
 `fetch-*` CLI commands have not been run against the live API from this
 environment. Run them from somewhere with open egress (a laptop, CI, a
 normal server) before trusting live data end-to-end.
+
+## Frontend: `web/`
+
+A Next.js 16 app (TypeScript, Tailwind v4, App Router) — the "Overline"
+hero design direction from the earlier design-canvas mockup, now as real
+code instead of a static mockup. The mockup's images were placeholder
+geometric silhouettes because a design canvas can only ever show
+*embedded* images (strict sandbox, no external network). A real
+Next.js app running in a real browser has no such restriction — that's
+the whole reason to move here rather than keep polishing the mockup.
+
+- `src/lib/fpl.ts` — deliberately mirrors `data_pipeline/players.py` /
+  `media.py`: `fetchBootstrapStatic()`, `topExpensivePlayers()`,
+  `playerPhotoUrl()`, `teamBadgeUrl()`, `teamCodeForId()`. Same names,
+  same logic, same "not verified against a live response" caveat.
+  **This duplication (FPL-parsing logic in both Python and TypeScript)
+  is a known, deliberate short-term shortcut** — the frontend currently
+  fetches FPL data directly rather than through a backend. Once a
+  backend API exists wrapping `data_pipeline`'s settlement/resolution
+  logic for actual market data, this file's *fetching* should be
+  replaced by calls to that backend, so FPL-parsing lives in one place,
+  not two. The pure URL-building functions are harmless to keep either
+  way.
+- `src/components/Hero.tsx` — the hero section: real `next/image` tags
+  for player photos and team badges (via `next.config.ts`'s
+  `remotePatterns` allowing `resources.premierleague.com`), not the
+  mockup's SVG silhouettes.
+- `src/app/page.tsx` — fetches bootstrap-static server-side and renders
+  the hero. **Fails soft**: FPL being unreachable or down renders the
+  hero with zero player cards rather than crashing the page — verified
+  in this sandbox, where the fetch reliably 403s (same egress block as
+  the Python pipeline) and the page still builds and renders correctly.
+- Brand tokens (background/foreground/accent colors, the two Google
+  Fonts) live in `src/app/globals.css`'s `@theme` block and
+  `src/app/layout.tsx` — Big Shoulders (display/headline) + Space
+  Grotesk (body), matching the mockup.
+
+Verified in this sandbox: `npm run build`, `npm run lint`, and a real
+rendered screenshot (desktop + mobile) via a local dev server — the
+layout, gradient, and typography all render correctly. Real player
+photos could not be verified end-to-end here (FPL is unreachable), but
+the card layout itself was checked with local placeholder images swapped
+in temporarily, which caught and fixed a real bug (a vertical card
+stagger that made one player's name collide with the card in front of
+it) before it shipped.
 
 ## Open items (not yet decided)
 

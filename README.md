@@ -37,10 +37,24 @@ pytest
 Tests run entirely against fixture data in `tests/fixtures/` — no
 network access required.
 
+## Frontend
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+A Next.js app in `web/` — currently just the landing page's hero
+section, fetching real player data/photos from the FPL API directly
+(see `docs/architecture.md` for why that's a short-term shortcut, not
+the intended long-term shape once a backend exists).
+
 ## Layout
 
 ```
 data_pipeline/    FPL API client, local snapshot cache, market-fact derivation, CLI
+web/              Next.js frontend
 tests/            Unit tests + fixture JSON matching the real FPL API shape
 docs/             Architecture notes and open decisions
 data/cache/       Local snapshot store (gitignored, grows over time)
