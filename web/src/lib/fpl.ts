@@ -98,6 +98,18 @@ function toPlayer(element: BootstrapElement): Player {
   };
 }
 
+const POSITION_LABELS: Record<number, string> = {
+  1: "GKP",
+  2: "DEF",
+  3: "MID",
+  4: "FWD",
+};
+
+/** Short position label for a player's element_type (1=GKP..4=FWD). */
+export function positionLabel(elementType: number): string {
+  return POSITION_LABELS[elementType] ?? "?";
+}
+
 /**
  * A player's photo, from bootstrap-static's `photo` field (e.g. "223094.jpg").
  *

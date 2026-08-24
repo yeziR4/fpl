@@ -221,28 +221,52 @@ the whole reason to move here rather than keep polishing the mockup.
   replaced by calls to that backend, so FPL-parsing lives in one place,
   not two. The pure URL-building functions are harmless to keep either
   way.
-- `src/components/Hero.tsx` — the hero section: real `next/image` tags
-  for player photos and team badges (via `next.config.ts`'s
-  `remotePatterns` allowing `resources.premierleague.com`), not the
-  mockup's SVG silhouettes.
-- `src/app/page.tsx` — fetches bootstrap-static server-side and renders
-  the hero. **Fails soft**: FPL being unreachable or down renders the
-  hero with zero player cards rather than crashing the page — verified
-  in this sandbox, where the fetch reliably 403s (same egress block as
-  the Python pipeline) and the page still builds and renders correctly.
+Full page, not just the hero:
+
+- `src/components/Header.tsx` — sticky nav: wordmark, Markets / How it
+  works links, a "Vara Network" chip, a Connect Wallet button (not
+  wired to anything yet — no wallet integration exists).
+- `src/components/Hero.tsx` — the pitch: headline, CTA, and (when
+  player data loaded) a stacked photo-card preview of a few players.
+  Renders correctly with zero players too — the image column doesn't
+  reserve space it isn't using, so the fail-soft state doesn't leave a
+  blank gap on mobile (an actual bug caught and fixed this pass).
+- `src/components/MarketsSection.tsx` — the actual product surface: a
+  grid of player cards (photo, position, team badge, name, price) each
+  with two market buttons ("Over 5 pts" / "Over 10 pts"). Deliberately
+  shows **no fabricated odds or pool sizes** — there's no staking
+  backend yet, so every card says "Pool opens at kickoff" rather than
+  inventing numbers that would look live but aren't. Renders an honest
+  "Markets unavailable" empty state when player data fails to load.
+- `src/components/HowItWorks.tsx` — three-step explainer (pick a
+  market → stake your side → settled on-chain), static content.
+- `src/components/Footer.tsx` — brand recap, nav links, a one-line
+  disclaimer.
+- `src/components/BrandMark.tsx` — the angular ring mark and the
+  network glyph, shared by Header/Footer/Hero (previously duplicated
+  across files; consolidated here).
+- `src/app/page.tsx` — fetches bootstrap-static server-side once,
+  shapes it for both the hero (first 3 players) and the markets grid
+  (top 8). **Fails soft**: FPL being unreachable or down renders empty
+  states rather than crashing the page — verified in this sandbox,
+  where the fetch reliably 403s (same egress block as the Python
+  pipeline) and the page still builds and renders correctly throughout.
 - Brand tokens (background/foreground/accent colors, the two Google
   Fonts) live in `src/app/globals.css`'s `@theme` block and
   `src/app/layout.tsx` — Big Shoulders (display/headline) + Space
   Grotesk (body), matching the mockup.
 
-Verified in this sandbox: `npm run build`, `npm run lint`, and a real
-rendered screenshot (desktop + mobile) via a local dev server — the
-layout, gradient, and typography all render correctly. Real player
-photos could not be verified end-to-end here (FPL is unreachable), but
-the card layout itself was checked with local placeholder images swapped
-in temporarily, which caught and fixed a real bug (a vertical card
-stagger that made one player's name collide with the card in front of
-it) before it shipped.
+Verified in this sandbox: `npm run build`, `npm run lint`, and real
+rendered screenshots (desktop + mobile, both the fail-soft empty state
+and — with local placeholder images swapped in temporarily to work
+around this sandbox's network block, then reverted before committing —
+the fully populated state) via a local dev server. That process caught
+and fixed two real bugs before they shipped: the mobile empty-state gap
+above, and a vertical card stagger in the hero that made one player's
+name collide with the card stacked in front of it. Real player photos
+themselves could not be verified end-to-end here since FPL is
+unreachable — that needs checking from an environment with real
+internet before this is trusted in production.
 
 ## Open items (not yet decided)
 
