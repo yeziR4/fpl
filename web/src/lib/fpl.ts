@@ -60,7 +60,15 @@ export interface Player {
 export async function fetchBootstrapStatic(): Promise<BootstrapStatic> {
   const res = await fetch(`${API_BASE_URL}/bootstrap-static/`, {
     // Revalidate periodically rather than on every request -- prices
-    // and points change at most a few times a day.
+    // and points change at most a few times a day. Known caveat,
+    // confirmed via a real deploy log: this response is ~2MB, over
+    // Next's data-cache per-item limit, so in a real (non-static-export)
+    // deployment this silently never actually gets cached -- every
+    // request re-fetches regardless of `revalidate`. Not incorrect,
+    // just not throttled the way the option implies. Fixing that for
+    // real needs an external cache layer; not worth it before there's
+    // a real backend to fetch this through instead (see the frontend
+    // section of docs/architecture.md).
     next: { revalidate: 300 },
   });
   if (!res.ok) {

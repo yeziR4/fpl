@@ -43,6 +43,12 @@ jobs:
           GITHUB_PAGES: "true"
 
       - uses: actions/configure-pages@v5
+        with:
+          # Repo has never had Pages turned on manually -- let this
+          # action enable it (via the API, using this workflow's own
+          # `pages: write` permission) rather than requiring a manual
+          # visit to Settings -> Pages first.
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
