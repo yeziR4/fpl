@@ -301,6 +301,44 @@ to a real, live, inspectable URL without new infrastructure. Revisit
 once real hosting (Vercel, or wherever the eventual backend lives) is
 set up for real, since that removes all three tradeoffs above.
 
+The deploy also runs on a schedule (every 6 hours, `.github/workflows/deploy-web.yml`)
+so the static snapshot doesn't go stale for days between pushes —
+still a snapshot, not truly live, just a fresher one.
+
+**One-time manual step this took**: the workflow's own token can
+deploy to Pages once a Pages site exists, but can't create one for the
+first time via the API (`configure-pages`'s `enablement: true` still
+hit "Resource not accessible by integration" on a repo that had never
+had Pages touched). Fixed by the repo owner visiting Settings → Pages
+once and setting Source to "GitHub Actions" — after that, every deploy
+(push-triggered, scheduled, or manual) works with no further manual
+steps.
+
+**Player photos vs. site freshness — two different things.** If a
+specific player's photo looks outdated, that's very likely the
+Premier League's own media library, not our fetch: `resources.premierleague.com`
+is the same canonical asset `fantasy.premierleague.com` itself
+displays, not a lower-tier mirror — there isn't a known "more official"
+free endpoint to switch to. New signings and youth-team graduates in
+particular can go a while with an old or placeholder photo upstream,
+which we have no way to override. The scheduled rebuild above fixes
+the *other* kind of "old" — the static snapshot itself being stale —
+but not a genuinely outdated upstream photo.
+
+### Opponent context in the markets grid
+
+Each market card shows who the player's team is playing this
+gameweek — badge + short name + home ("vs") or away ("@") — since
+that's directly relevant to whether they'll clear a points threshold,
+not just decoration. `relevantGameweekId()` picks the in-progress
+gameweek if there is one, else the next upcoming one
+(`bootstrap-static`'s `events[].is_current` / `is_next`); `opponentFor()`
+looks up that team's fixture for that gameweek. A blank gameweek (team
+has no fixture) or a double gameweek (more than one) both resolve to
+`null` — shown honestly as "No fixture" rather than guessing which
+match to show, same simplification `data_pipeline/resolution.py`
+already makes on the Python side for the same reason.
+
 ## Open items (not yet decided)
 
 - **Fee structure** for the parimutuel pool.

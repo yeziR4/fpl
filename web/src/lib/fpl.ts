@@ -40,9 +40,24 @@ export interface BootstrapTeam {
   short_name: string;
 }
 
+export interface BootstrapEvent {
+  id: number;
+  is_current: boolean;
+  is_next: boolean;
+}
+
 export interface BootstrapStatic {
   elements: BootstrapElement[];
   teams: BootstrapTeam[];
+  events: BootstrapEvent[];
+}
+
+export interface Fixture {
+  id: number;
+  event: number | null; // null when postponed / not yet scheduled into a gameweek
+  team_h: number;
+  team_a: number;
+  finished: boolean;
 }
 
 export interface Player {
@@ -75,6 +90,52 @@ export async function fetchBootstrapStatic(): Promise<BootstrapStatic> {
     throw new Error(`FPL bootstrap-static request failed: ${res.status} ${res.statusText}`);
   }
   return res.json();
+}
+
+/** Fetches the full fixture list, past and future, across all gameweeks. */
+export async function fetchFixtures(): Promise<Fixture[]> {
+  const res = await fetch(`${API_BASE_URL}/fixtures/`, {
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) {
+    throw new Error(`FPL fixtures request failed: ${res.status} ${res.statusText}`);
+  }
+  return res.json();
+}
+
+/** The gameweek to show markets/opponents for: the current one if a
+ * gameweek is in progress, otherwise the next upcoming one. Null if
+ * bootstrap-static has neither flagged (shouldn't happen in-season). */
+export function relevantGameweekId(bootstrap: BootstrapStatic): number | null {
+  const current = bootstrap.events.find((e) => e.is_current);
+  if (current) return current.id;
+  const next = bootstrap.events.find((e) => e.is_next);
+  return next ? next.id : null;
+}
+
+export interface Opponent {
+  teamId: number;
+  isHome: boolean;
+}
+
+/**
+ * The opponent a player's team faces in a given gameweek, from the
+ * fixture list.
+ *
+ * Returns null for a blank gameweek (team has no fixture that week)
+ * or a double gameweek (more than one) -- neither is resolved to a
+ * single answer here, same simplification as
+ * data_pipeline/resolution.py's fixture_status_for_player on the
+ * Python side.
+ */
+export function opponentFor(teamId: number, gw: number, fixtures: Fixture[]): Opponent | null {
+  const teamFixtures = fixtures.filter(
+    (f) => f.event === gw && (f.team_h === teamId || f.team_a === teamId),
+  );
+  if (teamFixtures.length !== 1) return null;
+  const fixture = teamFixtures[0];
+  const isHome = fixture.team_h === teamId;
+  return { teamId: isHome ? fixture.team_a : fixture.team_h, isHome };
 }
 
 /**

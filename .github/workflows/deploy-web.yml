@@ -11,6 +11,15 @@ on:
     branches: ["claude/fpl-prediction-market-ajf8qh", "main"]
     paths: ["web/**", ".github/workflows/deploy-web.yml"]
   workflow_dispatch:
+  schedule:
+    # Static export = data is snapshotted at build time, not fetched
+    # per request (see "Hosting: GitHub Pages via Actions" in
+    # docs/architecture.md) -- without this, prices/photos/the current
+    # gameweek only update on the next code push, which could be days.
+    # Every 6 hours keeps it reasonably current without hammering FPL's
+    # public API. This does not make the site "live" -- still a
+    # snapshot, just a fresher one.
+    - cron: "17 */6 * * *"
 
 permissions:
   contents: read

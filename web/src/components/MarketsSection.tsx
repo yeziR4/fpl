@@ -1,9 +1,17 @@
 import Image from "next/image";
 import { positionLabel, type Player } from "@/lib/fpl";
 
+export interface MarketOpponent {
+  badgeUrl: string;
+  shortName: string;
+  isHome: boolean;
+}
+
 export interface MarketPlayer {
   player: Player;
   badgeUrl: string;
+  /** null: no fixture this gameweek (blank/double gameweek) -- shown honestly, not guessed at. */
+  opponent: MarketOpponent | null;
 }
 
 interface MarketsSectionProps {
@@ -29,8 +37,8 @@ export function MarketsSection({ players }: MarketsSectionProps) {
 
         {players.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {players.map(({ player, badgeUrl }) => (
-              <MarketCard key={player.id} player={player} badgeUrl={badgeUrl} />
+            {players.map(({ player, badgeUrl, opponent }) => (
+              <MarketCard key={player.id} player={player} badgeUrl={badgeUrl} opponent={opponent} />
             ))}
           </div>
         ) : (
@@ -41,7 +49,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
   );
 }
 
-function MarketCard({ player, badgeUrl }: MarketPlayer) {
+function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50">
       <div className="relative aspect-[4/3] w-full bg-accent-dim">
@@ -65,7 +73,31 @@ function MarketCard({ player, badgeUrl }: MarketPlayer) {
           </div>
           <span className="truncate text-[14px] font-semibold text-foreground">{player.webName}</span>
         </div>
-        <span className="text-[12.5px] text-foreground/50">£{player.priceMillions.toFixed(1)}m</span>
+        <div className="flex items-center justify-between">
+          <span className="text-[12.5px] text-foreground/50">£{player.priceMillions.toFixed(1)}m</span>
+          {opponent ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11.5px] font-medium text-foreground/45">
+                {opponent.isHome ? "vs" : "@"}
+              </span>
+              <div className="relative h-4 w-4 shrink-0 overflow-hidden rounded-full bg-foreground/10">
+                <Image
+                  src={opponent.badgeUrl}
+                  alt={opponent.shortName}
+                  fill
+                  sizes="16px"
+                  className="object-contain p-0.5"
+                  unoptimized
+                />
+              </div>
+              <span className="text-[11.5px] font-semibold text-foreground/70">
+                {opponent.shortName}
+              </span>
+            </div>
+          ) : (
+            <span className="text-[11px] text-foreground/35">No fixture</span>
+          )}
+        </div>
 
         <div className="mt-1 flex flex-col gap-1.5">
           <MarketButton label="Over 5 pts" />
