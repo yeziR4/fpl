@@ -30,3 +30,11 @@ def test_top_expensive_players_respects_n():
 def test_price_millions_conversion():
     players = top_expensive_players(load_bootstrap(), n=1)
     assert players[0].price_millions == 15.0
+
+
+def test_photo_url_derived_from_raw_photo_field():
+    players = top_expensive_players(load_bootstrap(), n=1)
+    assert players[0].photo == "223094.jpg"
+    assert players[0].photo_url == (
+        "https://resources.premierleague.com/premierleague/photos/players/110x140/p223094.png"
+    )

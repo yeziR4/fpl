@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .media import player_photo_url
+
 
 @dataclass(frozen=True)
 class Player:
@@ -18,10 +20,16 @@ class Player:
     team: int
     element_type: int  # 1=GKP, 2=DEF, 3=MID, 4=FWD
     now_cost: int  # tenths of a million, e.g. 150 == £15.0m
+    photo: str  # bootstrap-static's raw photo field, e.g. "223094.jpg"
 
     @property
     def price_millions(self) -> float:
         return self.now_cost / 10
+
+    @property
+    def photo_url(self) -> str:
+        """See media.player_photo_url -- not verified against a live response."""
+        return player_photo_url(self.photo)
 
 
 def _to_player(element: dict) -> Player:
@@ -31,6 +39,7 @@ def _to_player(element: dict) -> Player:
         team=element["team"],
         element_type=element["element_type"],
         now_cost=element["now_cost"],
+        photo=element["photo"],
     )
 
 

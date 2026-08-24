@@ -132,6 +132,28 @@ happened. That means **we have to snapshot it ourselves over time** to
 build any history — there is no way to backfill later. This is the whole
 reason the pipeline is snapshot/cache-based rather than fetch-on-demand.
 
+### Player photos and team badges
+
+For the frontend: player photos and team badges do **not** need a new
+fetch. `bootstrap-static` already carries a `photo` code per player
+and a stable `code` per team (a different field from the season-relative
+`id` used everywhere else), and the pipeline already caches that
+snapshot. `data_pipeline/media.py` turns those into CDN URLs:
+
+```python
+player.photo_url                                  # from Player.photo
+team_badge_url(team_code_for_id(bootstrap, team_id))
+```
+
+**Not verified against a live response** — `resources.premierleague.com`
+is blocked by this sandbox's egress policy, same as the main API host
+(confirmed via direct connection attempts). The URL pattern is what the
+wider FPL tooling ecosystem uses, but this repo hasn't itself confirmed
+one resolves to a real image. Before wiring this into the frontend for
+real: fetch bootstrap-static somewhere with open egress, build a URL
+for one real player and one real team, and check it actually loads.
+Update `media.py`'s docstring once confirmed.
+
 ## What's built so far: `data_pipeline/`
 
 A small, dependency-light Python package:

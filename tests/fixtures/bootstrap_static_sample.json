@@ -1,11 +1,20 @@
 {
   "elements": [
-    {"id": 1, "web_name": "Haaland", "first_name": "Erling", "second_name": "Haaland", "team": 11, "element_type": 4, "now_cost": 150, "total_points": 210},
-    {"id": 2, "web_name": "Salah", "first_name": "Mohamed", "second_name": "Salah", "team": 10, "element_type": 3, "now_cost": 135, "total_points": 220},
-    {"id": 3, "web_name": "Palmer", "first_name": "Cole", "second_name": "Palmer", "team": 6, "element_type": 3, "now_cost": 110, "total_points": 195},
-    {"id": 4, "web_name": "Saka", "first_name": "Bukayo", "second_name": "Saka", "team": 1, "element_type": 3, "now_cost": 100, "total_points": 180},
-    {"id": 5, "web_name": "Isak", "first_name": "Alexander", "second_name": "Isak", "team": 13, "element_type": 4, "now_cost": 90, "total_points": 175},
-    {"id": 6, "web_name": "Watkins", "first_name": "Ollie", "second_name": "Watkins", "team": 2, "element_type": 4, "now_cost": 90, "total_points": 160},
-    {"id": 7, "web_name": "Cheap Keeper", "first_name": "Bench", "second_name": "Warmer", "team": 20, "element_type": 1, "now_cost": 39, "total_points": 20}
+    {"id": 1, "web_name": "Haaland", "first_name": "Erling", "second_name": "Haaland", "team": 11, "element_type": 4, "now_cost": 150, "total_points": 210, "photo": "223094.jpg"},
+    {"id": 2, "web_name": "Salah", "first_name": "Mohamed", "second_name": "Salah", "team": 10, "element_type": 3, "now_cost": 135, "total_points": 220, "photo": "118748.jpg"},
+    {"id": 3, "web_name": "Palmer", "first_name": "Cole", "second_name": "Palmer", "team": 6, "element_type": 3, "now_cost": 110, "total_points": 195, "photo": "231358.jpg"},
+    {"id": 4, "web_name": "Saka", "first_name": "Bukayo", "second_name": "Saka", "team": 1, "element_type": 3, "now_cost": 100, "total_points": 180, "photo": "223340.jpg"},
+    {"id": 5, "web_name": "Isak", "first_name": "Alexander", "second_name": "Isak", "team": 13, "element_type": 4, "now_cost": 90, "total_points": 175, "photo": "219931.jpg"},
+    {"id": 6, "web_name": "Watkins", "first_name": "Ollie", "second_name": "Watkins", "team": 2, "element_type": 4, "now_cost": 90, "total_points": 160, "photo": "178301.jpg"},
+    {"id": 7, "web_name": "Cheap Keeper", "first_name": "Bench", "second_name": "Warmer", "team": 20, "element_type": 1, "now_cost": 39, "total_points": 20, "photo": "999999.jpg"}
+  ],
+  "teams": [
+    {"id": 1, "code": 3},
+    {"id": 2, "code": 7},
+    {"id": 6, "code": 8},
+    {"id": 10, "code": 14},
+    {"id": 11, "code": 43},
+    {"id": 13, "code": 4},
+    {"id": 20, "code": 21}
   ]
 }
