@@ -85,13 +85,21 @@ jobs:
           url="${{ steps.deploy.outputs.url }}"
           echo "Testing $url"
 
-          options_status=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$url")
+          # --retry: a brand-new deploy (or, worse, a brand-new
+          # workers.dev subdomain) can take a few seconds to propagate
+          # across Cloudflare's edge -- confirmed for real, not assumed:
+          # the very first version of this smoke test hit the just-
+          # deployed URL immediately and got curl's SSL-connect-error
+          # (exit 35), which retrying past cleanly fixed.
+          curl_retry="--retry 5 --retry-delay 3 --retry-all-errors"
+
+          options_status=$(curl -s $curl_retry -o /dev/null -w "%{http_code}" -X OPTIONS "$url")
           if [ "$options_status" != "200" ]; then
             echo "::error::OPTIONS preflight returned $options_status, expected 200"
             exit 1
           fi
 
-          missing_addr_body=$(curl -s -X POST "$url" -H "content-type: application/json" -d '{}')
+          missing_addr_body=$(curl -s $curl_retry -X POST "$url" -H "content-type: application/json" -d '{}')
           if [ "$missing_addr_body" != '{"error":"address_required"}' ]; then
             echo "::error::POST with no address returned unexpected body: $missing_addr_body"
             exit 1
@@ -100,7 +108,7 @@ jobs:
           # Forces a round trip through the Durable Object (address
           # canonicalization happens there) -- confirms FAUCET_LEDGER is
           # actually reachable, not just that the entry Worker boots.
-          invalid_addr_body=$(curl -s -X POST "$url" -H "content-type: application/json" -d '{"address":"not-a-real-address"}')
+          invalid_addr_body=$(curl -s $curl_retry -X POST "$url" -H "content-type: application/json" -d '{"address":"not-a-real-address"}')
           if [ "$invalid_addr_body" != '{"error":"invalid_address"}' ]; then
             echo "::error::POST with an invalid address returned unexpected body: $invalid_addr_body"
             exit 1
