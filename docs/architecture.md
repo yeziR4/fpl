@@ -399,6 +399,38 @@ A team with no unplayed fixture in the data at all (end of season, or
 next gameweek's fixtures not yet published) resolves to `null` —
 shown honestly as "No fixture" rather than guessing.
 
+### Stat count-up animation
+
+The "broadcast graphic" touch requested — every real Premier League
+game has these on-screen — built as our own motion-design on top of
+real data, not licensed match footage (there's no free/public API for
+that, and the Premier League tightly controls broadcast clips). Two
+places:
+
+- Each market card gets a Pts / Goals / Assists strip that rolls up
+  from 0 to the player's real season-to-date stats the moment the card
+  scrolls into view.
+- Each Hero card gets a small Pts badge on the photo, same effect.
+
+`total_points`, `goals_scored`, `assists` were already sitting unused
+in every `bootstrap-static` element — no new fetch, same as the photo
+fields. Added to `Player` in both `data_pipeline/players.py` and
+`web/src/lib/fpl.ts`, kept mirrored per the usual convention.
+
+`StatCountUp` (`web/src/components/StatCountUp.tsx`) is a small client
+component: an `IntersectionObserver` fires the animation once, the
+first time the number scrolls into view (not on every scroll back into
+frame), via `requestAnimationFrame` with an ease-out curve. Respects
+`prefers-reduced-motion` — jumps straight to the final value via a
+lazy `useState` initializer rather than animating, which also avoids
+the "setState synchronously in an effect" lint rule (`react-hooks/set-state-in-effect`)
+that a naive `useEffect`-based check would trip.
+
+Verified by screenshotting the effect mid-flight (partial numbers,
+e.g. 88 pts) against the settled state (the real 210) with mock data
+via a local dev server, same pattern as the other UI verifications in
+this doc — not just "it compiles."
+
 ## Open items (not yet decided)
 
 - **Fee structure** for the parimutuel pool.

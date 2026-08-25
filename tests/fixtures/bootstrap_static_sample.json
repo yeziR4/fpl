@@ -1,12 +1,12 @@
 {
   "elements": [
-    {"id": 1, "web_name": "Haaland", "first_name": "Erling", "second_name": "Haaland", "team": 11, "element_type": 4, "now_cost": 150, "total_points": 210, "photo": "223094.jpg", "code": 223094, "has_temporary_code": false},
-    {"id": 2, "web_name": "Salah", "first_name": "Mohamed", "second_name": "Salah", "team": 10, "element_type": 3, "now_cost": 135, "total_points": 220, "photo": "118748.jpg", "code": 118748, "has_temporary_code": false},
-    {"id": 3, "web_name": "Palmer", "first_name": "Cole", "second_name": "Palmer", "team": 6, "element_type": 3, "now_cost": 110, "total_points": 195, "photo": "231358.jpg", "code": 231358, "has_temporary_code": false},
-    {"id": 4, "web_name": "Saka", "first_name": "Bukayo", "second_name": "Saka", "team": 1, "element_type": 3, "now_cost": 100, "total_points": 180, "photo": "223340.jpg", "code": 223340, "has_temporary_code": false},
-    {"id": 5, "web_name": "Isak", "first_name": "Alexander", "second_name": "Isak", "team": 13, "element_type": 4, "now_cost": 90, "total_points": 175, "photo": "219931.jpg", "code": 219931, "has_temporary_code": false},
-    {"id": 6, "web_name": "Watkins", "first_name": "Ollie", "second_name": "Watkins", "team": 2, "element_type": 4, "now_cost": 90, "total_points": 160, "photo": "178301.jpg", "code": 178301, "has_temporary_code": false},
-    {"id": 7, "web_name": "Cheap Keeper", "first_name": "Bench", "second_name": "Warmer", "team": 20, "element_type": 1, "now_cost": 39, "total_points": 20, "photo": "999999.jpg", "code": 999999, "has_temporary_code": true}
+    {"id": 1, "web_name": "Haaland", "first_name": "Erling", "second_name": "Haaland", "team": 11, "element_type": 4, "now_cost": 150, "total_points": 210, "goals_scored": 24, "assists": 6, "photo": "223094.jpg", "code": 223094, "has_temporary_code": false},
+    {"id": 2, "web_name": "Salah", "first_name": "Mohamed", "second_name": "Salah", "team": 10, "element_type": 3, "now_cost": 135, "total_points": 220, "goals_scored": 20, "assists": 13, "photo": "118748.jpg", "code": 118748, "has_temporary_code": false},
+    {"id": 3, "web_name": "Palmer", "first_name": "Cole", "second_name": "Palmer", "team": 6, "element_type": 3, "now_cost": 110, "total_points": 195, "goals_scored": 15, "assists": 9, "photo": "231358.jpg", "code": 231358, "has_temporary_code": false},
+    {"id": 4, "web_name": "Saka", "first_name": "Bukayo", "second_name": "Saka", "team": 1, "element_type": 3, "now_cost": 100, "total_points": 180, "goals_scored": 12, "assists": 10, "photo": "223340.jpg", "code": 223340, "has_temporary_code": false},
+    {"id": 5, "web_name": "Isak", "first_name": "Alexander", "second_name": "Isak", "team": 13, "element_type": 4, "now_cost": 90, "total_points": 175, "goals_scored": 18, "assists": 4, "photo": "219931.jpg", "code": 219931, "has_temporary_code": false},
+    {"id": 6, "web_name": "Watkins", "first_name": "Ollie", "second_name": "Watkins", "team": 2, "element_type": 4, "now_cost": 90, "total_points": 160, "goals_scored": 14, "assists": 7, "photo": "178301.jpg", "code": 178301, "has_temporary_code": false},
+    {"id": 7, "web_name": "Cheap Keeper", "first_name": "Bench", "second_name": "Warmer", "team": 20, "element_type": 1, "now_cost": 39, "total_points": 20, "goals_scored": 0, "assists": 0, "photo": "999999.jpg", "code": 999999, "has_temporary_code": true}
   ],
   "teams": [
     {"id": 1, "code": 3},

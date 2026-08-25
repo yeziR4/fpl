@@ -22,6 +22,9 @@ class Player:
     now_cost: int  # tenths of a million, e.g. 150 == £15.0m
     code: int  # stable player identifier -- what the photo CDN path actually keys on
     has_temporary_code: bool  # true for brand-new signings FPL hasn't got a real photo for yet
+    total_points: int  # season-to-date -- already fetched, just not exposed before
+    goals_scored: int  # season-to-date
+    assists: int  # season-to-date
 
     @property
     def price_millions(self) -> float:
@@ -46,6 +49,9 @@ def _to_player(element: dict) -> Player:
         now_cost=element["now_cost"],
         code=element["code"],
         has_temporary_code=element.get("has_temporary_code", False),
+        total_points=element.get("total_points", 0),
+        goals_scored=element.get("goals_scored", 0),
+        assists=element.get("assists", 0),
     )
 
 

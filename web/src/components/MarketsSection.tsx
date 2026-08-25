@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { positionLabel, type Player } from "@/lib/fpl";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
+import { StatCountUp } from "@/components/StatCountUp";
 
 export interface MarketOpponent {
   badgeUrl: string;
@@ -98,12 +99,44 @@ function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
           )}
         </div>
 
+        <StatStrip player={player} />
+
         <div className="mt-1 flex flex-col gap-2">
           <MarketRow label="Over 5 pts" />
           <MarketRow label="Over 10 pts" />
         </div>
         <span className="text-center text-[10.5px] text-foreground/35">Pool opens at kickoff</span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Season-to-date PTS / G / A, rolling up from 0 the moment the card
+ * scrolls into view -- the broadcast-graphic touch requested, built on
+ * real bootstrap-static stats rather than licensed match footage.
+ */
+function StatStrip({ player }: { player: Player }) {
+  return (
+    <div className="flex items-stretch rounded-md border border-foreground/10 bg-white/[0.03]">
+      <Stat label="Pts" value={player.totalPoints} />
+      <div className="w-px shrink-0 bg-foreground/10" />
+      <Stat label="Goals" value={player.goalsScored} />
+      <div className="w-px shrink-0 bg-foreground/10" />
+      <Stat label="Assists" value={player.assists} />
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex flex-1 flex-col items-center gap-0.5 py-1.5">
+      <span className="font-display text-lg font-black leading-none text-accent">
+        <StatCountUp value={value} />
+      </span>
+      <span className="text-[9px] font-semibold uppercase tracking-[0.09em] text-foreground/40">
+        {label}
+      </span>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Player } from "@/lib/fpl";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
+import { StatCountUp } from "@/components/StatCountUp";
 
 export interface HeroPlayer {
   player: Player;
@@ -124,6 +125,14 @@ function PlayerCard({
     >
       <div className="relative aspect-[110/140] overflow-hidden rounded-lg border-2 border-accent/70 bg-accent-dim shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
         <PlayerPhoto photoUrl={player.photoUrl} alt={player.webName} sizes="180px" />
+        <div className="absolute bottom-2 right-2 flex flex-col items-center rounded bg-background/85 px-2 py-1 leading-none backdrop-blur-sm">
+          <span className="font-display text-base font-black text-accent">
+            <StatCountUp value={player.totalPoints} />
+          </span>
+          <span className="text-[7.5px] font-semibold uppercase tracking-[0.1em] text-foreground/50">
+            Pts
+          </span>
+        </div>
       </div>
       <div className="mt-2 flex items-center gap-1.5">
         <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-foreground/10">

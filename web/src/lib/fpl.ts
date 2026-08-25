@@ -30,6 +30,8 @@ export interface BootstrapElement {
   element_type: number; // 1=GKP, 2=DEF, 3=MID, 4=FWD
   now_cost: number; // tenths of a million, e.g. 150 == £15.0m
   total_points: number;
+  goals_scored: number; // season-to-date
+  assists: number; // season-to-date
   code: number; // stable id -- what the photo CDN path actually keys on, see playerPhotoUrl
   has_temporary_code: boolean; // true for brand-new signings FPL hasn't got a real photo for yet
 }
@@ -71,6 +73,9 @@ export interface Player {
   code: number;
   hasTemporaryCode: boolean;
   priceMillions: number;
+  totalPoints: number;
+  goalsScored: number;
+  assists: number;
   /** null: no real photo available yet (hasTemporaryCode) -- render your own placeholder. */
   photoUrl: string | null;
 }
@@ -173,6 +178,9 @@ function toPlayer(element: BootstrapElement): Player {
     code: element.code,
     hasTemporaryCode: element.has_temporary_code,
     priceMillions: element.now_cost / 10,
+    totalPoints: element.total_points,
+    goalsScored: element.goals_scored,
+    assists: element.assists,
     photoUrl: element.has_temporary_code ? null : playerPhotoUrl(element.code),
   };
 }

@@ -40,6 +40,15 @@ def test_photo_url_derived_from_code_field():
     )
 
 
+def test_season_stats_pass_through():
+    # goals_scored/assists/total_points feed the frontend's stat count-up
+    # animation -- just passed through from bootstrap-static, no math here.
+    players = top_expensive_players(load_bootstrap(), n=1)
+    assert players[0].total_points == 210
+    assert players[0].goals_scored == 24
+    assert players[0].assists == 6
+
+
 def test_photo_url_is_none_for_temporary_code():
     # A brand-new signing FPL hasn't got a real photo for yet -- render
     # a placeholder in the UI rather than guessing at an unverified URL.
