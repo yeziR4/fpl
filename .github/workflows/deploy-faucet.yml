@@ -38,7 +38,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Wrangler 4.x requires Node 22+ -- confirmed the hard way:
+          # this was pinned to 20 (copying deploy-web.yml's Next.js
+          # requirement) and the first real deploy attempt failed with
+          # "Wrangler requires at least Node.js v22.0.0."
+          node-version: 22
           cache: npm
           cache-dependency-path: faucet/package-lock.json
 
