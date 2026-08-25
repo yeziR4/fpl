@@ -99,9 +99,9 @@ function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
           )}
         </div>
 
-        <div className="mt-1 flex flex-col gap-1.5">
-          <MarketButton label="Over 5 pts" />
-          <MarketButton label="Over 10 pts" />
+        <div className="mt-1 flex flex-col gap-2">
+          <MarketRow label="Over 5 pts" />
+          <MarketRow label="Over 10 pts" />
         </div>
         <span className="text-center text-[10.5px] text-foreground/35">Pool opens at kickoff</span>
       </div>
@@ -109,11 +109,28 @@ function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
   );
 }
 
-function MarketButton({ label }: { label: string }) {
+function MarketRow({ label }: { label: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] font-medium text-foreground/50">{label}</span>
+      <div className="grid grid-cols-2 gap-1.5">
+        <MarketButton label="Yes" variant="yes" />
+        <MarketButton label="No" variant="no" />
+      </div>
+    </div>
+  );
+}
+
+function MarketButton({ label, variant }: { label: string; variant: "yes" | "no" }) {
+  const isYes = variant === "yes";
   return (
     <button
       type="button"
-      className="rounded border border-accent/35 bg-accent/[0.06] px-3 py-2 text-[12.5px] font-medium text-foreground/85 transition-colors hover:border-accent hover:bg-accent/15"
+      className={
+        isYes
+          ? "rounded border border-accent bg-accent px-2 py-1.5 text-[12px] font-semibold text-[#05100d] transition-opacity hover:opacity-90"
+          : "rounded border border-foreground/25 bg-transparent px-2 py-1.5 text-[12px] font-medium text-foreground/70 transition-colors hover:border-foreground/45 hover:text-foreground"
+      }
     >
       {label}
     </button>
