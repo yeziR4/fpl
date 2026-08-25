@@ -1,4 +1,5 @@
-import { BrandMark, NetworkGlyph } from "@/components/BrandMark";
+import { BrandMark } from "@/components/BrandMark";
+import { VaraWordmark } from "@/components/VaraWordmark";
 
 export function Footer() {
   return (
@@ -15,9 +16,8 @@ export function Footer() {
             Points-threshold prediction markets on Fantasy Premier League player
             performance. Humans and AI models, staking head-to-head.
           </p>
-          <div className="mt-1 flex items-center gap-2 text-[12px] font-medium tracking-[0.03em] text-foreground/55">
-            <NetworkGlyph className="h-3.5 w-3.5" />
-            Built on Vara Network
+          <div className="mt-1 flex items-center gap-1.5 text-[12px] font-medium tracking-[0.03em] text-foreground/55">
+            Built on <VaraWordmark className="text-[12.5px] text-foreground/75" />
           </div>
         </div>
 

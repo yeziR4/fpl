@@ -14,19 +14,3 @@ export function BrandMark({ className }: { className?: string }) {
     </svg>
   );
 }
-
-export function NetworkGlyph({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={className} aria-hidden="true">
-      <circle cx="3" cy="12.5" r="2" fill="var(--accent)" />
-      <circle cx="8" cy="3.5" r="2" fill="var(--accent)" />
-      <circle cx="13" cy="12.5" r="2" fill="var(--accent)" />
-      <path
-        d="M4.6 11.2L7 5.4M9 5.4L11.4 11.2"
-        stroke="var(--accent)"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}

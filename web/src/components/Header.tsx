@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BrandMark, NetworkGlyph } from "@/components/BrandMark";
+import { BrandMark } from "@/components/BrandMark";
+import { VaraWordmark } from "@/components/VaraWordmark";
 import { WalletButton } from "@/components/WalletButton";
 
 export function Header() {
@@ -26,10 +27,10 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-2 rounded-full border border-foreground/18 px-3.5 py-1.5 sm:flex">
-            <NetworkGlyph className="h-3.5 w-3.5" />
-            <span className="text-[11.5px] font-medium tracking-[0.03em] text-foreground/75">
-              Vara Network
+          <div className="hidden items-center gap-1.5 rounded-full border border-foreground/18 px-3.5 py-1.5 sm:flex">
+            <VaraWordmark className="text-[13px] text-foreground" />
+            <span className="text-[11px] font-medium tracking-[0.03em] text-foreground/55">
+              Network
             </span>
           </div>
           <WalletButton />
