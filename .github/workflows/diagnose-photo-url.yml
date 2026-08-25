@@ -91,3 +91,30 @@ jobs:
           done
           echo "=== byte-for-byte diff (empty = identical images) ==="
           cmp badge-premierleague.png badge-premierleague25.png && echo "IDENTICAL" || echo "DIFFERENT"
+
+      - name: premierleague25 403'd plain -- test whether a Referer/Origin unlocks it
+        run: |
+          CODE=$(cat code.txt)
+          URL="https://resources.premierleague.com/premierleague25/photos/players/110x140/p${CODE}.png"
+          echo "=== plain (repeat baseline) ==="
+          curl -sS -o /dev/null -w "http_status: %{http_code}\n" "$URL"
+          echo "=== with Referer: https://fantasy.premierleague.com/ ==="
+          curl -sS -o /dev/null -w "http_status: %{http_code}\n" -H "Referer: https://fantasy.premierleague.com/" "$URL"
+          echo "=== with Origin: https://fantasy.premierleague.com ==="
+          curl -sS -o /dev/null -w "http_status: %{http_code}\n" -H "Origin: https://fantasy.premierleague.com" "$URL"
+          echo "=== with both Referer and Origin ==="
+          curl -sS -o body.txt -D headers.txt -w "http_status: %{http_code}\n" \
+            -H "Referer: https://fantasy.premierleague.com/" \
+            -H "Origin: https://fantasy.premierleague.com" \
+            "$URL"
+          echo "--- response body (likely an XML error with the real reason) ---"
+          cat body.txt
+          echo
+          echo "--- response headers ---"
+          cat headers.txt
+
+      - name: Also check whether the frontend bundle references a query-string / signed variant
+        run: |
+          curl -sS -A "Mozilla/5.0" https://fantasy.premierleague.com/assets/index-CxyUBDMb.js -o bundle.js
+          echo "=== 200 chars of context around every 'premierleague25' occurrence ==="
+          grep -aboE '.{100}premierleague25.{200}' bundle.js | head -20
