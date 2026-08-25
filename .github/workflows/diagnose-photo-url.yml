@@ -47,33 +47,47 @@ jobs:
           echo "=== lines mentioning 'resources' ==="
           grep -i resources findings.txt || echo "(none)"
 
-      - name: Sanity check -- our current pattern against a real player photo
+      - name: Sanity check -- old vs premierleague25 path for a real player photo
         run: |
           curl -sS -A "Mozilla/5.0" https://fantasy.premierleague.com/api/bootstrap-static/ -o bootstrap.json
           python3 - <<'PY'
           import json
           data = json.load(open("bootstrap.json"))
-          # Most expensive player -- highest public profile, most likely to
-          # have a recent, well-maintained photo if anyone does.
           e = max(data["elements"], key=lambda x: x["now_cost"])
           print("sample player:", e["web_name"], "cost:", e["now_cost"], "photo:", e["photo"])
           code = e["photo"].rsplit(".", 1)[0]
-          print("our current URL:", f"https://resources.premierleague.com/premierleague/photos/players/110x140/p{code}.png")
+          with open("code.txt", "w") as f:
+              f.write(code)
+          team = next(t for t in data["teams"] if t["id"] == e["team"])
+          print("sample team:", team["name"], "code:", team["code"])
+          with open("teamcode.txt", "w") as f:
+              f.write(str(team["code"]))
           PY
 
-      - name: Fetch our current URL for that player and report size/status
+      - name: Fetch photo under both paths and compare
         run: |
-          CODE=$(python3 -c "
-          import json
-          data = json.load(open('bootstrap.json'))
-          e = max(data['elements'], key=lambda x: x['now_cost'])
-          print(e['photo'].rsplit('.', 1)[0])
-          ")
-          URL="https://resources.premierleague.com/premierleague/photos/players/110x140/p${CODE}.png"
-          echo "Checking: $URL"
-          curl -sS -o photo.png -D headers.txt "$URL"
-          echo "--- response headers ---"
-          cat headers.txt
-          echo "--- file size ---"
-          wc -c < photo.png
-          file photo.png
+          CODE=$(cat code.txt)
+          for PREFIX in "premierleague" "premierleague25"; do
+            URL="https://resources.premierleague.com/${PREFIX}/photos/players/110x140/p${CODE}.png"
+            echo "=== $URL ==="
+            curl -sS -o "photo-${PREFIX}.png" -D "headers-${PREFIX}.txt" "$URL"
+            grep -iE "^(http|content-length|last-modified|etag)" "headers-${PREFIX}.txt"
+            wc -c < "photo-${PREFIX}.png"
+            echo
+          done
+          echo "=== byte-for-byte diff (empty = identical images) ==="
+          cmp photo-premierleague.png photo-premierleague25.png && echo "IDENTICAL" || echo "DIFFERENT"
+
+      - name: Fetch team badge under both paths and compare
+        run: |
+          TEAMCODE=$(cat teamcode.txt)
+          for PREFIX in "premierleague" "premierleague25"; do
+            URL="https://resources.premierleague.com/${PREFIX}/badges/50/t${TEAMCODE}.png"
+            echo "=== $URL ==="
+            curl -sS -o "badge-${PREFIX}.png" -D "badgeheaders-${PREFIX}.txt" -w "http_status: %{http_code}\n" "$URL"
+            grep -iE "^(http|content-length|last-modified|etag)" "badgeheaders-${PREFIX}.txt" || true
+            wc -c < "badge-${PREFIX}.png"
+            echo
+          done
+          echo "=== byte-for-byte diff (empty = identical images) ==="
+          cmp badge-premierleague.png badge-premierleague25.png && echo "IDENTICAL" || echo "DIFFERENT"
