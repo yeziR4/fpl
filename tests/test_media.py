@@ -12,14 +12,15 @@ def load_bootstrap():
     return json.loads((FIXTURES / "bootstrap_static_sample.json").read_text())
 
 
-def test_player_photo_url_strips_extension_and_uses_png():
-    # bootstrap-static's `photo` field carries .jpg; the CDN serves .png.
-    url = player_photo_url("223094.jpg")
+def test_player_photo_url_built_from_stable_code():
+    # Keyed on elements[].code -- what FPL's own frontend actually
+    # reads -- not parsed out of the raw `photo` filename field.
+    url = player_photo_url(223094)
     assert url == "https://resources.premierleague.com/premierleague/photos/players/110x140/p223094.png"
 
 
 def test_player_photo_url_accepts_a_different_size():
-    url = player_photo_url("223094.jpg", size="40x40")
+    url = player_photo_url(223094, size="40x40")
     assert "/photos/players/40x40/p223094.png" in url
 
 

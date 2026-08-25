@@ -30,7 +30,8 @@ export interface BootstrapElement {
   element_type: number; // 1=GKP, 2=DEF, 3=MID, 4=FWD
   now_cost: number; // tenths of a million, e.g. 150 == £15.0m
   total_points: number;
-  photo: string; // e.g. "223094.jpg" -- see playerPhotoUrl
+  code: number; // stable id -- what the photo CDN path actually keys on, see playerPhotoUrl
+  has_temporary_code: boolean; // true for brand-new signings FPL hasn't got a real photo for yet
 }
 
 export interface BootstrapTeam {
@@ -67,9 +68,11 @@ export interface Player {
   team: number;
   elementType: number;
   nowCost: number;
-  photo: string;
+  code: number;
+  hasTemporaryCode: boolean;
   priceMillions: number;
-  photoUrl: string;
+  /** null: no real photo available yet (hasTemporaryCode) -- render your own placeholder. */
+  photoUrl: string | null;
 }
 
 /** Fetches the full current-state snapshot: players, teams, prices. */
@@ -167,9 +170,10 @@ function toPlayer(element: BootstrapElement): Player {
     team: element.team,
     elementType: element.element_type,
     nowCost: element.now_cost,
-    photo: element.photo,
+    code: element.code,
+    hasTemporaryCode: element.has_temporary_code,
     priceMillions: element.now_cost / 10,
-    photoUrl: playerPhotoUrl(element.photo),
+    photoUrl: element.has_temporary_code ? null : playerPhotoUrl(element.code),
   };
 }
 
@@ -186,16 +190,37 @@ export function positionLabel(elementType: number): string {
 }
 
 /**
- * A player's photo, from bootstrap-static's `photo` field (e.g. "223094.jpg").
+ * A player's photo, from bootstrap-static's `code` field.
  *
- * That field carries a .jpg extension, but the CDN serves .png at a
- * different path -- a known quirk of the source data, not a typo
- * here. See data_pipeline/media.py for the Python equivalent and the
- * "not verified against a live response" caveat, which applies here
- * too until someone checks a real URL loads.
+ * **Verified against FPL's own production frontend bundle** (fetched
+ * live from a GitHub Actions runner, which has real internet unlike
+ * the dev sandbox this was built in -- see data_pipeline/media.py for
+ * the full writeup). Two things confirmed there and mirrored here:
+ *
+ * 1. FPL's own frontend keys this URL on `elements[].code`, not by
+ *    parsing the `photo` filename field the way this function used to
+ *    (and the way community tooling like vaastav/Fantasy-Premier-League
+ *    and amosbastian/fpl does when relaying the raw field). The two
+ *    happen to be numerically identical today, but `code` is what
+ *    FPL's own code actually reads.
+ * 2. FPL's frontend actually requests a fresher path,
+ *    `resources.premierleague.com/premierleague25/...`, but that path
+ *    403s for any request without a logged-in FPL session's cookies
+ *    (confirmed via Referer/Origin spoofing -- the response carries
+ *    `access-control-allow-credentials: true`, the signature of
+ *    session-gated access, not a header we can copy). This legacy
+ *    `/premierleague/...` path is the only one actually reachable by
+ *    an anonymous visitor, confirmed still-serving but confirmed stale
+ *    for some players (a fetched photo came back `last-modified: Fri,
+ *    16 Aug 2024`). No public fix exists for that until FPL exposes
+ *    the fresher path without requiring login.
+ *
+ * Callers should not call this for a player with `has_temporary_code`
+ * true (see Player.photoUrl / hasTemporaryCode) -- that flag means FPL
+ * doesn't have a real photo for this player yet, and the CDN has no
+ * confirmed placeholder path on this endpoint to fall back to.
  */
-export function playerPhotoUrl(photo: string, size: "40x40" | "110x140" = "110x140"): string {
-  const code = photo.replace(/\.[a-zA-Z0-9]+$/, "");
+export function playerPhotoUrl(code: number, size: "40x40" | "110x140" = "110x140"): string {
   return `${MEDIA_BASE_URL}/photos/players/${size}/p${code}.png`;
 }
 

@@ -20,16 +20,21 @@ class Player:
     team: int
     element_type: int  # 1=GKP, 2=DEF, 3=MID, 4=FWD
     now_cost: int  # tenths of a million, e.g. 150 == £15.0m
-    photo: str  # bootstrap-static's raw photo field, e.g. "223094.jpg"
+    code: int  # stable player identifier -- what the photo CDN path actually keys on
+    has_temporary_code: bool  # true for brand-new signings FPL hasn't got a real photo for yet
 
     @property
     def price_millions(self) -> float:
         return self.now_cost / 10
 
     @property
-    def photo_url(self) -> str:
-        """See media.player_photo_url -- not verified against a live response."""
-        return player_photo_url(self.photo)
+    def photo_url(self) -> str | None:
+        """See media.player_photo_url. None means no real photo is
+        available yet (has_temporary_code) -- render your own
+        placeholder rather than guessing at an unverified FPL asset."""
+        if self.has_temporary_code:
+            return None
+        return player_photo_url(self.code)
 
 
 def _to_player(element: dict) -> Player:
@@ -39,7 +44,8 @@ def _to_player(element: dict) -> Player:
         team=element["team"],
         element_type=element["element_type"],
         now_cost=element["now_cost"],
-        photo=element["photo"],
+        code=element["code"],
+        has_temporary_code=element.get("has_temporary_code", False),
     )
 
 

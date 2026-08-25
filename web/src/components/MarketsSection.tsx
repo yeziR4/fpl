@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { positionLabel, type Player } from "@/lib/fpl";
+import { PlayerPhoto } from "@/components/PlayerPhoto";
 
 export interface MarketOpponent {
   badgeUrl: string;
@@ -53,13 +54,11 @@ function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50">
       <div className="relative aspect-[4/3] w-full bg-accent-dim">
-        <Image
-          src={player.photoUrl}
+        <PlayerPhoto
+          photoUrl={player.photoUrl}
           alt={player.webName}
-          fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-          className="object-cover object-top"
-          unoptimized
+          className="object-top"
         />
         <div className="absolute left-2.5 top-2.5 rounded bg-background/80 px-1.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-accent">
           {positionLabel(player.elementType)}

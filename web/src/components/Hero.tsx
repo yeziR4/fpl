@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Player } from "@/lib/fpl";
+import { PlayerPhoto } from "@/components/PlayerPhoto";
 
 export interface HeroPlayer {
   player: Player;
@@ -122,14 +123,7 @@ function PlayerCard({
       style={{ zIndex: 10 - stackIndex }}
     >
       <div className="relative aspect-[110/140] overflow-hidden rounded-lg border-2 border-accent/70 bg-accent-dim shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-        <Image
-          src={player.photoUrl}
-          alt={player.webName}
-          fill
-          sizes="180px"
-          className="object-cover"
-          unoptimized
-        />
+        <PlayerPhoto photoUrl={player.photoUrl} alt={player.webName} sizes="180px" />
       </div>
       <div className="mt-2 flex items-center gap-1.5">
         <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full bg-foreground/10">

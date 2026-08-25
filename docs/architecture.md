@@ -135,24 +135,55 @@ reason the pipeline is snapshot/cache-based rather than fetch-on-demand.
 ### Player photos and team badges
 
 For the frontend: player photos and team badges do **not** need a new
-fetch. `bootstrap-static` already carries a `photo` code per player
-and a stable `code` per team (a different field from the season-relative
-`id` used everywhere else), and the pipeline already caches that
-snapshot. `data_pipeline/media.py` turns those into CDN URLs:
+fetch. `bootstrap-static` already carries a stable `code` per player
+and per team (a different field from the season-relative `id` used
+everywhere else for team lookups), and the pipeline already caches
+that snapshot. `data_pipeline/media.py` turns those into CDN URLs:
 
 ```python
-player.photo_url                                  # from Player.photo
+player.photo_url                                  # None if has_temporary_code
 team_badge_url(team_code_for_id(bootstrap, team_id))
 ```
 
-**Not verified against a live response** — `resources.premierleague.com`
-is blocked by this sandbox's egress policy, same as the main API host
-(confirmed via direct connection attempts). The URL pattern is what the
-wider FPL tooling ecosystem uses, but this repo hasn't itself confirmed
-one resolves to a real image. Before wiring this into the frontend for
-real: fetch bootstrap-static somewhere with open egress, build a URL
-for one real player and one real team, and check it actually loads.
-Update `media.py`'s docstring once confirmed.
+**Verified against FPL's own production frontend**, not just assumed —
+via a one-off GitHub Actions job (GitHub's runners have real internet;
+this sandbox doesn't) that fetched fantasy.premierleague.com's live
+frontend bundle and read the actual source. Two findings:
+
+1. FPL's frontend keys photo URLs on `elements[].code`, not by parsing
+   the `photo` filename field the way this repo (and the wider
+   community tooling — vaastav/Fantasy-Premier-League,
+   amosbastian/fpl, neither of which actually builds a photo URL
+   itself) used to. `code` and the numeric prefix of `photo` are
+   identical for every player in the checked snapshot today, but
+   `code` is what FPL's own code actually reads, so `Player` and the
+   TS `Player`/`BootstrapElement` types now carry `code` (and
+   `has_temporary_code`) instead of the raw `photo` string.
+2. FPL's frontend actually requests a *different, fresher* path —
+   `resources.premierleague.com/premierleague25/photos/players/...` —
+   than the one this repo uses. Confirmed the legacy path really is
+   stale, not just assumed: a fetched photo came back with
+   `last-modified: Fri, 16 Aug 2024`. But the fresher `premierleague25`
+   path 403s on every unauthenticated request, including with
+   `Referer`/`Origin` spoofed to FPL's own — the response carries
+   `access-control-allow-credentials: true`, the signature of a path
+   gated behind a logged-in session's cookies, not a header we can
+   copy. There's no known way to reach it without a real FPL user's
+   session, which an anonymous public site can't obtain or ethically
+   fake.
+
+Net effect: the legacy `/premierleague/...` path is not a bug to fix,
+it's confirmed to be the only path actually reachable by an
+unauthenticated request. Some player photos will stay stale versus
+what a logged-in FPL user sees, with no accessible fix from here —
+revisit if FPL ever opens the fresher path without requiring login.
+
+Separately, `has_temporary_code` (also on `elements[]`) is true for
+brand-new signings FPL doesn't have a real photo for yet — `photo_url`
+returns `None`/`null` for those rather than guessing at an unverified
+placeholder path on the (also gated) fresher endpoint. The frontend's
+`PlayerPhoto` component renders an honest placeholder icon in that
+case instead of passing `null` to `next/image`.
 
 ## What's built so far: `data_pipeline/`
 
@@ -212,7 +243,8 @@ the whole reason to move here rather than keep polishing the mockup.
 - `src/lib/fpl.ts` — deliberately mirrors `data_pipeline/players.py` /
   `media.py`: `fetchBootstrapStatic()`, `topExpensivePlayers()`,
   `playerPhotoUrl()`, `teamBadgeUrl()`, `teamCodeForId()`. Same names,
-  same logic, same "not verified against a live response" caveat.
+  same logic, same verified findings and caveats (see "Player photos
+  and team badges" above).
   **This duplication (FPL-parsing logic in both Python and TypeScript)
   is a known, deliberate short-term shortcut** — the frontend currently
   fetches FPL data directly rather than through a backend. Once a
@@ -322,15 +354,22 @@ once and setting Source to "GitHub Actions" — after that, every deploy
 steps.
 
 **Player photos vs. site freshness — two different things.** If a
-specific player's photo looks outdated, that's very likely the
-Premier League's own media library, not our fetch: `resources.premierleague.com`
-is the same canonical asset `fantasy.premierleague.com` itself
-displays, not a lower-tier mirror — there isn't a known "more official"
-free endpoint to switch to. New signings and youth-team graduates in
-particular can go a while with an old or placeholder photo upstream,
-which we have no way to override. The scheduled rebuild above fixes
-the *other* kind of "old" — the static snapshot itself being stale —
-but not a genuinely outdated upstream photo.
+specific player's photo looks outdated, that's not the scheduled
+rebuild's problem to fix. Confirmed by actually reading FPL's own
+frontend bundle (see "Player photos and team badges" above):
+`fantasy.premierleague.com` itself requests a *fresher* asset than the
+one this site can reach — `resources.premierleague.com/premierleague25/...`
+— but that path only serves a logged-in user's session, and 403s on
+every unauthenticated request we tried (Referer/Origin spoofing
+included). The legacy path this site uses is the only one that's
+actually publicly reachable, and it's confirmed stale for at least
+some players. New signings and youth-team graduates can also go a
+while with no real photo at all upstream (`has_temporary_code`),
+which we render as an honest placeholder rather than guessing at a
+URL. The scheduled rebuild above fixes the *other* kind of "old" — the
+static snapshot itself being stale — but not this one; there's
+currently no accessible fix for genuinely outdated upstream photos
+short of FPL opening the fresher path to anonymous requests.
 
 ### Opponent context in the markets grid
 

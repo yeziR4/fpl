@@ -32,9 +32,18 @@ def test_price_millions_conversion():
     assert players[0].price_millions == 15.0
 
 
-def test_photo_url_derived_from_raw_photo_field():
+def test_photo_url_derived_from_code_field():
     players = top_expensive_players(load_bootstrap(), n=1)
-    assert players[0].photo == "223094.jpg"
+    assert players[0].code == 223094
     assert players[0].photo_url == (
         "https://resources.premierleague.com/premierleague/photos/players/110x140/p223094.png"
     )
+
+
+def test_photo_url_is_none_for_temporary_code():
+    # A brand-new signing FPL hasn't got a real photo for yet -- render
+    # a placeholder in the UI rather than guessing at an unverified URL.
+    players = top_expensive_players(load_bootstrap(), n=7)
+    keeper = next(p for p in players if p.web_name == "Cheap Keeper")
+    assert keeper.has_temporary_code is True
+    assert keeper.photo_url is None
