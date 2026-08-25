@@ -59,7 +59,51 @@ jobs:
           sed -i "s/__KV_NAMESPACE_ID__/${{ vars.CLOUDFLARE_KV_NAMESPACE_ID }}/" wrangler.toml
 
       - name: Deploy Worker
-        run: npx wrangler deploy
+        id: deploy
+        run: |
+          npx wrangler deploy | tee /tmp/wrangler-deploy.log
+          url=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' /tmp/wrangler-deploy.log | head -1)
+          if [ -z "$url" ]; then
+            echo "::error::Couldn't find the deployed Worker's URL in wrangler's output -- deploy may have succeeded but the smoke test below can't run without it."
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test the live Worker
+        # This sandbox's own dev environment can't reach *.workers.dev
+        # directly to verify this by hand (same egress restriction that
+        # blocks vara.network and gear-tech.io) -- GitHub's runners have
+        # real internet, so this is the actual end-to-end check on every
+        # deploy, not just "wrangler said success." Only exercises the
+        # validation/routing/Durable-Object-reachability path, never a
+        # real payout -- no address here is valid enough to reach the
+        # signing step.
+        run: |
+          url="${{ steps.deploy.outputs.url }}"
+          echo "Testing $url"
+
+          options_status=$(curl -s -o /dev/null -w "%{http_code}" -X OPTIONS "$url")
+          if [ "$options_status" != "200" ]; then
+            echo "::error::OPTIONS preflight returned $options_status, expected 200"
+            exit 1
+          fi
+
+          missing_addr_body=$(curl -s -X POST "$url" -H "content-type: application/json" -d '{}')
+          if [ "$missing_addr_body" != '{"error":"address_required"}' ]; then
+            echo "::error::POST with no address returned unexpected body: $missing_addr_body"
+            exit 1
+          fi
+
+          # Forces a round trip through the Durable Object (address
+          # canonicalization happens there) -- confirms FAUCET_LEDGER is
+          # actually reachable, not just that the entry Worker boots.
+          invalid_addr_body=$(curl -s -X POST "$url" -H "content-type: application/json" -d '{"address":"not-a-real-address"}')
+          if [ "$invalid_addr_body" != '{"error":"invalid_address"}' ]; then
+            echo "::error::POST with an invalid address returned unexpected body: $invalid_addr_body"
+            exit 1
+          fi
+
+          echo "Smoke test passed: $url"
