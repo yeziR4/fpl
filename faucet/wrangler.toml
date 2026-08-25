@@ -1,0 +1,51 @@
+# Cloudflare Worker: the demo faucet's signing service.
+#
+# Deployed by .github/workflows/deploy-faucet.yml using a
+# CLOUDFLARE_API_TOKEN GitHub secret -- that token can push *code*, not
+# the faucet wallet's key. The key itself (FAUCET_MNEMONIC) is a
+# Cloudflare Worker secret, set once directly via `wrangler secret put`
+# by whoever holds it -- it never touches this repo, GitHub Secrets, or
+# any CI run. See docs/architecture.md for the full design and the
+# one-time setup steps.
+name = "overline-faucet"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Coarse, non-authoritative IP throttling -- a first-line filter before
+# a request ever reaches the Durable Object. Eventually-consistent KV
+# is fine here since this isn't the security-critical check (that's the
+# Durable Object's own strongly-consistent storage, below).
+[[kv_namespaces]]
+binding = "IP_THROTTLE"
+# Substituted at deploy time from the CLOUDFLARE_KV_NAMESPACE_ID GitHub
+# Actions variable (see deploy-faucet.yml) -- not a real ID here, and
+# deliberately not committed as one: a namespace ID isn't secret, but
+# baking a specific Cloudflare account's resource ID into this file
+# would tie the repo to one account for no reason. Create the
+# namespace once (`wrangler kv namespace create IP_THROTTLE` or via
+# the dashboard) and set its id as that repo variable.
+id = "__KV_NAMESPACE_ID__"
+
+# The Durable Object is the actual source of truth: one single global
+# instance serializes every claim against the faucet wallet, so two
+# near-simultaneous requests can't race the same on-chain nonce or
+# double-pay the same address. SQLite-backed (not the legacy KV-backed
+# storage API) specifically because that's the variant available on
+# Cloudflare's free plan -- confirmed before choosing this design, not
+# assumed.
+[[durable_objects.bindings]]
+name = "FAUCET_LEDGER"
+class_name = "FaucetLedger"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FaucetLedger"]
+
+[vars]
+# Non-secret configuration. FAUCET_MNEMONIC is set separately as a
+# Worker secret (`wrangler secret put FAUCET_MNEMONIC`), never here.
+PAYOUT_VARA = "10"
+MIN_RESERVE_VARA = "5"
+ALLOWED_ORIGIN = "https://yezir4.github.io"
+IP_RATE_LIMIT_PER_HOUR = "3"

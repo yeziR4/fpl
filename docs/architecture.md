@@ -191,6 +191,97 @@ click-outside pattern (same underlying trap, `position: fixed`) with a
 document-level `mousedown` listener instead, which doesn't depend on
 any element spanning the viewport at all.
 
+## Demo faucet: `faucet/`
+
+Every new wallet starts at 0 VARA, and buying real VARA is real
+friction for someone just trying the product. Gear runs its own
+official mainnet faucet (100 VARA per wallet, inside `idea.gear-tech.io`)
+-- confirmed by reading its actual backend source
+(`gear-tech/gear-js`), not just the announcement -- but that service is
+locked to Gear's own origin (Cloudflare-fronted, checks for their edge
+headers) and its CAPTCHA key is theirs. Not something to embed or
+route around; it exists for Gear's own site, not third-party dApps.
+
+So this is our own small demo faucet instead, holding a dedicated
+wallet the project funds separately (not for real financial risk --
+"for the sake of demonstration"). The one hard constraint on the whole
+design: **a signing key that pays out on request from the public
+internet can never be client-side code.** Anything shipped to the
+browser is fully readable by anyone who opens dev tools -- there is no
+such thing as "hidden" JavaScript. So this needs a real backend, which
+this site otherwise doesn't have (it's a static export, see "Hosting:
+GitHub Pages via Actions" below).
+
+**`faucet/` is a small, separate Cloudflare Worker**, not part of the
+Next.js app:
+
+- `src/index.ts` -- the public entry point. CORS locked to this site's
+  origin, method/shape validation, and a coarse per-IP throttle (KV,
+  1-hour TTL) as a first-line filter. None of this is the actual
+  security boundary -- it's cheap noise reduction before a request
+  reaches the part that is.
+- `src/FaucetLedger.ts` -- a Durable Object, and the actual point of
+  the design. Every claim, from anywhere, is forwarded to the *same
+  named instance* (`idFromName("faucet")`), and Cloudflare guarantees
+  a single DO instance processes requests strictly one at a time. That
+  serialization is what makes two people clicking "Claim" at the same
+  moment safe: no concurrent-access window where both could race the
+  faucet wallet's on-chain nonce or double-claim the same address.
+  It's also *why* the class doesn't need to track its own nonce
+  counter -- asking the chain for the current nonce fresh on every
+  claim is already race-free once only one request is ever in flight.
+  Address claims are canonicalized (`decodeAddress`) before being
+  checked against the DO's own storage, so re-encoding the same SS58
+  address differently can't claim twice. SQLite-backed Durable Objects
+  specifically (the `new_sqlite_classes` migration, not the older
+  KV-backed storage class) -- confirmed that variant is available on
+  Cloudflare's free plan before choosing this design, not assumed.
+  Also enforces a configurable reserve floor (`MIN_RESERVE_VARA`) so
+  the faucet can't be drained to dust by a burst of legitimate-looking
+  claims, and a `FAUCET_PAUSED` flag as an emergency stop that doesn't
+  need a redeploy.
+
+**Where the key actually lives**: `FAUCET_MNEMONIC` is a Cloudflare
+Worker secret, set once via `wrangler secret put` directly by whoever
+holds it, logged into their own Cloudflare account. It is deliberately
+never a GitHub secret and never appears in a CI run --
+`.github/workflows/deploy-faucet.yml` deploys the Worker's *code* using
+a separate `CLOUDFLARE_API_TOKEN` that can push a new script but has
+no way to read or set the wallet's key. Fewer systems that ever see
+the plaintext key is strictly safer than one more automated hop, even
+a reputable one.
+
+Real limits of this v1, stated plainly rather than implied to be
+solved: no CAPTCHA (Gear's own faucet uses Cloudflare Turnstile; this
+one relies on per-address-ever + coarse per-IP throttling only, which
+is proportionate to "small, funded for a demo" but would need
+Turnstile added if this ever needed to withstand real targeted abuse
+at scale). CORS-origin checking is a speed bump, not a wall -- a
+determined caller can still hit the Worker directly with curl; the
+per-address dedup is what actually bounds the damage, not the origin
+check.
+
+**One-time setup this depends on** (all outside this repo, and
+undocumented anywhere else, so recorded here in full):
+
+1. A Cloudflare account, with a Workers KV namespace created for the
+   `IP_THROTTLE` binding (`wrangler kv namespace create IP_THROTTLE`,
+   or via the dashboard) -- its id set as the
+   `CLOUDFLARE_KV_NAMESPACE_ID` GitHub Actions **variable** (not
+   secret; a namespace id isn't sensitive).
+2. A Cloudflare API token (Workers Scripts: Edit permission) as the
+   `CLOUDFLARE_API_TOKEN` GitHub **secret**, and the account ID as
+   `CLOUDFLARE_ACCOUNT_ID`.
+3. `wrangler secret put FAUCET_MNEMONIC` run once, directly, by
+   whoever holds the faucet wallet's seed phrase -- separate from steps
+   1-2, never via CI.
+4. Once deployed, the Worker's URL (`wrangler deploy`'s own output, or
+   the Cloudflare dashboard) set as the `NEXT_PUBLIC_FAUCET_URL`
+   GitHub Actions variable that `deploy-web.yml` bakes into the site
+   build. Until this is set, `WalletButton`'s claim section simply
+   doesn't render -- a missing faucet is a handled, normal state, not
+   a broken one.
+
 ## Data source: the unofficial FPL API
 
 FPL has no official public API, but a small set of unauthenticated,

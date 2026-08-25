@@ -1,0 +1,10 @@
+/node_modules
+
+# Wrangler's local dev state (simulated KV/Durable Object storage) and
+# local-only secrets. .dev.vars holds FAUCET_MNEMONIC for local testing
+# only -- the real one is a Cloudflare Worker secret, never a file.
+/.wrangler
+.dev.vars
+.dev.vars.*
+
+*.tsbuildinfo

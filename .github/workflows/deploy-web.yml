@@ -60,6 +60,12 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: "true"
+          # Bakes the demo faucet's URL into the static build (see
+          # faucet/ and docs/architecture.md). Empty until that repo
+          # variable is set, in which case WalletButton just hides the
+          # claim button rather than showing a broken one -- no faucet
+          # deployed yet is a normal, handled state, not an error.
+          NEXT_PUBLIC_FAUCET_URL: ${{ vars.NEXT_PUBLIC_FAUCET_URL }}
 
       - uses: actions/configure-pages@v5
         with:

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useWallet } from "@/lib/vara/WalletProvider";
 import { isValidMnemonic } from "@/lib/vara/mnemonicValidate";
+import { claimFaucet, faucetErrorMessage, isFaucetConfigured } from "@/lib/vara/faucet";
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -100,6 +101,7 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
     setTimeout(() => setCopied(false), 1500);
   }
 
+
   return (
     <div
       ref={ref}
@@ -139,6 +141,10 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
         </div>
       </div>
 
+      {isFaucetConfigured() && wallet.address && (
+        <FaucetClaimSection address={wallet.address} onClaimed={() => void wallet.refreshBalance()} />
+      )}
+
       <p className="mb-3 border-t border-foreground/10 pt-3 text-[11px] leading-relaxed text-foreground/40">
         Your seed phrase downloaded when this wallet was created. We never stored it and can&rsquo;t show
         it again — keep that file safe, it&rsquo;s the only way back in on a new browser.
@@ -154,6 +160,53 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
       >
         Log out on this browser
       </button>
+    </div>
+  );
+}
+
+/**
+ * Demo-only: claims a small amount of VARA from the project's own
+ * faucet (faucet/ at the repo root, a Cloudflare Worker -- see
+ * docs/architecture.md), not Gear's official mainnet faucet. Each
+ * wallet can claim once, enforced server-side by the Worker itself --
+ * this component just calls it and shows the result, it isn't the
+ * source of truth on eligibility.
+ */
+function FaucetClaimSection({ address, onClaimed }: { address: string; onClaimed: () => void }) {
+  const [state, setState] = useState<
+    { status: "idle" } | { status: "claiming" } | { status: "done"; message: string; ok: boolean }
+  >({ status: "idle" });
+
+  async function claim() {
+    setState({ status: "claiming" });
+    const result = await claimFaucet(address);
+    if (result.ok) {
+      setState({ status: "done", ok: true, message: `Sent ${result.amount} VARA` });
+      onClaimed();
+    } else {
+      setState({ status: "done", ok: false, message: faucetErrorMessage(result.error) });
+    }
+  }
+
+  return (
+    <div className="mb-3 flex flex-col gap-1.5 border-t border-foreground/10 pt-3">
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-foreground/40">
+        Demo faucet
+      </span>
+      {state.status === "done" ? (
+        <p className={`text-[12px] font-medium ${state.ok ? "text-accent" : "text-foreground/50"}`}>
+          {state.message}
+        </p>
+      ) : (
+        <button
+          type="button"
+          disabled={state.status === "claiming"}
+          onClick={() => void claim()}
+          className="w-full rounded border border-accent/50 py-1.5 text-[12.5px] font-medium text-accent transition-colors hover:border-accent disabled:opacity-50"
+        >
+          {state.status === "claiming" ? "Claiming…" : "Claim demo VARA"}
+        </button>
+      )}
     </div>
   );
 }

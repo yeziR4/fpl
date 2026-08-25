@@ -1,0 +1,61 @@
+name: Deploy faucet Worker
+
+# Deploys faucet/ (the demo-faucet Cloudflare Worker) whenever it
+# changes. This deploys CODE ONLY -- CLOUDFLARE_API_TOKEN can push a
+# new Worker version, it cannot read or set the faucet wallet's key.
+# FAUCET_MNEMONIC is a Cloudflare Worker secret, provisioned once
+# directly by whoever holds it (`wrangler secret put FAUCET_MNEMONIC`,
+# from their own machine, logged into their own Cloudflare account) --
+# it never becomes a GitHub secret, never appears in a workflow run,
+# never touches this repo. See docs/architecture.md for the full
+# design and the one-time setup this workflow depends on:
+#   1. A Cloudflare account, with a Workers KV namespace created for
+#      the IP_THROTTLE binding, its id set as the CLOUDFLARE_KV_NAMESPACE_ID
+#      repo variable (Settings -> Secrets and variables -> Actions -> Variables).
+#   2. A Cloudflare API token (Workers Scripts: Edit) set as the
+#      CLOUDFLARE_API_TOKEN repo secret, and the account ID as
+#      CLOUDFLARE_ACCOUNT_ID.
+#   3. FAUCET_MNEMONIC set as a Worker secret directly via Wrangler,
+#      separately from any of the above.
+
+on:
+  push:
+    branches: ["claude/fpl-prediction-market-ajf8qh", "main"]
+    paths: ["faucet/**", ".github/workflows/deploy-faucet.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: faucet
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: faucet/package-lock.json
+
+      - run: npm ci
+
+      - run: npx tsc --noEmit
+
+      - name: Substitute KV namespace ID
+        run: |
+          if [ -z "${{ vars.CLOUDFLARE_KV_NAMESPACE_ID }}" ]; then
+            echo "::error::CLOUDFLARE_KV_NAMESPACE_ID repo variable is not set -- create the IP_THROTTLE KV namespace in Cloudflare and set its id as a repo variable first (see docs/architecture.md)."
+            exit 1
+          fi
+          sed -i "s/__KV_NAMESPACE_ID__/${{ vars.CLOUDFLARE_KV_NAMESPACE_ID }}/" wrangler.toml
+
+      - name: Deploy Worker
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
