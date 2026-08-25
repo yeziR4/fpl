@@ -118,3 +118,34 @@ jobs:
           curl -sS -A "Mozilla/5.0" https://fantasy.premierleague.com/assets/index-CxyUBDMb.js -o bundle.js
           echo "=== 200 chars of context around every 'premierleague25' occurrence ==="
           grep -aboE '.{100}premierleague25.{200}' bundle.js | head -20
+
+      - name: Check element.code vs photo-derived code, and has_temporary_code
+        run: |
+          python3 - <<'PY'
+          import json
+          data = json.load(open("bootstrap.json"))
+          elements = data["elements"]
+          print("total elements:", len(elements))
+          print("has 'code' field:", "code" in elements[0])
+          print("has 'has_temporary_code' field:", "has_temporary_code" in elements[0])
+
+          temp_code_count = sum(1 for e in elements if e.get("has_temporary_code"))
+          print("elements with has_temporary_code=true:", temp_code_count)
+
+          mismatches = []
+          for e in elements:
+              photo_code = e["photo"].rsplit(".", 1)[0]
+              if str(e.get("code")) != photo_code:
+                  mismatches.append((e["web_name"], e.get("code"), photo_code, e.get("has_temporary_code")))
+          print("elements where code != photo-derived code:", len(mismatches))
+          for m in mismatches[:15]:
+              print("  ", m)
+
+          if temp_code_count:
+              print("--- sample has_temporary_code=true players ---")
+              shown = 0
+              for e in elements:
+                  if e.get("has_temporary_code") and shown < 5:
+                      print("  ", e["web_name"], "code:", e.get("code"), "photo:", e["photo"])
+                      shown += 1
+          PY
