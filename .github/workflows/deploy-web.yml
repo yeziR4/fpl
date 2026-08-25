@@ -14,12 +14,22 @@ on:
   schedule:
     # Static export = data is snapshotted at build time, not fetched
     # per request (see "Hosting: GitHub Pages via Actions" in
-    # docs/architecture.md) -- without this, prices/photos/the current
-    # gameweek only update on the next code push, which could be days.
-    # Every 6 hours keeps it reasonably current without hammering FPL's
-    # public API. This does not make the site "live" -- still a
-    # snapshot, just a fresher one.
-    - cron: "17 */6 * * *"
+    # docs/architecture.md) -- without this, prices/photos/fixtures
+    # only update on the next code push, which could be days, and
+    # nothing should have to remember to push one by hand.
+    #
+    # Be clear-eyed about what this is: FPL has no webhook, no way to
+    # be notified the instant a match ends -- polling on a schedule is
+    # the only lever that exists. This isn't "the system realizing the
+    # gameweek is done" in real time, it's checking honestly (reading
+    # each fixture's own `finished` flag, same logic either way) often
+    # enough that the gap between a match ending and the site
+    # reflecting it stays small. Was every 6 hours; a whole gameweek
+    # sitting stale that long was too loose a window. Hourly is cheap
+    # here (public repo, free Actions minutes) and shrinks that gap by
+    # 6x with no added complexity -- tighten further if even that's
+    # not enough.
+    - cron: "17 * * * *"
 
 permissions:
   contents: read

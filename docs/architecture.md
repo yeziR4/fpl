@@ -301,9 +301,16 @@ to a real, live, inspectable URL without new infrastructure. Revisit
 once real hosting (Vercel, or wherever the eventual backend lives) is
 set up for real, since that removes all three tradeoffs above.
 
-The deploy also runs on a schedule (every 6 hours, `.github/workflows/deploy-web.yml`)
+The deploy also runs on a schedule (hourly, `.github/workflows/deploy-web.yml`)
 so the static snapshot doesn't go stale for days between pushes —
-still a snapshot, not truly live, just a fresher one.
+still a snapshot, not truly live, just a fresher one. Started at every
+6 hours; tightened to hourly after a real gap surfaced (a full
+gameweek finished and stayed showing as "still to play" for over a
+day, because nothing had pushed since). FPL has no webhook — polling
+on a schedule and trusting each fixture's own `finished` flag is the
+only lever available until there's a real backend; hourly just shrinks
+the gap between a match ending and the site reflecting it, it doesn't
+close it to zero.
 
 **One-time manual step this took**: the workflow's own token can
 deploy to Pages once a Pages site exists, but can't create one for the
