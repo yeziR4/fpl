@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandMark, NetworkGlyph } from "@/components/BrandMark";
+import { WalletButton } from "@/components/WalletButton";
 
 export function Header() {
   return (
@@ -31,9 +32,7 @@ export function Header() {
               Vara Network
             </span>
           </div>
-          <button className="rounded-md bg-accent px-4.5 py-2 font-sans text-[14px] font-semibold text-[#05100d] transition-opacity hover:opacity-90">
-            Connect Wallet
-          </button>
+          <WalletButton />
         </div>
       </div>
     </header>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Big_Shoulders, Space_Grotesk } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { WalletProvider } from "@/lib/vara/WalletProvider";
 import "./globals.css";
 
 const bigShoulders = Big_Shoulders({
@@ -28,9 +29,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${bigShoulders.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Header />
-        {children}
-        <Footer />
+        <WalletProvider>
+          <Header />
+          {children}
+          <Footer />
+        </WalletProvider>
       </body>
     </html>
   );

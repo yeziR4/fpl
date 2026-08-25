@@ -109,10 +109,87 @@ still the right fit as the mechanism gets more concrete, since our actual
 needs (oracle input, pooled staking, timed settlement, low fees) aren't
 Vara-specific.
 
-Nothing on-chain has been built yet. This repo currently only contains
-the off-chain data pipeline (see below) — contracts are a later phase,
-once the market mechanism (bucket design, fee structure, oracle trust
-model) is settled enough to be worth encoding immutably.
+No market contract has been built yet — the pooled-stake escrow (a Gear
+program holding a market's stakes and paying out by resolution logic,
+not a hot wallet) is a later, separate phase once the market mechanism
+(bucket design, fee structure, oracle trust model) is settled enough to
+encode immutably. See below for what *has* shipped: per-user wallets.
+
+## Wallets: on-site, non-custodial key generation
+
+Every visitor gets a real Vara mainnet keypair generated in their own
+browser — no wallet extension required, no server ever sees the key.
+`web/src/lib/vara/`:
+
+- `keyring.ts` — `generateWallet()` / `restoreWalletFromMnemonic()`,
+  thin wrappers over `@gear-js/api`'s `GearKeyring` (itself a wrapper
+  over `@polkadot/keyring` + `@polkadot/util-crypto` — the same sr25519
+  machinery the Polkadot.js browser extension uses, confirmed by
+  installing the real package and reading its shipped `.d.ts`/`.js`
+  rather than guessing). Defaults to `VARA_SS58_FORMAT` (137)
+  automatically. Restoring validates the pasted phrase with
+  `mnemonicValidate()` (a real BIP39 checksum check) before deriving a
+  keypair — **load-bearing, not defensive padding**: `addFromUri` (what
+  `fromMnemonic` calls) accepts *any* string and silently derives *some*
+  keypair from it via a raw-seed fallback, valid BIP39 or not. Skipping
+  this check was caught while testing the restore flow with a garbage
+  string: it didn't error, it silently produced a different, empty
+  wallet — exactly the failure mode a "restore" feature must not have.
+- `api.ts` — a shared `GearApi` connection to `wss://rpc.vara.network`
+  (confirmed as the real mainnet endpoint against
+  gear-foundation/vara-wallet's own `NETWORK_MAP`, not guessed) and
+  `getBalance()`. Converts planck→VARA (1e12 per VARA, also confirmed
+  against that same reference tool's `VARA_DECIMALS` rather than
+  assumed) via BigInt division, not `Balance.toNumber()` — the latter
+  silently breaks past `Number.MAX_SAFE_INTEGER` planck (~9046 VARA),
+  which a real account balance can exceed.
+- `deviceKey.ts` / `walletCache.ts` — the "browser remembers you"
+  convenience layer, *not* the backup. A non-extractable AES-GCM
+  `CryptoKey` lives in IndexedDB per browser profile; the mnemonic is
+  encrypted with it before touching `localStorage`. Be precise about
+  what this buys: it stops a *passive* read of storage (a backup dump,
+  a devtools poke) from yielding a usable key, because no API can ever
+  extract a non-extractable key's raw bytes back out. It does **not**
+  stop an active XSS on this origin, which could just call this
+  module's own encrypt/decrypt functions — no client-side scheme can
+  defend against that; ordinary web security hygiene is what actually
+  carries that risk.
+- `walletDownload.ts` — triggers a local `.txt` file download of the
+  seed phrase the moment a wallet is created. This is the one real
+  backup. It is never stored anywhere retrievable, including by us —
+  lose the file with an empty browser cache and the wallet is gone,
+  same as any other self-custody wallet.
+- `WalletProvider.tsx` — app-wide React context (`useWallet()`). Client-
+  only by construction (`"use client"`, every operation touches
+  browser-only APIs) — must never be imported into a server component,
+  since it would break the static-export prerender (see "Hosting:
+  GitHub Pages via Actions" below). On mount, tries to silently restore
+  a cached wallet; falls back to showing "Create Wallet" if none exists
+  or storage was cleared.
+
+**The custody model, deliberately**: this is a non-custodial,
+self-generated wallet, the same shape as any browser extension wallet
+(we generate it, the user owns it, we never see the key again once it
+leaves creation) — just generated in-page instead of in an extension.
+The user is expected to secure their own downloaded seed phrase; this
+is not a hosted/managed-key product. The much harder custody problem —
+protecting the pool of every bettor's *staked* funds, which does need
+real collective protection since it isn't any one person's key — is
+explicitly out of scope here and deferred to the market-escrow contract
+mentioned above.
+
+**One real, known UI bug found and fixed while building this**:
+`Header`'s `backdrop-blur-sm` (for the sticky-nav translucency effect)
+makes it a CSS containing block for `position: fixed` descendants — any
+modal rendered inside it gets clipped to the header bar's own ~69px
+height instead of the viewport, rather than centering on the page.
+Confirmed by inspecting the rendered `getBoundingClientRect()`, not
+assumed from a screenshot. Fixed by portaling the restore-wallet modal
+to `document.body` via `createPortal`, and by replacing the wallet
+menu's and "wallet created" notice's full-screen backdrop-div
+click-outside pattern (same underlying trap, `position: fixed`) with a
+document-level `mousedown` listener instead, which doesn't depend on
+any element spanning the viewport at all.
 
 ## Data source: the unofficial FPL API
 
