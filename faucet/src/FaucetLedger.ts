@@ -144,8 +144,12 @@ export class FaucetLedger implements DurableObject {
       // Logged server-side (Cloudflare's own log tooling) rather than
       // returned to the client -- an error message/stack trace is
       // internal detail, not something to hand back over the wire.
-      console.error("Faucet claim failed", error);
-      return jsonResponse({ error: "send_failed" }, 502);
+      console.error("Faucet claim failed", error, connectionLog);
+      // debug: error detail + connectionLog included temporarily -- see comment above.
+      return jsonResponse(
+        { error: "send_failed", debug: connectionLog, debugError: String((error as Error)?.message ?? error) },
+        502,
+      );
     } finally {
       // Best-effort: never let cleanup itself be the thing that hangs
       // the response (see MarketLedger.ts for the same reasoning).
