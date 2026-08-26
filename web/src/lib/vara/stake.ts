@@ -25,13 +25,18 @@ export const MARKET_POOL_ADDRESS = "kGgVNfy33G9kRscEtXmsffz7HzcBEvN1K9DggnyGj1fz
 export type Side = "yes" | "no";
 
 export type StakeResult =
-  | { ok: true; txHash: string; yes: string; no: string }
+  | { ok: true; txHash: string; yes: string; no: string; yesCount: number; noCount: number }
   | { ok: false; error: string };
 
 export interface MarketTotals {
   yes: string;
   no: string;
-  stakeCount: number;
+  /** How many distinct stakes are on each side -- "how many people
+   * picked yes/no", independent of stake size. What the frontend
+   * combines with agent picks for a percentage-of-participants
+   * display; the VARA amounts above are a separate, size-weighted view. */
+  yesCount: number;
+  noCount: number;
 }
 
 function marketPath(playerId: number, gw: number, threshold: number): string {
@@ -77,6 +82,8 @@ export async function placeStake(args: {
         txHash: String(body.txHash),
         yes: planckToVara(BigInt(String(body.yesPlanck))),
         no: planckToVara(BigInt(String(body.noPlanck))),
+        yesCount: Number(body.yesCount),
+        noCount: Number(body.noCount),
       };
     }
     return { ok: false, error: typeof body.error === "string" ? body.error : "unknown_error" };
@@ -96,11 +103,17 @@ export async function fetchMarketTotals(args: {
     const base = args.faucetUrl.replace(/\/$/, "");
     const res = await fetch(`${base}/${marketPath(args.playerId, args.gw, args.threshold)}/totals`);
     if (!res.ok) return null;
-    const body = (await res.json()) as { yesPlanck: string; noPlanck: string; stakeCount: number };
+    const body = (await res.json()) as {
+      yesPlanck: string;
+      noPlanck: string;
+      yesCount: number;
+      noCount: number;
+    };
     return {
       yes: planckToVara(BigInt(body.yesPlanck)),
       no: planckToVara(BigInt(body.noPlanck)),
-      stakeCount: body.stakeCount,
+      yesCount: body.yesCount,
+      noCount: body.noCount,
     };
   } catch {
     return null;

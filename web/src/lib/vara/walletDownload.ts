@@ -6,7 +6,7 @@
  */
 export function downloadSeedPhrase(address: string, mnemonic: string): void {
   const body = [
-    "Vara wallet seed phrase",
+    "Overline seed phrase",
     "",
     `Address: ${address}`,
     "",
@@ -25,7 +25,7 @@ export function downloadSeedPhrase(address: string, mnemonic: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `vara-wallet-${address.slice(0, 8)}.txt`;
+  link.download = `overline-seed-phrase-${address.slice(0, 8)}.txt`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

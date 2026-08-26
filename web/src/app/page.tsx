@@ -3,6 +3,7 @@ import { MarketsSection } from "@/components/MarketsSection";
 import { HowItWorks } from "@/components/HowItWorks";
 import type { HeroPlayer } from "@/components/Hero";
 import type { MarketOpponent, MarketPlayer } from "@/components/MarketsSection";
+import { agentPickCounts } from "@/lib/agentPicks";
 import {
   fetchBootstrapStatic,
   fetchFixtures,
@@ -10,6 +11,8 @@ import {
   teamBadgeUrl,
   teamCodeForId,
   topExpensivePlayers,
+  PRIMARY_POINTS_THRESHOLD,
+  SECONDARY_POINTS_THRESHOLD,
   type BootstrapStatic,
   type Fixture,
   type Player,
@@ -49,20 +52,37 @@ async function loadMarketPlayers(): Promise<(HeroPlayer & MarketPlayer)[]> {
     ]);
     const players: Player[] = topExpensivePlayers(bootstrap, MARKET_PLAYER_COUNT);
 
-    return players.map((player) => {
-      // Resolved once per player, not twice -- gw is threaded through
-      // separately from the opponent badge/name lookup below because a
-      // stake needs to know which gameweek it resolves against even in
-      // the (rare) case that lookup itself fails, e.g. an opponent team
-      // id not found in bootstrap-static.
-      const nextFixture = nextFixtureForTeam(player.team, fixtures);
-      return {
-        player,
-        badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, player.team)),
-        opponent: resolveOpponent(bootstrap, nextFixture),
-        gw: nextFixture?.gw ?? null,
-      };
-    });
+    return Promise.all(
+      players.map(async (player) => {
+        // Resolved once per player, not twice -- gw is threaded through
+        // separately from the opponent badge/name lookup below because a
+        // stake needs to know which gameweek it resolves against even in
+        // the (rare) case that lookup itself fails, e.g. an opponent team
+        // id not found in bootstrap-static.
+        const nextFixture = nextFixtureForTeam(player.team, fixtures);
+        const gw = nextFixture?.gw ?? null;
+
+        // agentPickCounts reads a local file (see lib/agentPicks.ts) --
+        // cheap enough, and gw-scoped enough (most players share the
+        // same upcoming gameweek), that fetching both thresholds per
+        // player in parallel isn't worth deferring further.
+        const [primary, secondary] =
+          gw === null
+            ? [null, null]
+            : await Promise.all([
+                agentPickCounts(gw, player.id, PRIMARY_POINTS_THRESHOLD),
+                agentPickCounts(gw, player.id, SECONDARY_POINTS_THRESHOLD),
+              ]);
+
+        return {
+          player,
+          badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, player.team)),
+          opponent: resolveOpponent(bootstrap, nextFixture),
+          gw,
+          agentPicks: { primary, secondary },
+        };
+      }),
+    );
   } catch (error) {
     console.error("Failed to load FPL player/fixture data:", error);
     return [];

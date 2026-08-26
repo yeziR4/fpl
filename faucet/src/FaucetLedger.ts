@@ -23,9 +23,13 @@
 import { GearApi, GearKeyring, decodeAddress } from "@gear-js/api";
 import { BN } from "@polkadot/util";
 import type { Env } from "./env";
+import { TimeoutError, withTimeout } from "./withTimeout";
 
 const VARA_MAINNET_ENDPOINT = "wss://rpc.vara.network";
 const PLANCK_PER_VARA = BigInt(10) ** BigInt(12);
+const CONNECT_TIMEOUT_MS = 10_000;
+const BALANCE_TIMEOUT_MS = 10_000;
+const BROADCAST_TIMEOUT_MS = 30_000;
 
 export class FaucetLedger implements DurableObject {
   constructor(
@@ -78,42 +82,57 @@ export class FaucetLedger implements DurableObject {
       // credential is a config error, not something a retry or a
       // connection issue could ever fix.
       const faucetKeyring = await loadFaucetKeyring(this.env);
-      api = await GearApi.create({ providerAddress: VARA_MAINNET_ENDPOINT });
+      // Confirmed necessary for real, not speculative: this real-payout
+      // path is deliberately never exercised by the deploy smoke test
+      // (which only checks invalid-input routing, never a real
+      // credential-backed claim) -- a real user's claim was the first
+      // thing to actually hit an unguarded stall here, in either
+      // GearApi.create() or the calls below it. See withTimeout.ts.
+      api = await withTimeout(GearApi.create({ providerAddress: VARA_MAINNET_ENDPOINT }), CONNECT_TIMEOUT_MS);
 
-      const faucetBalance = await api.balance.findOut(faucetKeyring.address);
+      const faucetBalance = await withTimeout(api.balance.findOut(faucetKeyring.address), BALANCE_TIMEOUT_MS);
       const faucetPlanck = BigInt(faucetBalance.toString());
       if (faucetPlanck - payoutPlanck < minReservePlanck) {
         return jsonResponse({ error: "faucet_low" }, 503);
       }
 
-      const txHash = await new Promise<string>((resolve, reject) => {
-        api!.balance
-          // GearBalance.transfer's declared type is `number | BN`, not
-          // bigint -- BN(string) rather than BN(bigint) since BN.js
-          // predates native BigInt and its constructor doesn't accept
-          // one directly.
-          .transfer(address, new BN(payoutPlanck.toString()), true)
-          .signAndSend(faucetKeyring, (result) => {
-            if (result.status.isInBlock) {
-              resolve(result.txHash.toString());
-            }
-            if (result.dispatchError) {
-              reject(new Error(result.dispatchError.toString()));
-            }
-          })
-          .catch(reject);
-      });
+      const txHash = await withTimeout(
+        new Promise<string>((resolve, reject) => {
+          api!.balance
+            // GearBalance.transfer's declared type is `number | BN`, not
+            // bigint -- BN(string) rather than BN(bigint) since BN.js
+            // predates native BigInt and its constructor doesn't accept
+            // one directly.
+            .transfer(address, new BN(payoutPlanck.toString()), true)
+            .signAndSend(faucetKeyring, (result) => {
+              if (result.status.isInBlock) {
+                resolve(result.txHash.toString());
+              }
+              if (result.dispatchError) {
+                reject(new Error(result.dispatchError.toString()));
+              }
+            })
+            .catch(reject);
+        }),
+        BROADCAST_TIMEOUT_MS,
+      );
 
       await this.ctx.storage.put(`claim:${canonical}`, { txHash, claimedAt: Date.now() });
       return jsonResponse({ status: "sent", txHash, amount: payoutVara });
     } catch (error) {
+      if (error instanceof TimeoutError) {
+        console.error("Faucet claim timed out", error);
+        return jsonResponse({ error: "timeout" }, 504);
+      }
       // Logged server-side (Cloudflare's own log tooling) rather than
       // returned to the client -- an error message/stack trace is
       // internal detail, not something to hand back over the wire.
       console.error("Faucet claim failed", error);
       return jsonResponse({ error: "send_failed" }, 502);
     } finally {
-      await api?.disconnect();
+      // Best-effort: never let cleanup itself be the thing that hangs
+      // the response (see MarketLedger.ts for the same reasoning).
+      await withTimeout(Promise.resolve(api?.disconnect()), 3_000).catch(() => {});
     }
   }
 }

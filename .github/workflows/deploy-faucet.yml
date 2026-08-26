@@ -91,7 +91,13 @@ jobs:
           # the very first version of this smoke test hit the just-
           # deployed URL immediately and got curl's SSL-connect-error
           # (exit 35), which retrying past cleanly fixed.
-          curl_retry="--retry 5 --retry-delay 3 --retry-all-errors"
+          # --max-time as defense in depth on top of the Worker's own
+          # request timeouts (see faucet/src/withTimeout.ts) -- a real
+          # hang was caught here once already (a garbage extrinsic
+          # stalled the old, unguarded MarketLedger for minutes); this
+          # is what keeps this job itself from ever doing the same
+          # regardless of what future bug might reintroduce a stall.
+          curl_retry="--retry 5 --retry-delay 3 --retry-all-errors --max-time 20"
 
           options_status=$(curl -s $curl_retry -o /dev/null -w "%{http_code}" -X OPTIONS "$url")
           if [ "$options_status" != "200" ]; then
@@ -122,7 +128,7 @@ jobs:
           # not just that routing to it doesn't 404.
           totals_url="$url/markets/999999999/${{ github.run_id }}/5/totals"
           totals_body=$(curl -s $curl_retry "$totals_url")
-          if [ "$totals_body" != '{"yesPlanck":"0","noPlanck":"0","stakeCount":0}' ]; then
+          if [ "$totals_body" != '{"yesPlanck":"0","noPlanck":"0","yesCount":0,"noCount":0}' ]; then
             echo "::error::GET totals on a fresh market returned unexpected body: $totals_body"
             exit 1
           fi

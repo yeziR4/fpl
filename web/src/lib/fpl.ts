@@ -23,6 +23,14 @@
 const API_BASE_URL = "https://fantasy.premierleague.com/api";
 const MEDIA_BASE_URL = "https://resources.premierleague.com/premierleague";
 
+// Mirrors data_pipeline/settlement.py's PRIMARY_POINTS_THRESHOLD /
+// SECONDARY_POINTS_THRESHOLD -- the two lines every player's points
+// market is settled against for a single gameweek. Shared here rather
+// than duplicated in MarketsSection.tsx and page.tsx so both stay in
+// sync with each other by construction.
+export const PRIMARY_POINTS_THRESHOLD = 5;
+export const SECONDARY_POINTS_THRESHOLD = 10;
+
 export interface BootstrapElement {
   id: number;
   web_name: string;

@@ -1,16 +1,26 @@
 "use client";
 
 /**
- * One (player, gw, threshold) market's stake UI: live yes/no totals
- * plus the actual Yes/No buttons -- these used to render with no
- * onClick at all (a mockup, not a working market). Now wired end to
- * end: clicking a side opens a small amount input, confirming signs
- * and submits a real transfer via WalletProvider.placeStake (see
- * lib/vara/stake.ts and faucet/src/MarketLedger.ts).
+ * One (player, gw, threshold) market's stake UI: a percentage-of-
+ * participants bar (agents + real human stakers, combined) plus the
+ * actual Yes/No buttons -- these used to render with no onClick at
+ * all (a mockup, not a working market). Now wired end to end: clicking
+ * a side opens a small amount input, confirming signs and submits a
+ * real transfer via WalletProvider.placeStake (see lib/vara/stake.ts
+ * and faucet/src/MarketLedger.ts).
+ *
+ * Two different "yes/no" figures are both real and both shown,
+ * deliberately not collapsed into one number:
+ *   - participant counts (this bar): how many of the 5 agents plus how
+ *     many distinct human stakers picked each side -- one vote each,
+ *     a whale staking 100 VARA doesn't outweigh someone staking 1.
+ *   - VARA amounts (the caption underneath): how much is actually
+ *     staked on each side -- what the eventual payout math cares about.
  */
 
 import { useEffect, useState } from "react";
 import { useWallet } from "@/lib/vara/WalletProvider";
+import type { AgentPickCounts } from "@/lib/agentPicks";
 import { fetchMarketTotals, stakeErrorMessage, type MarketTotals, type Side } from "@/lib/vara/stake";
 
 interface StakeMarketProps {
@@ -21,9 +31,13 @@ interface StakeMarketProps {
   gw: number | null;
   threshold: number;
   label: string;
+  /** How the 5 agent models picked this market, read at build time.
+   * null if no picks exist yet for this gameweek (not the same as
+   * {yes: 0, no: 0}, which would look like they picked evenly). */
+  agentPicks: AgentPickCounts | null;
 }
 
-export function StakeMarket({ playerId, gw, threshold, label }: StakeMarketProps) {
+export function StakeMarket({ playerId, gw, threshold, label, agentPicks }: StakeMarketProps) {
   const wallet = useWallet();
   const [totals, setTotals] = useState<MarketTotals | null>(null);
   const [pendingSide, setPendingSide] = useState<Side | null>(null);
@@ -56,7 +70,7 @@ export function StakeMarket({ playerId, gw, threshold, label }: StakeMarketProps
     const result = await wallet.placeStake({ playerId, gw, threshold, side, amountVara: amount });
     setBusy(false);
     if (result.ok) {
-      setTotals({ yes: result.yes, no: result.no, stakeCount: (totals?.stakeCount ?? 0) + 1 });
+      setTotals({ yes: result.yes, no: result.no, yesCount: result.yesCount, noCount: result.noCount });
       setPendingSide(null);
       setFeedback({ ok: true, message: `Staked ${amount} VARA on ${side === "yes" ? "Yes" : "No"}` });
     } else {
@@ -64,26 +78,42 @@ export function StakeMarket({ playerId, gw, threshold, label }: StakeMarketProps
     }
   }
 
-  const yesTotal = totals ? Number(totals.yes) : 0;
-  const noTotal = totals ? Number(totals.no) : 0;
-  const combined = yesTotal + noTotal;
-  const yesShare = combined > 0 ? Math.round((yesTotal / combined) * 100) : 50;
+  const agentYes = agentPicks?.yes ?? 0;
+  const agentNo = agentPicks?.no ?? 0;
+  const humanYes = totals?.yesCount ?? 0;
+  const humanNo = totals?.noCount ?? 0;
+  const participantYes = agentYes + humanYes;
+  const participantNo = agentNo + humanNo;
+  const participantTotal = participantYes + participantNo;
+  const yesPct = participantTotal > 0 ? Math.round((participantYes / participantTotal) * 100) : null;
+
+  const varaYes = totals ? Number(totals.yes) : 0;
+  const varaNo = totals ? Number(totals.no) : 0;
+  const varaStaked = varaYes + varaNo;
 
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium text-foreground/50">{label}</span>
-        {totals && combined > 0 && (
-          <span className="text-[10.5px] tabular-nums text-foreground/40">
-            {totals.yes} / {totals.no} VARA
-          </span>
+        {yesPct !== null && (
+          <span className="text-[11px] font-semibold tabular-nums text-foreground/70">{yesPct}% Yes</span>
         )}
       </div>
 
-      {combined > 0 && (
-        <div className="flex h-1 overflow-hidden rounded-full bg-foreground/10" aria-hidden="true">
-          <div className="bg-accent" style={{ width: `${yesShare}%` }} />
-        </div>
+      {yesPct !== null && (
+        <>
+          <div className="flex h-1.5 overflow-hidden rounded-full bg-foreground/10" aria-hidden="true">
+            <div className="bg-accent" style={{ width: `${yesPct}%` }} />
+          </div>
+          <span className="text-[10px] leading-snug text-foreground/35">
+            {participantYes}/{participantTotal} picked Yes
+            {agentPicks && ` — ${agentYes + agentNo} agent${agentYes + agentNo === 1 ? "" : "s"}`}
+            {totals && humanYes + humanNo > 0
+              ? `, ${humanYes + humanNo} ${humanYes + humanNo === 1 ? "person" : "people"}`
+              : ""}
+            {varaStaked > 0 && ` · ${totals!.yes}/${totals!.no} VARA`}
+          </span>
+        </>
       )}
 
       {!marketOpen ? (

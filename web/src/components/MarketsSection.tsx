@@ -1,14 +1,9 @@
 import Image from "next/image";
-import { positionLabel, type Player } from "@/lib/fpl";
+import { PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD, positionLabel, type Player } from "@/lib/fpl";
+import type { AgentPickCounts } from "@/lib/agentPicks";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 import { StatCountUp } from "@/components/StatCountUp";
 import { StakeMarket } from "@/components/StakeMarket";
-
-// Mirrors data_pipeline/settlement.py's PRIMARY_POINTS_THRESHOLD /
-// SECONDARY_POINTS_THRESHOLD -- the two lines every player's points
-// market is settled against for a single gameweek.
-const PRIMARY_POINTS_THRESHOLD = 5;
-const SECONDARY_POINTS_THRESHOLD = 10;
 
 export interface MarketOpponent {
   badgeUrl: string;
@@ -27,6 +22,10 @@ export interface MarketPlayer {
    * either way, staking is disabled rather than guessing which
    * gameweek to attribute it to (see StakeMarket). */
   gw: number | null;
+  /** How the 5 agent models picked each threshold market, read at
+   * build time (see lib/agentPicks.ts). null per-threshold if no
+   * picks exist yet for this gameweek. */
+  agentPicks: { primary: AgentPickCounts | null; secondary: AgentPickCounts | null };
 }
 
 interface MarketsSectionProps {
@@ -52,8 +51,15 @@ export function MarketsSection({ players }: MarketsSectionProps) {
 
         {players.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {players.map(({ player, badgeUrl, opponent, gw }) => (
-              <MarketCard key={player.id} player={player} badgeUrl={badgeUrl} opponent={opponent} gw={gw} />
+            {players.map(({ player, badgeUrl, opponent, gw, agentPicks }) => (
+              <MarketCard
+                key={player.id}
+                player={player}
+                badgeUrl={badgeUrl}
+                opponent={opponent}
+                gw={gw}
+                agentPicks={agentPicks}
+              />
             ))}
           </div>
         ) : (
@@ -64,7 +70,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
   );
 }
 
-function MarketCard({ player, badgeUrl, opponent, gw }: MarketPlayer) {
+function MarketCard({ player, badgeUrl, opponent, gw, agentPicks }: MarketPlayer) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50">
       <div className="relative aspect-[4/3] w-full bg-accent-dim">
@@ -115,8 +121,20 @@ function MarketCard({ player, badgeUrl, opponent, gw }: MarketPlayer) {
         <StatStrip player={player} />
 
         <div className="mt-1 flex flex-col gap-3">
-          <StakeMarket playerId={player.id} gw={gw} threshold={PRIMARY_POINTS_THRESHOLD} label="Over 5 pts" />
-          <StakeMarket playerId={player.id} gw={gw} threshold={SECONDARY_POINTS_THRESHOLD} label="Over 10 pts" />
+          <StakeMarket
+            playerId={player.id}
+            gw={gw}
+            threshold={PRIMARY_POINTS_THRESHOLD}
+            label="Over 5 pts"
+            agentPicks={agentPicks.primary}
+          />
+          <StakeMarket
+            playerId={player.id}
+            gw={gw}
+            threshold={SECONDARY_POINTS_THRESHOLD}
+            label="Over 10 pts"
+            agentPicks={agentPicks.secondary}
+          />
         </div>
       </div>
     </div>

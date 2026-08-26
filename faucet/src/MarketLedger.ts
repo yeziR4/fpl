@@ -23,6 +23,7 @@
 
 import { GearApi, decodeAddress } from "@gear-js/api";
 import type { Env } from "./env";
+import { TimeoutError, withTimeout } from "./withTimeout";
 
 const VARA_MAINNET_ENDPOINT = "wss://rpc.vara.network";
 
@@ -39,10 +40,15 @@ interface StakeRecord {
 interface MarketTotals {
   yesPlanck: string;
   noPlanck: string;
-  stakeCount: number;
+  /** Count of distinct stakes per side -- "how many people picked
+   * yes/no", independent of how much each staked. The frontend uses
+   * this (combined with agent picks) for a percentage-of-participants
+   * display, separate from the VARA-amount totals above. */
+  yesCount: number;
+  noCount: number;
 }
 
-const EMPTY_TOTALS: MarketTotals = { yesPlanck: "0", noPlanck: "0", stakeCount: 0 };
+const EMPTY_TOTALS: MarketTotals = { yesPlanck: "0", noPlanck: "0", yesCount: 0, noCount: 0 };
 
 export class MarketLedger implements DurableObject {
   constructor(
@@ -167,7 +173,8 @@ export class MarketLedger implements DurableObject {
         yesPlanck:
           side === "yes" ? (BigInt(totals.yesPlanck) + amountPlanck).toString() : totals.yesPlanck,
         noPlanck: side === "no" ? (BigInt(totals.noPlanck) + amountPlanck).toString() : totals.noPlanck,
-        stakeCount: totals.stakeCount + 1,
+        yesCount: totals.yesCount + (side === "yes" ? 1 : 0),
+        noCount: totals.noCount + (side === "no" ? 1 : 0),
       };
 
       await this.ctx.storage.put(`stake:${txHash}`, record);
@@ -204,24 +211,6 @@ const MIN_EXTRINSIC_HEX_LENGTH = 200;
 
 function isPlausibleExtrinsicHex(value: string): boolean {
   return value.startsWith("0x") && value.length >= MIN_EXTRINSIC_HEX_LENGTH;
-}
-
-class TimeoutError extends Error {}
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new TimeoutError(`Timed out after ${ms}ms`)), ms);
-    promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (error) => {
-        clearTimeout(timer);
-        reject(error);
-      },
-    );
-  });
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

@@ -57,6 +57,8 @@ export function faucetErrorMessage(error: string): string {
       return "The faucet is running low and needs a top-up.";
     case "invalid_address":
       return "That doesn't look like a valid address.";
+    case "timeout":
+      return "That took too long -- the chain may be slow right now. Try again.";
     case "not_configured":
       return "The faucet isn't set up yet.";
     case "network_error":
