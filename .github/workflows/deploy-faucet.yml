@@ -99,26 +99,44 @@ jobs:
           # regardless of what future bug might reintroduce a stall.
           curl_retry="--retry 5 --retry-delay 3 --retry-all-errors --max-time 20"
 
+          # A code-only deploy (no new subdomain) can *also* take a few
+          # seconds to roll out to every edge node -- confirmed for
+          # real, a second time: some nodes kept serving the previous
+          # deploy's response shape for a few seconds right after this
+          # workflow added yesCount/noCount to the totals response.
+          # That's a valid 200 with stale content, not a connection
+          # error, so curl's own --retry above doesn't catch it --
+          # this wrapper does, by re-fetching and re-comparing a few
+          # times before actually failing the job.
+          check_body() {
+            local description="$1" expected="$2"
+            shift 2
+            local attempt body
+            for attempt in 1 2 3 4 5; do
+              body=$(curl -s $curl_retry "$@")
+              if [ "$body" = "$expected" ]; then
+                return 0
+              fi
+              sleep 3
+            done
+            echo "::error::$description returned unexpected body after retries: $body"
+            return 1
+          }
+
           options_status=$(curl -s $curl_retry -o /dev/null -w "%{http_code}" -X OPTIONS "$url")
           if [ "$options_status" != "200" ]; then
             echo "::error::OPTIONS preflight returned $options_status, expected 200"
             exit 1
           fi
 
-          missing_addr_body=$(curl -s $curl_retry -X POST "$url" -H "content-type: application/json" -d '{}')
-          if [ "$missing_addr_body" != '{"error":"address_required"}' ]; then
-            echo "::error::POST with no address returned unexpected body: $missing_addr_body"
-            exit 1
-          fi
+          check_body "POST with no address" '{"error":"address_required"}' \
+            -X POST "$url" -H "content-type: application/json" -d '{}' || exit 1
 
           # Forces a round trip through the Durable Object (address
           # canonicalization happens there) -- confirms FAUCET_LEDGER is
           # actually reachable, not just that the entry Worker boots.
-          invalid_addr_body=$(curl -s $curl_retry -X POST "$url" -H "content-type: application/json" -d '{"address":"not-a-real-address"}')
-          if [ "$invalid_addr_body" != '{"error":"invalid_address"}' ]; then
-            echo "::error::POST with an invalid address returned unexpected body: $invalid_addr_body"
-            exit 1
-          fi
+          check_body "POST with an invalid address" '{"error":"invalid_address"}' \
+            -X POST "$url" -H "content-type: application/json" -d '{"address":"not-a-real-address"}' || exit 1
 
           # Markets: GET totals on a market nothing has ever staked on
           # forces a round trip through a *fresh* MarketLedger Durable
@@ -127,20 +145,14 @@ jobs:
           # -- confirms MARKET_LEDGER is reachable and starts at zero,
           # not just that routing to it doesn't 404.
           totals_url="$url/markets/999999999/${{ github.run_id }}/5/totals"
-          totals_body=$(curl -s $curl_retry "$totals_url")
-          if [ "$totals_body" != '{"yesPlanck":"0","noPlanck":"0","yesCount":0,"noCount":0}' ]; then
-            echo "::error::GET totals on a fresh market returned unexpected body: $totals_body"
-            exit 1
-          fi
+          check_body "GET totals on a fresh market" '{"yesPlanck":"0","noPlanck":"0","yesCount":0,"noCount":0}' \
+            "$totals_url" || exit 1
 
           # POST stake with a garbage extrinsic never reaches the chain --
           # rejected before any broadcast, same as the faucet's invalid-address
           # check above.
           stake_url="$url/markets/999999999/${{ github.run_id }}/5/stake"
-          invalid_stake_body=$(curl -s $curl_retry -X POST "$stake_url" -H "content-type: application/json" -d '{"signedExtrinsicHex":"0xdeadbeef","side":"yes"}')
-          if [ "$invalid_stake_body" != '{"error":"invalid_extrinsic"}' ]; then
-            echo "::error::POST stake with a garbage extrinsic returned unexpected body: $invalid_stake_body"
-            exit 1
-          fi
+          check_body "POST stake with a garbage extrinsic" '{"error":"invalid_extrinsic"}' \
+            -X POST "$stake_url" -H "content-type: application/json" -d '{"signedExtrinsicHex":"0xdeadbeef","side":"yes"}' || exit 1
 
           echo "Smoke test passed: $url"
