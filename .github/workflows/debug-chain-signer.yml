@@ -1,0 +1,36 @@
+name: Debug chain-signer
+
+# One-off diagnostic: checks chain-signer's endpoints respond as
+# expected without touching any funds -- an unauthenticated request
+# should be rejected (401), never silently accepted. Manual-only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      chain_signer_url:
+        description: "chain-signer deployment URL"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST without auth -- must be rejected
+        run: |
+          url="${{ github.event.inputs.chain_signer_url }}"
+          for endpoint in api/faucet-pay api/market-relay; do
+            echo "Testing $url/$endpoint without auth..."
+            code=$(curl -s --max-time 15 -o /tmp/response.json -w "%{http_code}" -X POST "$url/$endpoint" \
+              -H "content-type: application/json" -d '{}')
+            echo "HTTP status: $code"
+            cat /tmp/response.json
+            echo
+            if [ "$code" != "401" ]; then
+              echo "::error::$endpoint without auth returned $code, expected 401"
+              exit 1
+            fi
+          done
+          echo "Both endpoints correctly reject unauthenticated requests."
