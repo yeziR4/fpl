@@ -74,6 +74,15 @@ export class FaucetLedger implements DurableObject {
     // uncaught connection error was surfacing as a raw 500 instead of
     // the intended { error: "send_failed" } response.
     let api: Awaited<ReturnType<typeof GearApi.create>> | undefined;
+    // TEMPORARY diagnostic: a real claim timed out twice at exactly
+    // the connect step, at two different timeout values (10s, then
+    // 20s) -- pointing at the connection never completing at all,
+    // not just being slow. A manually-constructed WsProvider (rather
+    // than the one GearApi builds internally from `providerAddress`)
+    // lets this attach event listeners to see what actually happens.
+    // Only surfaced in the timeout error response, never in a normal
+    // one -- remove once the cause is confirmed and fixed for real.
+    const connectionLog: string[] = [];
     try {
       // Checked before even opening the chain connection -- a missing
       // credential is a config error, not something a retry or a
@@ -85,9 +94,19 @@ export class FaucetLedger implements DurableObject {
       // credential-backed claim) -- a real user's claim was the first
       // thing to actually hit an unguarded stall here, in either
       // GearApi.create() or the calls below it. See withTimeout.ts.
-      api = await withTimeout(GearApi.create({ providerAddress: VARA_MAINNET_ENDPOINT }), CONNECT_TIMEOUT_MS);
+      const { WsProvider } = await import("@polkadot/api");
+      const provider = new WsProvider(VARA_MAINNET_ENDPOINT, false); // false: no auto-retry-connect loop
+      provider.on("connected", () => connectionLog.push("provider:connected"));
+      provider.on("disconnected", () => connectionLog.push("provider:disconnected"));
+      provider.on("error", (err) => connectionLog.push(`provider:error ${String(err?.message ?? err)}`));
+      connectionLog.push("provider:constructed");
+      const connectPromise = provider.connect().then(() => connectionLog.push("provider.connect():resolved"));
+      api = await withTimeout(
+        connectPromise.then(() => GearApi.create({ provider })),
+        CONNECT_TIMEOUT_MS,
+      );
 
-      const faucetBalance = await withTimeout(api.balance.findOut(faucetKeyring.address), BALANCE_TIMEOUT_MS);
+      const faucetBalance = await withTimeout(api!.balance.findOut(faucetKeyring.address), BALANCE_TIMEOUT_MS);
       const faucetPlanck = BigInt(faucetBalance.toString());
       if (faucetPlanck - payoutPlanck < minReservePlanck) {
         return jsonResponse({ error: "faucet_low" }, 503);
@@ -118,8 +137,9 @@ export class FaucetLedger implements DurableObject {
       return jsonResponse({ status: "sent", txHash, amount: payoutVara });
     } catch (error) {
       if (error instanceof TimeoutError) {
-        console.error("Faucet claim timed out", error);
-        return jsonResponse({ error: "timeout" }, 504);
+        console.error("Faucet claim timed out", error, connectionLog);
+        // debug: connectionLog included temporarily -- see comment above.
+        return jsonResponse({ error: "timeout", debug: connectionLog }, 504);
       }
       // Logged server-side (Cloudflare's own log tooling) rather than
       // returned to the client -- an error message/stack trace is
