@@ -23,13 +23,10 @@
 import { GearApi, GearKeyring, decodeAddress } from "@gear-js/api";
 import { BN } from "@polkadot/util";
 import type { Env } from "./env";
-import { TimeoutError, withTimeout } from "./withTimeout";
+import { BALANCE_TIMEOUT_MS, BROADCAST_TIMEOUT_MS, CONNECT_TIMEOUT_MS, TimeoutError, withTimeout } from "./withTimeout";
 
 const VARA_MAINNET_ENDPOINT = "wss://rpc.vara.network";
 const PLANCK_PER_VARA = BigInt(10) ** BigInt(12);
-const CONNECT_TIMEOUT_MS = 10_000;
-const BALANCE_TIMEOUT_MS = 10_000;
-const BROADCAST_TIMEOUT_MS = 30_000;
 
 export class FaucetLedger implements DurableObject {
   constructor(

@@ -23,7 +23,7 @@
 
 import { GearApi, decodeAddress } from "@gear-js/api";
 import type { Env } from "./env";
-import { TimeoutError, withTimeout } from "./withTimeout";
+import { BROADCAST_TIMEOUT_MS, CONNECT_TIMEOUT_MS, TimeoutError, withTimeout } from "./withTimeout";
 
 const VARA_MAINNET_ENDPOINT = "wss://rpc.vara.network";
 
@@ -197,9 +197,6 @@ export class MarketLedger implements DurableObject {
     }
   }
 }
-
-const CONNECT_TIMEOUT_MS = 10_000;
-const BROADCAST_TIMEOUT_MS = 30_000;
 
 // A real signed balances.transferKeepAlive extrinsic is comfortably
 // larger than this (roughly 150-200+ bytes / 300-400+ hex chars for
