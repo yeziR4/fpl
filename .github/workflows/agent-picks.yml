@@ -1,0 +1,95 @@
+name: Agent picks & leaderboard
+
+# Runs the OpenRouter agent-picks pipeline (data_pipeline/agents.py)
+# and the leaderboard scorer (data_pipeline/leaderboard.py) on a
+# schedule. Both need a fresh bootstrap/fixtures snapshot and both
+# write into data/, which then gets committed straight back to the
+# repo -- data/agent_picks/gw*.json and data/leaderboard.json are the
+# persistent, versioned record (see .gitignore: only data/cache/* is
+# excluded, these paths are not).
+#
+#   auto-generate-picks targets whichever gameweek's deadline hasn't
+#     passed yet and skips if that gameweek already has a saved picks
+#     file -- a pick, once made, is never silently regenerated.
+#   auto-score scores every gameweek that has saved picks but isn't in
+#     the leaderboard yet, gated on resolution.py's own
+#     is_gameweek_finished() -- never scores off a partial gameweek.
+#
+# Both are idempotent no-ops most runs (no open deadline yet, nothing
+# newly finished), so running this a few times a day is cheap and
+# doesn't need to be precisely timed to a deadline or a final whistle.
+#
+# OPENROUTER_API_KEY is a GitHub Actions secret the repo owner adds
+# directly (Settings -> Secrets and variables -> Actions) -- same
+# discipline as the faucet's wallet key: never pasted into chat, never
+# committed, used server-side only, never shipped to the browser
+# build. See docs/architecture.md.
+
+on:
+  schedule:
+    - cron: "40 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-picks
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Fetch fresh bootstrap + fixtures
+        run: |
+          python -m data_pipeline.cli fetch-bootstrap
+          python -m data_pipeline.cli fetch-fixtures
+
+      - name: Fetch live stats for any gameweek with saved picks
+        # Needed before auto-score can resolve outcomes for it. Safe
+        # to call on an in-progress or even not-yet-started gameweek --
+        # resolution.py only trusts this data once is_gameweek_finished
+        # says so, so an early/partial fetch here can't cause a
+        # premature score.
+        run: |
+          shopt -s nullglob
+          for f in data/agent_picks/gw*.json; do
+            gw=$(basename "$f" .json | sed 's/gw//')
+            python -m data_pipeline.cli fetch-live "$gw"
+          done
+
+      - name: Generate picks for the next open gameweek
+        run: python -m data_pipeline.cli auto-generate-picks
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Score any newly finished gameweeks
+        run: python -m data_pipeline.cli auto-score
+
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # These paths may not exist yet (e.g. the very first run, or
+          # an off-season run with no open deadline and nothing
+          # finished to score) -- `git add` on a missing path is fatal,
+          # so only add what's actually there.
+          [ -d data/agent_picks ] && git add data/agent_picks
+          [ -f data/leaderboard.json ] && git add data/leaderboard.json
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "Agent picks / leaderboard update [skip ci]"
+            git push
+          fi

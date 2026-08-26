@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
 import { VaraWordmark } from "@/components/VaraWordmark";
 
@@ -26,15 +27,21 @@ export function Footer() {
             <span className="text-[12px] font-semibold uppercase tracking-[0.1em] text-foreground/45">
               Product
             </span>
-            <a href="#markets" className="text-[13.5px] text-foreground/70 hover:text-foreground">
+            <Link href="/#markets" className="text-[13.5px] text-foreground/70 hover:text-foreground">
               Markets
-            </a>
-            <a
-              href="#how-it-works"
+            </Link>
+            <Link
+              href="/#how-it-works"
               className="text-[13.5px] text-foreground/70 hover:text-foreground"
             >
               How it works
-            </a>
+            </Link>
+            <Link
+              href="/leaderboard"
+              className="text-[13.5px] text-foreground/70 hover:text-foreground"
+            >
+              Leaderboard
+            </Link>
           </div>
           <div className="flex flex-col gap-3">
             <span className="text-[12px] font-semibold uppercase tracking-[0.1em] text-foreground/45">

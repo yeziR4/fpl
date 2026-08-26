@@ -386,7 +386,7 @@ A small, dependency-light Python package:
 
 Deliberately **not** built yet: a real database (JSON files are fine at
 this scale and are trivially inspectable/diffable), any market or
-staking logic, any chain integration, any AI-agent interface.
+staking logic, any chain integration.
 
 ### Known constraint: sandboxed dev environments may not have internet access
 
@@ -397,6 +397,92 @@ tested against realistic fixture data in `tests/fixtures/`, but the
 `fetch-*` CLI commands have not been run against the live API from this
 environment. Run them from somewhere with open egress (a laptop, CI, a
 normal server) before trusting live data end-to-end.
+
+## AI agent picks & leaderboard: `data_pipeline/agents.py`, `leaderboard.py`
+
+Five top-tier models, one per lab (OpenAI, Anthropic, Google, xAI,
+DeepSeek — via [OpenRouter](https://openrouter.ai)), are each given the
+same snapshot of FPL data and asked to predict the same points-threshold
+markets `resolution.py` already knows how to settle. A leaderboard tracks
+how often each one was right, gameweek over gameweek.
+
+Deliberately narrow, per an explicit scoping decision: this is picks +
+leaderboard only. No matchmaking, no assignment of agents to specific
+markets, no stakes — every model is asked about the same player pool,
+every time, and the leaderboard is just "were they right", not a wagering
+mechanism.
+
+- **`agents.py`** — the "ask the models" half.
+  - `AGENT_MODELS`: five `AgentModel(slug, name)` entries, one per lab.
+    Prefers OpenRouter's self-updating `~lab/model-latest` aliases where
+    offered (OpenAI, Anthropic, Google) — these silently re-point to each
+    lab's new flagship, so the list doesn't quietly go stale the way a
+    dated slug eventually does. xAI and DeepSeek don't offer that alias
+    style at time of writing, so those two are pinned to explicit dated
+    slugs instead.
+  - `build_prompt()` — the exact same prompt for every model: the top-N
+    most expensive players (`players.top_expensive_players`), each one's
+    opponent for the target gameweek (derived from the cached fixture
+    list, including blank/double-gameweek cases), price, and season
+    points so far. Asks for a single JSON object back — a `pick` (yes/no)
+    and `confidence` per (player, threshold) pair.
+  - `call_model()` — one HTTP call to OpenRouter's OpenAI-compatible
+    `/chat/completions` endpoint. Raises `OpenRouterError` on any
+    failure; never fabricates a fallback reply.
+  - `parse_picks()` — defensively parses a model's JSON reply. A
+    malformed reply, an out-of-pool player id, an unknown threshold, or
+    a non-yes/no pick value is dropped, never guessed at — a model that
+    returns garbage just yields fewer picks, never a wrong or invented
+    one. Tolerates markdown code fences some models wrap JSON in despite
+    being told not to.
+  - `generate_picks_for_gameweek()` — orchestrates the above across all
+    five models for one gameweek. One model erroring out (bad slug,
+    outage, garbled reply) is caught and recorded per-model — it never
+    blocks the other four from producing their picks.
+  - `save_picks()` / `load_picks()` — persist to (read from)
+    `data/agent_picks/gw<N>.json`. This is a committed, versioned record
+    (see `.gitignore` — only `data/cache/*` is excluded), not a cache: a
+    pick, once made and saved, is never silently regenerated or
+    overwritten by a later run (`auto-generate-picks` skips a gameweek
+    that already has a saved file unless told `--force`).
+- **`leaderboard.py`** — the "were they right" half. Has no resolution
+  logic of its own: `score_gameweek()` calls straight into
+  `resolution.py`'s `is_gameweek_finished()` / `resolve_points_threshold()`
+  — the same payout-safe state machine everything else in this pipeline
+  settles against — and refuses to score a gameweek that isn't finished
+  yet, for the same reason a market wouldn't pay out early. `
+  update_leaderboard()` folds one gameweek's score into
+  `data/leaderboard.json`, keyed by gameweek plus a running `totals` per
+  model; re-scoring an already-scored gameweek (e.g. after a late
+  bonus-points correction) replaces that gameweek's entry and recomputes
+  totals from scratch rather than double-counting it.
+- **CLI** (`cli.py`): `generate-picks --gw N` / `score-gameweek --gw N`
+  target an explicit gameweek by hand. `auto-generate-picks` /
+  `auto-score` are what the scheduled workflow actually calls:
+  the first targets whichever gameweek's deadline (`events[].deadline_time`
+  from bootstrap-static) hasn't passed yet; the second scores every
+  gameweek that has saved picks but isn't in the leaderboard yet. Both
+  are safe no-ops most runs — nothing to pick yet, nothing newly finished
+  to score — so the workflow (`.github/workflows/agent-picks.yml`) just
+  runs on a schedule rather than needing to be timed precisely to a
+  deadline or a final whistle.
+
+**Security**: `OPENROUTER_API_KEY` is a GitHub Actions secret the repo
+owner adds directly (Settings → Secrets and variables → Actions), the
+same discipline as the faucet's wallet key above — never pasted into
+chat, never committed, used server-side only inside the workflow, never
+shipped into the static frontend build.
+
+**Verification discipline**: this sandbox can't reach `openrouter.ai`
+directly (same egress restriction as `vara.network` / `gear-tech.io` —
+confirmed via a direct blocked connection attempt), so the five model
+slugs above were sourced from OpenRouter's own published model
+reference rather than tested locally. Before relying on them further,
+run `generate-picks` once via the real workflow (GitHub's runners have
+open egress) and check each model actually resolved and replied — a
+renamed or retired slug shows up as that one model's `error` field, not
+a pipeline-wide failure, but is still worth fixing promptly rather than
+carrying a permanently-erroring model on the leaderboard.
 
 ## Frontend: `web/`
 

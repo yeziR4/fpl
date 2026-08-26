@@ -10,6 +10,10 @@
     python -m data_pipeline.cli resolve-full90 1 --gw 1
     python -m data_pipeline.cli gw-status 1
     python -m data_pipeline.cli resolve-gameweek --gw 1
+    python -m data_pipeline.cli generate-picks --gw 1
+    python -m data_pipeline.cli score-gameweek --gw 1
+    python -m data_pipeline.cli auto-generate-picks
+    python -m data_pipeline.cli auto-score
 
 The `fetch-*` commands need outbound access to fantasy.premierleague.com
 and must be run from an environment that has it. The rest only read
@@ -21,12 +25,23 @@ the pipeline. `resolve-points` / `resolve-full90` are what a market
 should actually call to decide a payout: they return PENDING until the
 underlying fixture is confirmed finished, never a premature YES/NO off
 a partial or provisional snapshot. See data_pipeline/resolution.py.
+
+`generate-picks` / `score-gameweek` target an explicit gameweek and
+need OPENROUTER_API_KEY set for the former. `auto-generate-picks` /
+`auto-score` are what a scheduled job should call instead: the first
+targets whichever gameweek's deadline hasn't passed yet and skips if
+that gameweek's picks already exist (pass --force to regenerate); the
+second scores every gameweek that has saved picks but isn't in the
+leaderboard yet, and only once resolution.py says it's actually safe
+to. See data_pipeline/agents.py and data_pipeline/leaderboard.py.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from datetime import datetime, timezone
 
 from . import cache
 from .players import top_expensive_players
@@ -123,6 +138,101 @@ def cmd_resolve_gameweek(args: argparse.Namespace) -> None:
         print(f"  {player.web_name:<20} over {PRIMARY_POINTS_THRESHOLD}: {primary:<8} over {SECONDARY_POINTS_THRESHOLD}: {secondary}")
 
 
+def cmd_generate_picks(args: argparse.Namespace) -> None:
+    from .agents import generate_picks_for_gameweek, save_picks
+
+    results = generate_picks_for_gameweek(args.gw, n_players=args.n)
+    path = save_picks(args.gw, results)
+    for r in results:
+        status = f"{len(r.picks)} picks" if not r.error else f"ERROR: {r.error}"
+        print(f"  {r.model.name:<24} {status}")
+    print(f"Saved -> {path}")
+
+
+def cmd_score_gameweek(args: argparse.Namespace) -> None:
+    from .leaderboard import score_gameweek, update_leaderboard
+
+    summary = score_gameweek(args.gw)
+    path = update_leaderboard(summary)
+    for m in summary["models"]:
+        acc = f"{m['accuracy']:.0%}" if m["accuracy"] is not None else "n/a"
+        print(f"  {m['name']:<24} correct={m['correct']} wrong={m['wrong']} pending={m['pending']} acc={acc}")
+    print(f"Updated leaderboard -> {path}")
+
+
+def _next_pick_gameweek(bootstrap: dict) -> int | None:
+    """The gameweek whose deadline hasn't passed yet -- what
+    `auto-generate-picks` should target. None if there isn't one (no
+    events data cached, or every known gameweek is already finished or
+    past its deadline)."""
+    now = datetime.now(timezone.utc)
+    upcoming = []
+    for event in bootstrap.get("events", []):
+        if event.get("finished"):
+            continue
+        deadline = event.get("deadline_time")
+        if not deadline:
+            continue
+        if datetime.fromisoformat(deadline.replace("Z", "+00:00")) > now:
+            upcoming.append(event)
+    if not upcoming:
+        return None
+    return min(upcoming, key=lambda e: e["id"])["id"]
+
+
+def cmd_auto_generate_picks(args: argparse.Namespace) -> None:
+    from .agents import PICKS_DIR, generate_picks_for_gameweek, save_picks
+
+    bootstrap = cache.load_latest_bootstrap_static()
+    gw = _next_pick_gameweek(bootstrap)
+    if gw is None:
+        print("No upcoming gameweek with an open deadline -- nothing to pick.")
+        return
+
+    picks_path = PICKS_DIR / f"gw{gw}.json"
+    if picks_path.exists() and not args.force:
+        print(f"GW{gw} picks already exist at {picks_path} -- skipping (pass --force to regenerate).")
+        return
+
+    print(f"Generating agent picks for GW{gw}...")
+    results = generate_picks_for_gameweek(gw, n_players=args.n)
+    path = save_picks(gw, results)
+    for r in results:
+        status = f"{len(r.picks)} picks" if not r.error else f"ERROR: {r.error}"
+        print(f"  {r.model.name:<24} {status}")
+    print(f"Saved -> {path}")
+
+
+def cmd_auto_score(args: argparse.Namespace) -> None:
+    from .agents import PICKS_DIR
+    from .leaderboard import LEADERBOARD_PATH, score_gameweek, update_leaderboard
+
+    if LEADERBOARD_PATH.exists():
+        board = json.loads(LEADERBOARD_PATH.read_text())
+        scored_gws = {int(g) for g in board.get("gameweeks", {})}
+    else:
+        scored_gws = set()
+
+    available = (
+        sorted(int(p.stem.removeprefix("gw")) for p in PICKS_DIR.glob("gw*.json"))
+        if PICKS_DIR.exists()
+        else []
+    )
+    to_score = [gw for gw in available if gw not in scored_gws and is_gameweek_finished(gw)]
+    if not to_score:
+        print("No finished gameweeks with unscored picks.")
+        return
+
+    for gw in to_score:
+        print(f"Scoring GW{gw}...")
+        summary = score_gameweek(gw)
+        update_leaderboard(summary)
+        for m in summary["models"]:
+            acc = f"{m['accuracy']:.0%}" if m["accuracy"] is not None else "n/a"
+            print(f"  {m['name']:<24} correct={m['correct']} wrong={m['wrong']} pending={m['pending']} acc={acc}")
+    print(f"Updated leaderboard -> {LEADERBOARD_PATH}")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="data_pipeline", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -177,6 +287,34 @@ def build_parser() -> argparse.ArgumentParser:
     resolve_gameweek.add_argument("--gw", type=int, required=True)
     resolve_gameweek.add_argument("--n", type=int, default=20)
     resolve_gameweek.set_defaults(func=cmd_resolve_gameweek)
+
+    generate_picks = sub.add_parser(
+        "generate-picks", help="Ask the configured OpenRouter models for picks on one gameweek's player pool"
+    )
+    generate_picks.add_argument("--gw", type=int, required=True)
+    generate_picks.add_argument("--n", type=int, default=20)
+    generate_picks.set_defaults(func=cmd_generate_picks)
+
+    score_gameweek_parser = sub.add_parser(
+        "score-gameweek", help="Score one gameweek's saved agent picks against resolved outcomes"
+    )
+    score_gameweek_parser.add_argument("--gw", type=int, required=True)
+    score_gameweek_parser.set_defaults(func=cmd_score_gameweek)
+
+    auto_generate_picks = sub.add_parser(
+        "auto-generate-picks",
+        help="Generate picks for whichever gameweek's deadline hasn't passed yet (skips if already generated)",
+    )
+    auto_generate_picks.add_argument("--n", type=int, default=20)
+    auto_generate_picks.add_argument(
+        "--force", action="store_true", help="Regenerate even if picks already exist for that gameweek"
+    )
+    auto_generate_picks.set_defaults(func=cmd_auto_generate_picks)
+
+    auto_score = sub.add_parser(
+        "auto-score", help="Score every finished gameweek that has saved picks but isn't in the leaderboard yet"
+    )
+    auto_score.set_defaults(func=cmd_auto_score)
 
     return parser
 

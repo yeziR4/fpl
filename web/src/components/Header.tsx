@@ -15,15 +15,29 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
-          <a href="#markets" className="text-[14px] font-medium text-foreground/75 hover:text-foreground">
+          {/* Root-relative hashes via next/link, not a bare "#markets" --
+              now that /leaderboard exists, a same-page anchor would silently
+              do nothing from there. next/link also applies basePath, which a
+              plain <a href="/#markets"> wouldn't on the GitHub Pages build
+              (see next.config.ts). */}
+          <Link
+            href="/#markets"
+            className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
+          >
             Markets
-          </a>
-          <a
-            href="#how-it-works"
+          </Link>
+          <Link
+            href="/#how-it-works"
             className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
           >
             How it works
-          </a>
+          </Link>
+          <Link
+            href="/leaderboard"
+            className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
+          >
+            Leaderboard
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
