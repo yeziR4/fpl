@@ -71,7 +71,7 @@ export class MarketLedger implements DurableObject {
       side?: unknown;
     };
 
-    if (typeof signedExtrinsicHex !== "string" || !signedExtrinsicHex.startsWith("0x")) {
+    if (typeof signedExtrinsicHex !== "string" || !isPlausibleExtrinsicHex(signedExtrinsicHex)) {
       return jsonResponse({ error: "invalid_extrinsic" }, 400);
     }
     if (side !== "yes" && side !== "no") {
@@ -80,7 +80,17 @@ export class MarketLedger implements DurableObject {
 
     let api: Awaited<ReturnType<typeof GearApi.create>> | undefined;
     try {
-      api = await GearApi.create({ providerAddress: VARA_MAINNET_ENDPOINT });
+      // Confirmed for real, not hypothetical: before the length check
+      // above existed, a garbage-short hex string (curl testing
+      // "0xdeadbeef") reached api.tx() and stalled the request for
+      // minutes -- SCALE-decoding truncated/garbage bytes can read a
+      // bogus compact-length prefix and try to consume far more data
+      // than exists. A network-facing endpoint must never hand
+      // attacker-controlled bytes to that decoder without a sanity
+      // check first; the length floor above is deliberately generous
+      // (a real signed transferKeepAlive is comfortably larger) so it
+      // only rejects things nowhere close to a real extrinsic.
+      api = await withTimeout(GearApi.create({ providerAddress: VARA_MAINNET_ENDPOINT }), CONNECT_TIMEOUT_MS);
 
       let extrinsic;
       try {
@@ -129,18 +139,21 @@ export class MarketLedger implements DurableObject {
 
       const stakerAddress = decodeAddress(extrinsic.signer.toString());
 
-      await new Promise<void>((resolve, reject) => {
-        extrinsic!
-          .send((result) => {
-            if (result.status.isInBlock) {
-              resolve();
-            }
-            if (result.dispatchError) {
-              reject(new Error(result.dispatchError.toString()));
-            }
-          })
-          .catch(reject);
-      });
+      await withTimeout(
+        new Promise<void>((resolve, reject) => {
+          extrinsic!
+            .send((result) => {
+              if (result.status.isInBlock) {
+                resolve();
+              }
+              if (result.dispatchError) {
+                reject(new Error(result.dispatchError.toString()));
+              }
+            })
+            .catch(reject);
+        }),
+        BROADCAST_TIMEOUT_MS,
+      );
 
       const record: StakeRecord = {
         address: stakerAddress,
@@ -162,12 +175,53 @@ export class MarketLedger implements DurableObject {
 
       return jsonResponse({ status: "staked", txHash, ...updated });
     } catch (error) {
+      if (error instanceof TimeoutError) {
+        console.error("Stake timed out", error);
+        return jsonResponse({ error: "timeout" }, 504);
+      }
       console.error("Stake failed", error);
       return jsonResponse({ error: "send_failed" }, 502);
     } finally {
-      await api?.disconnect();
+      // Best-effort: a connection already in a bad enough state to
+      // need this cleanup is also a connection that could hang on
+      // disconnect() itself -- never let cleanup be the thing that
+      // holds the response open.
+      await withTimeout(Promise.resolve(api?.disconnect()), 3_000).catch(() => {});
     }
   }
+}
+
+const CONNECT_TIMEOUT_MS = 10_000;
+const BROADCAST_TIMEOUT_MS = 30_000;
+
+// A real signed balances.transferKeepAlive extrinsic is comfortably
+// larger than this (roughly 150-200+ bytes / 300-400+ hex chars for
+// an sr25519-signed call) -- this floor exists purely to keep garbage
+// input (a handful of bytes) from ever reaching the SCALE decoder
+// below, not to validate the extrinsic is well-formed. That decoder
+// is what actually validates shape; this is a cheap gate in front of it.
+const MIN_EXTRINSIC_HEX_LENGTH = 200;
+
+function isPlausibleExtrinsicHex(value: string): boolean {
+  return value.startsWith("0x") && value.length >= MIN_EXTRINSIC_HEX_LENGTH;
+}
+
+class TimeoutError extends Error {}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new TimeoutError(`Timed out after ${ms}ms`)), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }
 
 function jsonResponse(body: unknown, status = 200): Response {

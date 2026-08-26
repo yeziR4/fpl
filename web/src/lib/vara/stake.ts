@@ -120,6 +120,8 @@ export function stakeErrorMessage(error: string): string {
       return "Something went wrong building that transaction -- try again.";
     case "already_recorded":
       return "That transaction was already recorded.";
+    case "timeout":
+      return "That took too long -- the chain may be slow right now. Try again.";
     case "network_error":
       return "Couldn't reach the market -- try again.";
     default:
