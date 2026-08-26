@@ -1,0 +1,37 @@
+name: Debug faucet claim
+
+# One-off diagnostic: POSTs a real claim to the live faucet Worker for
+# a given address and echoes back the raw JSON response, so a "the
+# faucet isn't working" report can be checked against what the Worker
+# actually says server-side, not guessed at. Manual-only (no schedule,
+# no push trigger) -- this can trigger a real payout, so it must never
+# run automatically.
+
+on:
+  workflow_dispatch:
+    inputs:
+      address:
+        description: "Vara address to test-claim for"
+        required: true
+      faucet_url:
+        description: "Faucet Worker URL"
+        required: false
+        default: "https://overline-faucet.hassanyezir2002.workers.dev"
+
+permissions:
+  contents: read
+
+jobs:
+  claim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST claim and show the raw response
+        run: |
+          echo "POSTing to ${{ github.event.inputs.faucet_url }} for address ${{ github.event.inputs.address }}"
+          http_code=$(curl -s -o /tmp/response.json -w "%{http_code}" -X POST "${{ github.event.inputs.faucet_url }}" \
+            -H "content-type: application/json" \
+            -d "{\"address\":\"${{ github.event.inputs.address }}\"}")
+          echo "HTTP status: $http_code"
+          echo "Body:"
+          cat /tmp/response.json
+          echo
