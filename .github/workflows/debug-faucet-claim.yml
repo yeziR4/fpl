@@ -35,32 +35,3 @@ jobs:
           echo "Body:"
           cat /tmp/response.json
           echo
-
-      # Diagnostic control: the Worker's own error was "Unable to
-      # initialize the API: Invalid array buffer length" -- this
-      # connects to the exact same endpoint with the exact same
-      # library, but from a plain Node.js process (a real GitHub
-      # Actions runner, not a Cloudflare Workers isolate). If this
-      # succeeds where the Worker fails, that's strong evidence the
-      # problem is specific to the Workers runtime environment, not
-      # the chain, the RPC endpoint, or @gear-js/api itself.
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Try the same connection from plain Node.js
-        run: |
-          npm init -y >/dev/null 2>&1
-          npm install @gear-js/api@^0.45.0 >/dev/null 2>&1
-          node -e "
-          import('@gear-js/api').then(async (m) => {
-            try {
-              const api = await m.GearApi.create({ providerAddress: 'wss://rpc.vara.network' });
-              const chain = (await api.rpc.system.chain()).toString();
-              console.log('CONNECTED OK from plain Node -- chain:', chain);
-              await api.disconnect();
-            } catch (e) {
-              console.log('FAILED from plain Node too:', e.message);
-              process.exitCode = 1;
-            }
-          });
-          "

@@ -1,22 +1,29 @@
 name: Deploy faucet Worker
 
-# Deploys faucet/ (the demo-faucet Cloudflare Worker) whenever it
-# changes. This deploys CODE ONLY -- CLOUDFLARE_API_TOKEN can push a
-# new Worker version, it cannot read or set the faucet wallet's key.
-# FAUCET_MNEMONIC is a Cloudflare Worker secret, provisioned once
-# directly by whoever holds it (`wrangler secret put FAUCET_MNEMONIC`,
-# from their own machine, logged into their own Cloudflare account) --
-# it never becomes a GitHub secret, never appears in a workflow run,
-# never touches this repo. See docs/architecture.md for the full
-# design and the one-time setup this workflow depends on:
+# Deploys faucet/ (the demo faucet + markets Cloudflare Worker)
+# whenever it changes. This deploys CODE ONLY -- CLOUDFLARE_API_TOKEN
+# can push a new Worker version, it cannot read or set any key. The
+# Worker no longer holds any signing key at all: the actual chain
+# interaction lives in chain-signer/ (a small Node.js service on
+# Vercel -- see docs/architecture.md for why), and this Worker
+# authenticates to it with CHAIN_SIGNER_API_KEY, a Cloudflare Worker
+# secret provisioned once directly (`wrangler secret put
+# CHAIN_SIGNER_API_KEY`, from their own machine) -- it never becomes a
+# GitHub secret, never appears in a workflow run, never touches this
+# repo. See docs/architecture.md for the full design and the one-time
+# setup this workflow depends on:
 #   1. A Cloudflare account, with a Workers KV namespace created for
 #      the IP_THROTTLE binding, its id set as the CLOUDFLARE_KV_NAMESPACE_ID
 #      repo variable (Settings -> Secrets and variables -> Actions -> Variables).
 #   2. A Cloudflare API token (Workers Scripts: Edit) set as the
 #      CLOUDFLARE_API_TOKEN repo secret, and the account ID as
 #      CLOUDFLARE_ACCOUNT_ID.
-#   3. FAUCET_MNEMONIC set as a Worker secret directly via Wrangler,
-#      separately from any of the above.
+#   3. chain-signer/ deployed to Vercel (see chain-signer's own setup
+#      notes and docs/architecture.md), its URL set as the
+#      CHAIN_SIGNER_URL repo variable, and CHAIN_SIGNER_API_KEY set as
+#      a Worker secret directly via Wrangler -- separately from any of
+#      the above, and matching the same value set on chain-signer's
+#      Vercel project.
 
 on:
   push:
@@ -58,6 +65,16 @@ jobs:
           fi
           sed -i "s/__KV_NAMESPACE_ID__/${{ vars.CLOUDFLARE_KV_NAMESPACE_ID }}/" wrangler.toml
 
+      - name: Substitute chain-signer URL
+        run: |
+          if [ -z "${{ vars.CHAIN_SIGNER_URL }}" ]; then
+            echo "::error::CHAIN_SIGNER_URL repo variable is not set -- deploy chain-signer/ to Vercel first and set its URL as a repo variable (see docs/architecture.md)."
+            exit 1
+          fi
+          # Escape any '/' in the URL for sed's own sake.
+          escaped_url=$(printf '%s\n' "${{ vars.CHAIN_SIGNER_URL }}" | sed 's/[\/&]/\\&/g')
+          sed -i "s/__CHAIN_SIGNER_URL__/${escaped_url}/" wrangler.toml
+
       - name: Deploy Worker
         id: deploy
         run: |
@@ -91,11 +108,12 @@ jobs:
           # the very first version of this smoke test hit the just-
           # deployed URL immediately and got curl's SSL-connect-error
           # (exit 35), which retrying past cleanly fixed.
-          # --max-time as defense in depth on top of the Worker's own
-          # request timeouts (see faucet/src/withTimeout.ts) -- a real
-          # hang was caught here once already (a garbage extrinsic
-          # stalled the old, unguarded MarketLedger for minutes); this
-          # is what keeps this job itself from ever doing the same
+          # --max-time as defense in depth on top of chain-signer's own
+          # request timeouts (see chain-signer/lib/withTimeout.ts) -- a
+          # real hang was caught here once already (a garbage extrinsic
+          # stalled the old, unguarded MarketLedger for minutes, back
+          # when this Worker still did the chain interaction itself);
+          # this is what keeps this job itself from ever doing the same
           # regardless of what future bug might reintroduce a stall.
           curl_retry="--retry 5 --retry-delay 3 --retry-all-errors --max-time 20"
 

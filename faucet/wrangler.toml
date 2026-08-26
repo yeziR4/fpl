@@ -1,12 +1,19 @@
-# Cloudflare Worker: the demo faucet's signing service.
+# Cloudflare Worker: the demo faucet's routing/dedup/state layer.
+#
+# The actual chain interaction (signing, broadcasting) does NOT happen
+# here -- confirmed for real that GearApi.create() cannot initialize
+# inside a Cloudflare Workers isolate, so that work lives in
+# chain-signer/ (a small Node.js service on Vercel) instead, called
+# over an authenticated HTTPS POST. See docs/architecture.md for the
+# full story.
 #
 # Deployed by .github/workflows/deploy-faucet.yml using a
 # CLOUDFLARE_API_TOKEN GitHub secret -- that token can push *code*, not
-# the faucet wallet's key. The key itself (FAUCET_MNEMONIC) is a
-# Cloudflare Worker secret, set once directly via `wrangler secret put`
-# by whoever holds it -- it never touches this repo, GitHub Secrets, or
-# any CI run. See docs/architecture.md for the full design and the
-# one-time setup steps.
+# any key. CHAIN_SIGNER_API_KEY (the shared secret this Worker uses to
+# authenticate to chain-signer) is a Cloudflare Worker secret, set once
+# directly via `wrangler secret put` -- it never touches this repo,
+# GitHub Secrets, or any CI run. See docs/architecture.md for the full
+# design and the one-time setup steps.
 name = "overline-faucet"
 main = "src/index.ts"
 compatibility_date = "2026-01-01"
@@ -60,8 +67,8 @@ tag = "v2"
 new_sqlite_classes = ["MarketLedger"]
 
 [vars]
-# Non-secret configuration. FAUCET_MNEMONIC is set separately as a
-# Worker secret (`wrangler secret put FAUCET_MNEMONIC`), never here.
+# Non-secret configuration. CHAIN_SIGNER_API_KEY is set separately as
+# a Worker secret (`wrangler secret put CHAIN_SIGNER_API_KEY`), never here.
 PAYOUT_VARA = "10"
 MIN_RESERVE_VARA = "5"
 ALLOWED_ORIGIN = "https://yezir4.github.io"
@@ -70,3 +77,8 @@ IP_RATE_LIMIT_PER_HOUR = "3"
 # env.ts. Same address as the faucet wallet for now (see
 # docs/architecture.md).
 MARKET_POOL_ADDRESS = "kGgVNfy33G9kRscEtXmsffz7HzcBEvN1K9DggnyGj1fzBAkyG"
+# Substituted at deploy time from the CHAIN_SIGNER_URL GitHub Actions
+# variable (see deploy-faucet.yml) -- not committed as a real URL
+# since it depends on the operator's own Vercel project. See
+# chain-signer/ and docs/architecture.md for the one-time setup.
+CHAIN_SIGNER_URL = "__CHAIN_SIGNER_URL__"

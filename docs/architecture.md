@@ -231,46 +231,46 @@ Next.js app:
   serialization is what makes two people clicking "Claim" at the same
   moment safe: no concurrent-access window where both could race the
   faucet wallet's on-chain nonce or double-claim the same address.
-  It's also *why* the class doesn't need to track its own nonce
-  counter -- asking the chain for the current nonce fresh on every
-  claim is already race-free once only one request is ever in flight.
   Address claims are canonicalized (`decodeAddress`) before being
   checked against the DO's own storage, so re-encoding the same SS58
   address differently can't claim twice. SQLite-backed Durable Objects
   specifically (the `new_sqlite_classes` migration, not the older
   KV-backed storage class) -- confirmed that variant is available on
   Cloudflare's free plan before choosing this design, not assumed.
-  Also enforces a configurable reserve floor (`MIN_RESERVE_VARA`) so
-  the faucet can't be drained to dust by a burst of legitimate-looking
-  claims, and a `FAUCET_PAUSED` flag as an emergency stop that doesn't
-  need a redeploy.
 
-**Where the key actually lives**: `FAUCET_MNEMONIC` is a Cloudflare
-Worker secret, set once via `wrangler secret put` directly by whoever
-holds it, logged into their own Cloudflare account. It is deliberately
-never a GitHub secret and never appears in a CI run --
-`.github/workflows/deploy-faucet.yml` deploys the Worker's *code* using
-a separate `CLOUDFLARE_API_TOKEN` that can push a new script but has
-no way to read or set the wallet's key. Fewer systems that ever see
-the plaintext key is strictly safer than one more automated hop, even
-a reputable one.
+  **This Durable Object does not talk to the chain at all anymore.**
+  It used to -- `GearApi.create()`, the keyring, the balance check, the
+  signed transfer all lived here originally. Confirmed for real (not
+  guessed) that this cannot work: a genuine user's claim reproducibly
+  timed out, and a plain-Node control test against the exact same RPC
+  endpoint, same library, same everything succeeded where the Worker
+  failed with `"Unable to initialize the API: Invalid array buffer
+  length"` while decoding the chain's runtime metadata. Every time, not
+  intermittently. That's `@polkadot/api`/`@gear-js/api` unable to
+  initialize inside a Cloudflare Workers V8 isolate specifically --
+  not a bug in this code, not a chain/RPC problem, not a timing issue
+  (bumping the timeout from 10s to 20s changed nothing; it kept failing
+  at the new limit too). See "chain-signer" below for where that logic
+  actually lives now. `FaucetLedger` today does exactly the part
+  that's genuinely Cloudflare's job: dedup, the pause flag, and calling
+  chain-signer over an authenticated HTTPS POST once dedup has passed.
+  Also enforces a configurable reserve floor (`MIN_RESERVE_VARA`,
+  checked by chain-signer) so the faucet can't be drained to dust by a
+  burst of legitimate-looking claims, and a `FAUCET_PAUSED` flag as an
+  emergency stop that doesn't need a redeploy.
 
-**Two credential shapes, because not every wallet gives up a
-mnemonic**: `FaucetLedger.ts`'s `loadFaucetKeyring()` accepts either
-`FAUCET_MNEMONIC` *or* the pair `FAUCET_KEYSTORE_JSON` +
-`FAUCET_KEYSTORE_PASSWORD` (`GearKeyring.fromJson`, already built into
-`@gear-js/api` -- no extra dependency). The second shape exists because
-Polkadot{.js} extension (and some other wallets) never displays a seed
-phrase for an account that already exists in it, whether it was
-created there or imported -- only an encrypted "Export Account" JSON
-file. That JSON, plus the password chosen *at export time* (not a seed
-phrase), is enough to sign with -- set both as Worker secrets the same
-way: `wrangler secret put FAUCET_KEYSTORE_JSON` (paste the exported
-file's contents) and `wrangler secret put FAUCET_KEYSTORE_PASSWORD`.
-Never set `FAUCET_MNEMONIC` and the keystore pair at the same time
-for different wallets -- `loadFaucetKeyring()` prefers whichever is
-present, `FAUCET_MNEMONIC` first, so a stale one left over from an
-earlier setup would silently win.
+**Where the key actually lives now**: nowhere in this repo, and
+nowhere in Cloudflare either -- `FAUCET_MNEMONIC` /
+`FAUCET_KEYSTORE_JSON` + `FAUCET_KEYSTORE_PASSWORD` are environment
+variables on chain-signer's Vercel project (see "chain-signer" below).
+This Worker only holds `CHAIN_SIGNER_API_KEY`, a shared bearer token
+that authenticates its requests to chain-signer -- it has no way to
+read or set the wallet's key, and never did have a way to *use* it
+either, once this split happened. Set once via `wrangler secret put
+CHAIN_SIGNER_API_KEY`, deliberately never a GitHub secret, never
+appears in a CI run -- `.github/workflows/deploy-faucet.yml` deploys
+the Worker's *code* using a separate `CLOUDFLARE_API_TOKEN` that can
+push a new script but has no way to read or set anything sensitive.
 
 Real limits of this v1, stated plainly rather than implied to be
 solved: no CAPTCHA (Gear's own faucet uses Cloudflare Turnstile; this
@@ -293,15 +293,92 @@ undocumented anywhere else, so recorded here in full):
 2. A Cloudflare API token (Workers Scripts: Edit permission) as the
    `CLOUDFLARE_API_TOKEN` GitHub **secret**, and the account ID as
    `CLOUDFLARE_ACCOUNT_ID`.
-3. `wrangler secret put FAUCET_MNEMONIC` run once, directly, by
-   whoever holds the faucet wallet's seed phrase -- separate from steps
-   1-2, never via CI.
+3. chain-signer/ deployed to Vercel first (see its own setup steps
+   below) -- its URL set as the `CHAIN_SIGNER_URL` GitHub Actions
+   **variable**, and `wrangler secret put CHAIN_SIGNER_API_KEY` run
+   once, directly, matching the same value set on chain-signer's
+   Vercel project.
 4. Once deployed, the Worker's URL (`wrangler deploy`'s own output, or
    the Cloudflare dashboard) set as the `NEXT_PUBLIC_FAUCET_URL`
    GitHub Actions variable that `deploy-web.yml` bakes into the site
    build. Until this is set, `WalletButton`'s claim section simply
    doesn't render -- a missing faucet is a handled, normal state, not
    a broken one.
+
+## chain-signer: the actual on-chain signing service, on Vercel
+
+The one place `GearApi.create()` is ever called from a live deployment
+-- confirmed necessary the hard way. The original design (see git
+history) had the faucet and market Workers do their own chain
+interaction directly, the same way any polkadot.js-ecosystem backend
+normally would. That failed in production, consistently, not
+intermittently: `GearApi.create()` throws `"Unable to initialize the
+API: Invalid array buffer length"` while decoding Vara's runtime
+metadata, every single time, from inside a Cloudflare Workers isolate.
+A **plain-Node control test** -- same library, same `wss://rpc.vara.network`
+endpoint, run from a GitHub Actions runner instead of a Worker --
+connected and decoded that same metadata without issue, which is what
+actually confirmed this as a Workers-runtime limitation rather than
+a chain, library, or endpoint problem worth chasing further inside
+Workers itself.
+
+So the chain interaction moved to `chain-signer/`, a small set of
+Vercel Functions (real Node.js, not an isolate) with exactly two
+endpoints:
+
+- **`api/faucet-pay.ts`** -- everything `FaucetLedger.ts` used to do
+  itself: load the faucet keyring, check the reserve floor, sign and
+  broadcast the payout. Called by `FaucetLedger` only after its own
+  dedup check has already passed; this endpoint has no dedup logic of
+  its own; it does the chain interaction and nothing else.
+- **`api/market-relay.ts`** -- everything `MarketLedger.ts` used to do
+  itself: decode a client-signed extrinsic, verify it's really a
+  signed `balances.transfer*` to the given pool address, broadcast it.
+  Still fully non-custodial -- this endpoint never holds anyone's key,
+  it only relays a transaction someone else already signed. Dedup by
+  txHash and the running yes/no totals stay in `MarketLedger`, which
+  calls this endpoint and then records the result itself.
+
+**Auth**: both endpoints require `Authorization: Bearer
+<CHAIN_SIGNER_API_KEY>` (checked in `lib/auth.ts`) -- neither is meant
+to be public. `faucet-pay` obviously can't be (it's an unconditional
+payout oracle without the Worker's dedup/pause/rate-limit checks in
+front of it); `market-relay` is non-custodial so the stakes of it
+leaking are lower, but it's gated the same way anyway, mainly so it
+can't be used as a free arbitrary-broadcast relay by anyone who finds
+the URL.
+
+**Where the credentials live**: `FAUCET_MNEMONIC` (or
+`FAUCET_KEYSTORE_JSON` + `FAUCET_KEYSTORE_PASSWORD`, same two-shape
+support as before -- see `chain-signer/lib/keyring.ts`) and
+`CHAIN_SIGNER_API_KEY` are **Vercel project environment variables**
+(Project Settings -> Environment Variables, marked sensitive), set
+directly by whoever holds them. Never committed here, never a GitHub
+secret, never appears in a CI run -- there is no CI deploy step for
+this service; Vercel's own GitHub integration deploys it directly on
+push once the project is connected (see setup below), so the wallet
+key never has to pass through a workflow run at all.
+
+**One-time setup this depends on**:
+
+1. A Vercel account, with a new project pointed at this repo with
+   **Root Directory set to `chain-signer`** (Vercel's monorepo
+   support -- the rest of this repo is ignored for this project).
+   Vercel auto-detects the `/api/*.ts` files as Node.js Functions, no
+   build config needed.
+2. `FAUCET_MNEMONIC` (or the `FAUCET_KEYSTORE_JSON` +
+   `FAUCET_KEYSTORE_PASSWORD` pair) set as Vercel environment
+   variables -- the same value that used to be a Cloudflare Worker
+   secret, moved here.
+3. `CHAIN_SIGNER_API_KEY` set as a Vercel environment variable to any
+   long random string, **and** as a Cloudflare Worker secret
+   (`wrangler secret put CHAIN_SIGNER_API_KEY`) with the exact same
+   value -- this is what lets the faucet Worker authenticate to this
+   service.
+4. Once deployed, this project's URL (from the Vercel dashboard) set
+   as the `CHAIN_SIGNER_URL` GitHub Actions **variable** -- what
+   `deploy-faucet.yml` bakes into `faucet/wrangler.toml` at deploy
+   time.
 
 ## Market staking: `MarketLedger` in `faucet/`
 
@@ -316,27 +393,34 @@ program, its own deploy pipeline and contract-level testing) --
 picking this middle path was an explicit decision, not a default.
 
 **The core difference from the faucet: nothing here signs on anyone's
-behalf.** `FaucetLedger` holds the faucet wallet's own key and signs
-its payouts server-side. `MarketLedger` never holds any staker's key --
-a stake is signed client-side, by the staker's own non-custodial
+behalf.** `FaucetLedger` (via chain-signer) uses the faucet wallet's
+own key to sign its payouts. `MarketLedger` never holds any staker's
+key -- a stake is signed client-side, by the staker's own non-custodial
 wallet (`web/src/lib/vara/stake.ts`, called from
 `WalletProvider.placeStake`), *before* it ever reaches the Worker. What
 arrives is an already-signed extrinsic (hex-encoded), plus which
-market and side it's for. `MarketLedger.ts` then:
+market and side it's for. `MarketLedger.ts` does a cheap length check
+(long enough to plausibly be a real signed extrinsic -- rejects
+obvious garbage before it ever leaves the Worker), then calls
+chain-signer's `api/market-relay.ts` (see "chain-signer" above -- this
+used to happen locally via `GearApi.create()`, which cannot initialize
+inside a Cloudflare Workers isolate), which:
 
 1. Reconstructs the extrinsic from the hex and checks, before ever
    broadcasting it: is it actually signed, is it a `balances.transfer*`
-   call, and is its destination exactly `MARKET_POOL_ADDRESS`? Any
-   other shape is rejected outright -- this endpoint can never become a
-   way to relay an arbitrary signed transaction through the Worker's
-   own RPC connection.
-2. Dedups on the extrinsic's own hash, computable from its signed bytes
-   *before* submission -- no separate nonce or idempotency key needed,
-   and no way to double-count the same signed transfer resubmitted twice.
-3. Relays it (`extrinsic.send(callback)` -- broadcasting an
+   call, and is its destination exactly the pool address passed in?
+   Any other shape is rejected outright -- this endpoint can never
+   become a way to relay an arbitrary signed transaction on request.
+2. Relays it (`extrinsic.send(callback)` -- broadcasting an
    already-signed extrinsic, not `signAndSend`, which would try to sign
-   it again) and only records the stake, updating that market's
-   yes/no totals, once it's confirmed `isInBlock`.
+   it again) and returns once it's confirmed `isInBlock`, along with
+   the extrinsic's own hash, the signer's address, and the amount.
+
+`MarketLedger.ts` then dedups on that returned hash (computable from
+the extrinsic's signed bytes, so the same signed transfer resubmitted
+twice -- e.g. a client retry after a network blip -- can never double-
+count) and only then records the stake, updating that market's yes/no
+totals.
 
 **One Durable Object instance per market** (`idFromName` keyed on
 `player_id:gw:threshold`), deliberately unlike `FaucetLedger`'s single

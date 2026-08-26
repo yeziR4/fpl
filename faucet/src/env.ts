@@ -1,20 +1,4 @@
 export interface Env {
-  /** The faucet wallet's recovery phrase. A Worker *secret*
-   * (`wrangler secret put FAUCET_MNEMONIC`) -- never set in wrangler.toml,
-   * never in this repo, never in a GitHub Actions run.
-   *
-   * Optional because some wallets (e.g. Polkadot{.js} extension) never
-   * expose a mnemonic for an account once it exists, whether it was
-   * created there or imported -- only an encrypted JSON export. See
-   * FAUCET_KEYSTORE_JSON/FAUCET_KEYSTORE_PASSWORD below for that case;
-   * FaucetLedger requires exactly one of the two credential shapes. */
-  FAUCET_MNEMONIC?: string;
-  /** Alternative to FAUCET_MNEMONIC: the JSON keystore from a wallet's
-   * "Export Account" (Polkadot{.js}, SubWallet, etc), as a Worker
-   * secret. Paired with FAUCET_KEYSTORE_PASSWORD -- the password set
-   * *at export time* to encrypt that file, not a seed phrase. */
-  FAUCET_KEYSTORE_JSON?: string;
-  FAUCET_KEYSTORE_PASSWORD?: string;
   IP_THROTTLE: KVNamespace;
   FAUCET_LEDGER: DurableObjectNamespace;
   /** One Durable Object instance per (player_id, gw, threshold) market --
@@ -26,6 +10,20 @@ export interface Env {
    * wallet; see docs/architecture.md for why that's an accepted v1
    * simplification, not an oversight. */
   MARKET_POOL_ADDRESS: string;
+  /** Base URL of the chain-signer service (a small Node.js service on
+   * Vercel -- see chain-signer/ and docs/architecture.md for why the
+   * actual chain interaction lives there and not in this Worker:
+   * GearApi.create() cannot initialize inside a Cloudflare Workers
+   * isolate, confirmed via a real plain-Node control test). Not a
+   * secret -- it's a plain deployment URL. */
+  CHAIN_SIGNER_URL: string;
+  /** Shared bearer token, checked by chain-signer on every request --
+   * a Worker *secret* (`wrangler secret put CHAIN_SIGNER_API_KEY`),
+   * matching the same value set as a Vercel environment variable on
+   * chain-signer's side. Without this, anyone who found chain-signer's
+   * URL could trigger a real payout or broadcast directly, bypassing
+   * every check (dedup, pause, rate limit) this Worker does first. */
+  CHAIN_SIGNER_API_KEY: string;
   PAYOUT_VARA: string;
   MIN_RESERVE_VARA: string;
   ALLOWED_ORIGIN: string;

@@ -1,0 +1,21 @@
+{
+  "name": "chain-signer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@gear-js/api": "^0.45.0",
+    "@polkadot/util": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@vercel/node": "^8",
+    "typescript": "^5"
+  }
+}

@@ -9,8 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@gear-js/api": "^0.45.0",
-    "@polkadot/util": "^14.0.2"
+    "@gear-js/api": "^0.45.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5",
