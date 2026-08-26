@@ -37,6 +37,18 @@ PICKS_DIR = Path("data/agent_picks")
 class AgentModel:
     slug: str
     name: str
+    # Each model's own real Vara mainnet wallet -- generated once
+    # (GearKeyring.create(), the same sr25519 keypair machinery
+    # web/src/lib/vara/keyring.ts uses for a human's wallet), so a
+    # future "the model stakes VARA on its own pick" feature has
+    # somewhere real to stake from. An address is public information,
+    # safe to commit -- unlike the mnemonic behind it, which is not
+    # stored anywhere in this repo. See docs/architecture.md.
+    #
+    # Defaults to "" purely so tests can build a throwaway AgentModel
+    # without needing a real address -- every entry in AGENT_MODELS
+    # below sets a real one.
+    address: str = ""
 
 
 # One model per lab, chosen for genuine cross-lab diversity rather than
@@ -50,11 +62,13 @@ class AgentModel:
 # these further; a renamed/retired slug fails that one model's pick
 # for a gameweek, not the whole pipeline (see call_model/generate_picks_for_gameweek).
 AGENT_MODELS: tuple[AgentModel, ...] = (
-    AgentModel("~openai/gpt-latest", "GPT (latest)"),
-    AgentModel("~anthropic/claude-opus-latest", "Claude Opus (latest)"),
-    AgentModel("~google/gemini-pro-latest", "Gemini Pro (latest)"),
-    AgentModel("x-ai/grok-4.20", "Grok 4.20"),
-    AgentModel("deepseek/deepseek-v4-pro", "DeepSeek V4 Pro"),
+    AgentModel("~openai/gpt-latest", "GPT (latest)", "kGh61bXfYSsT223sqzn4sWpq5Mz2VJWBJxsAK6R3E8YnXoAN2"),
+    AgentModel(
+        "~anthropic/claude-opus-latest", "Claude Opus (latest)", "kGkqpNus1hJGtgsZzh4SUV5upvrfk2hsKp5TvtfNqYemGoBEX"
+    ),
+    AgentModel("~google/gemini-pro-latest", "Gemini Pro (latest)", "kGgBKtcr97kHFDybuA3qxhsDcBQYVXxVtLNkpf8WhYM1DWQ5h"),
+    AgentModel("x-ai/grok-4.20", "Grok 4.20", "kGg3f6tTWQaGCsg2YDeWUAJCnVTDXuPwu4oJzSmzH4BeEk2a3"),
+    AgentModel("deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "kGihgHBfyczWhbM3tpXrmDKKZLRYsgicx7eaeVBFDdiuNurQs"),
 )
 
 

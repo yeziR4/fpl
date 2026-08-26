@@ -17,6 +17,15 @@ export interface Env {
   FAUCET_KEYSTORE_PASSWORD?: string;
   IP_THROTTLE: KVNamespace;
   FAUCET_LEDGER: DurableObjectNamespace;
+  /** One Durable Object instance per (player_id, gw, threshold) market --
+   * see MarketLedger.ts. Unlike FAUCET_LEDGER, never needs the wallet's
+   * key: a stake arrives already signed by the staker's own wallet. */
+  MARKET_LEDGER: DurableObjectNamespace;
+  /** Where stakes are sent -- a plain address, not a secret (addresses
+   * are public by nature). Currently the same address as the faucet
+   * wallet; see docs/architecture.md for why that's an accepted v1
+   * simplification, not an oversight. */
+  MARKET_POOL_ADDRESS: string;
   PAYOUT_VARA: string;
   MIN_RESERVE_VARA: string;
   ALLOWED_ORIGIN: string;

@@ -2,6 +2,13 @@ import Image from "next/image";
 import { positionLabel, type Player } from "@/lib/fpl";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 import { StatCountUp } from "@/components/StatCountUp";
+import { StakeMarket } from "@/components/StakeMarket";
+
+// Mirrors data_pipeline/settlement.py's PRIMARY_POINTS_THRESHOLD /
+// SECONDARY_POINTS_THRESHOLD -- the two lines every player's points
+// market is settled against for a single gameweek.
+const PRIMARY_POINTS_THRESHOLD = 5;
+const SECONDARY_POINTS_THRESHOLD = 10;
 
 export interface MarketOpponent {
   badgeUrl: string;
@@ -14,6 +21,12 @@ export interface MarketPlayer {
   badgeUrl: string;
   /** null: no fixture this gameweek (blank/double gameweek) -- shown honestly, not guessed at. */
   opponent: MarketOpponent | null;
+  /** The gameweek a stake on this player would resolve against. null
+   * alongside a null `opponent` (no fixture), or in the rarer case a
+   * fixture exists but hasn't been slotted into a gameweek yet --
+   * either way, staking is disabled rather than guessing which
+   * gameweek to attribute it to (see StakeMarket). */
+  gw: number | null;
 }
 
 interface MarketsSectionProps {
@@ -39,8 +52,8 @@ export function MarketsSection({ players }: MarketsSectionProps) {
 
         {players.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {players.map(({ player, badgeUrl, opponent }) => (
-              <MarketCard key={player.id} player={player} badgeUrl={badgeUrl} opponent={opponent} />
+            {players.map(({ player, badgeUrl, opponent, gw }) => (
+              <MarketCard key={player.id} player={player} badgeUrl={badgeUrl} opponent={opponent} gw={gw} />
             ))}
           </div>
         ) : (
@@ -51,7 +64,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
   );
 }
 
-function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
+function MarketCard({ player, badgeUrl, opponent, gw }: MarketPlayer) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50">
       <div className="relative aspect-[4/3] w-full bg-accent-dim">
@@ -101,11 +114,10 @@ function MarketCard({ player, badgeUrl, opponent }: MarketPlayer) {
 
         <StatStrip player={player} />
 
-        <div className="mt-1 flex flex-col gap-2">
-          <MarketRow label="Over 5 pts" />
-          <MarketRow label="Over 10 pts" />
+        <div className="mt-1 flex flex-col gap-3">
+          <StakeMarket playerId={player.id} gw={gw} threshold={PRIMARY_POINTS_THRESHOLD} label="Over 5 pts" />
+          <StakeMarket playerId={player.id} gw={gw} threshold={SECONDARY_POINTS_THRESHOLD} label="Over 10 pts" />
         </div>
-        <span className="text-center text-[10.5px] text-foreground/35">Pool opens at kickoff</span>
       </div>
     </div>
   );
@@ -138,34 +150,6 @@ function Stat({ label, value }: { label: string; value: number }) {
         {label}
       </span>
     </div>
-  );
-}
-
-function MarketRow({ label }: { label: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[11px] font-medium text-foreground/50">{label}</span>
-      <div className="grid grid-cols-2 gap-1.5">
-        <MarketButton label="Yes" variant="yes" />
-        <MarketButton label="No" variant="no" />
-      </div>
-    </div>
-  );
-}
-
-function MarketButton({ label, variant }: { label: string; variant: "yes" | "no" }) {
-  const isYes = variant === "yes";
-  return (
-    <button
-      type="button"
-      className={
-        isYes
-          ? "rounded border border-accent bg-accent px-2 py-1.5 text-[12px] font-semibold text-[#05100d] transition-opacity hover:opacity-90"
-          : "rounded border border-foreground/25 bg-transparent px-2 py-1.5 text-[12px] font-medium text-foreground/70 transition-colors hover:border-foreground/45 hover:text-foreground"
-      }
-    >
-      {label}
-    </button>
   );
 }
 

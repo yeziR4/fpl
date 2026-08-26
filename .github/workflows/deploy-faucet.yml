@@ -114,4 +114,27 @@ jobs:
             exit 1
           fi
 
+          # Markets: GET totals on a market nothing has ever staked on
+          # forces a round trip through a *fresh* MarketLedger Durable
+          # Object (a brand-new player/gw/threshold combo every run,
+          # via the run id, so this never collides with a real market)
+          # -- confirms MARKET_LEDGER is reachable and starts at zero,
+          # not just that routing to it doesn't 404.
+          totals_url="$url/markets/999999999/${{ github.run_id }}/5/totals"
+          totals_body=$(curl -s $curl_retry "$totals_url")
+          if [ "$totals_body" != '{"yesPlanck":"0","noPlanck":"0","stakeCount":0}' ]; then
+            echo "::error::GET totals on a fresh market returned unexpected body: $totals_body"
+            exit 1
+          fi
+
+          # POST stake with a garbage extrinsic never reaches the chain --
+          # rejected before any broadcast, same as the faucet's invalid-address
+          # check above.
+          stake_url="$url/markets/999999999/${{ github.run_id }}/5/stake"
+          invalid_stake_body=$(curl -s $curl_retry -X POST "$stake_url" -H "content-type: application/json" -d '{"signedExtrinsicHex":"0xdeadbeef","side":"yes"}')
+          if [ "$invalid_stake_body" != '{"error":"invalid_extrinsic"}' ]; then
+            echo "::error::POST stake with a garbage extrinsic returned unexpected body: $invalid_stake_body"
+            exit 1
+          fi
+
           echo "Smoke test passed: $url"

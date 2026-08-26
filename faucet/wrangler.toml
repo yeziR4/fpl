@@ -38,9 +38,26 @@ id = "__KV_NAMESPACE_ID__"
 name = "FAUCET_LEDGER"
 class_name = "FaucetLedger"
 
+# One instance per (player_id, gw, threshold) market -- see
+# MarketLedger.ts and index.ts's routing. Unlike FAUCET_LEDGER these
+# don't need to serialize against each other (no shared wallet nonce
+# to protect), so a global single instance would only add unnecessary
+# contention across unrelated markets.
+[[durable_objects.bindings]]
+name = "MARKET_LEDGER"
+class_name = "MarketLedger"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["FaucetLedger"]
+
+# A second, separate migration tag -- Cloudflare migrations are
+# append-only per class; adding MarketLedger to the already-applied
+# "v1" tag isn't how a class introduced after the first deploy gets
+# picked up.
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["MarketLedger"]
 
 [vars]
 # Non-secret configuration. FAUCET_MNEMONIC is set separately as a
@@ -49,3 +66,7 @@ PAYOUT_VARA = "10"
 MIN_RESERVE_VARA = "5"
 ALLOWED_ORIGIN = "https://yezir4.github.io"
 IP_RATE_LIMIT_PER_HOUR = "3"
+# Where market stakes are sent. A plain address, not a secret -- see
+# env.ts. Same address as the faucet wallet for now (see
+# docs/architecture.md).
+MARKET_POOL_ADDRESS = "kGgVNfy33G9kRscEtXmsffz7HzcBEvN1K9DggnyGj1fzBAkyG"

@@ -9,14 +9,18 @@
  *
  * Deliberately does NOT expose the mnemonic or keyring outside this
  * module once creation/restore is done -- components read `address`
- * and `balance` only. Signing (staking a market) will need the keyring
- * itself later; that's a deliberately separate, later addition once
- * there's something real to sign.
+ * and `balance`, and call `placeStake` for the one thing that actually
+ * needs to sign something. placeStake re-derives the keyring from the
+ * cached mnemonic on demand rather than holding it in React state for
+ * the component's whole lifetime -- it exists only for the duration of
+ * that one signing call, same lifetime the mnemonic itself has during
+ * createWallet/restoreWallet above.
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { cacheWallet, loadCachedWallet, clearCachedWallet } from "./walletCache";
 import { downloadSeedPhrase } from "./walletDownload";
+import type { Side, StakeResult } from "./stake";
 // `./keyring` and `./api` both import @gear-js/api, which bundles
 // @polkadot/api's full RPC/metadata client alongside the (much
 // smaller) keyring pieces this feature actually needs most of the
@@ -42,6 +46,13 @@ interface WalletState {
   logout: () => void;
   refreshBalance: () => Promise<void>;
   dismissJustCreated: () => void;
+  placeStake: (args: {
+    playerId: number;
+    gw: number;
+    threshold: number;
+    side: Side;
+    amountVara: string;
+  }) => Promise<StakeResult>;
 }
 
 const WalletContext = createContext<WalletState | null>(null);
@@ -127,6 +138,35 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const dismissJustCreated = useCallback(() => setJustCreated(false), []);
 
+  const placeStake = useCallback(
+    async (args: {
+      playerId: number;
+      gw: number;
+      threshold: number;
+      side: Side;
+      amountVara: string;
+    }): Promise<StakeResult> => {
+      if (!address) return { ok: false, error: "not_connected" };
+      const faucetUrl = process.env.NEXT_PUBLIC_FAUCET_URL;
+      if (!faucetUrl) return { ok: false, error: "not_configured" };
+
+      const cached = await loadCachedWallet();
+      if (!cached) return { ok: false, error: "wallet_locked" };
+
+      const [{ restoreWalletFromMnemonic }, { placeStake: signAndSubmitStake }] = await Promise.all([
+        import("./keyring"),
+        import("./stake"),
+      ]);
+      // Re-derives the keyring for this call only -- see the module
+      // docstring above for why this isn't kept around in state.
+      const wallet = await restoreWalletFromMnemonic(cached.mnemonic);
+      const result = await signAndSubmitStake({ keyring: wallet.keyring, faucetUrl, ...args });
+      void fetchBalance(address); // a successful stake just moved this wallet's balance
+      return result;
+    },
+    [address, fetchBalance],
+  );
+
   const value = useMemo(
     () => ({
       status,
@@ -139,8 +179,21 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       logout,
       refreshBalance,
       dismissJustCreated,
+      placeStake,
     }),
-    [status, address, balance, balanceError, justCreated, createWallet, restoreWallet, logout, refreshBalance, dismissJustCreated],
+    [
+      status,
+      address,
+      balance,
+      balanceError,
+      justCreated,
+      createWallet,
+      restoreWallet,
+      logout,
+      refreshBalance,
+      dismissJustCreated,
+      placeStake,
+    ],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

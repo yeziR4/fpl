@@ -109,11 +109,15 @@ still the right fit as the mechanism gets more concrete, since our actual
 needs (oracle input, pooled staking, timed settlement, low fees) aren't
 Vara-specific.
 
-No market contract has been built yet — the pooled-stake escrow (a Gear
-program holding a market's stakes and paying out by resolution logic,
-not a hot wallet) is a later, separate phase once the market mechanism
-(bucket design, fee structure, oracle trust model) is settled enough to
-encode immutably. See below for what *has* shipped: per-user wallets.
+No market *contract* has been built yet — the pooled-stake escrow (a
+Gear program holding a market's stakes and paying out by resolution
+logic, not a hot wallet) is a later, separate phase once the market
+mechanism (bucket design, fee structure, oracle trust model) is
+settled enough to encode immutably. What *has* shipped, as an explicit
+stepping stone toward that rather than the final design: real VARA
+transfers into an operator-controlled pool address, tracked by a
+Cloudflare Worker -- see "Market staking" below, and per-user wallets
+further down.
 
 ## Wallets: on-site, non-custodial key generation
 
@@ -299,6 +303,65 @@ undocumented anywhere else, so recorded here in full):
    doesn't render -- a missing faucet is a handled, normal state, not
    a broken one.
 
+## Market staking: `MarketLedger` in `faucet/`
+
+The Yes/No buttons on each market are wired to real VARA transfers, in
+the same `overline-faucet` Worker as the faucet above (new routes, not
+a new Worker) -- an explicit stepping stone toward the pooled-stake
+Gear program described above, not the final design. Chosen over a mock
+ledger because a working demo should mean something real is actually
+moving, and chosen over building the Gear program itself because that
+is realistically a multi-session undertaking on its own (a new Rust
+program, its own deploy pipeline and contract-level testing) --
+picking this middle path was an explicit decision, not a default.
+
+**The core difference from the faucet: nothing here signs on anyone's
+behalf.** `FaucetLedger` holds the faucet wallet's own key and signs
+its payouts server-side. `MarketLedger` never holds any staker's key --
+a stake is signed client-side, by the staker's own non-custodial
+wallet (`web/src/lib/vara/stake.ts`, called from
+`WalletProvider.placeStake`), *before* it ever reaches the Worker. What
+arrives is an already-signed extrinsic (hex-encoded), plus which
+market and side it's for. `MarketLedger.ts` then:
+
+1. Reconstructs the extrinsic from the hex and checks, before ever
+   broadcasting it: is it actually signed, is it a `balances.transfer*`
+   call, and is its destination exactly `MARKET_POOL_ADDRESS`? Any
+   other shape is rejected outright -- this endpoint can never become a
+   way to relay an arbitrary signed transaction through the Worker's
+   own RPC connection.
+2. Dedups on the extrinsic's own hash, computable from its signed bytes
+   *before* submission -- no separate nonce or idempotency key needed,
+   and no way to double-count the same signed transfer resubmitted twice.
+3. Relays it (`extrinsic.send(callback)` -- broadcasting an
+   already-signed extrinsic, not `signAndSend`, which would try to sign
+   it again) and only records the stake, updating that market's
+   yes/no totals, once it's confirmed `isInBlock`.
+
+**One Durable Object instance per market** (`idFromName` keyed on
+`player_id:gw:threshold`), deliberately unlike `FaucetLedger`'s single
+global instance -- there's no shared mutable resource here (a wallet's
+nonce) that needs strict serialization across every market at once, so
+partitioning by market avoids unnecessary contention between unrelated
+players' markets.
+
+**`MARKET_POOL_ADDRESS`** is a plain `wrangler.toml` var, not a
+secret -- an address is public information by nature (unlike the key
+behind it). Currently the same address as the faucet wallet
+(`kGgVNfy33G9kRscEtXmsffz7HzcBEvN1K9DggnyGj1fzBAkyG`): an accepted v1
+simplification (one operator-controlled wallet does double duty as
+both the faucet's payout source and the stake pool) rather than
+standing up a second wallet for no functional gain yet. Worth
+splitting once real payout logic exists and the two balances need to
+be reasoned about separately.
+
+**Not built yet, stated plainly**: payout. A market's pool grows as
+people stake, but nothing yet reads `resolution.py`'s outcome and pays
+the winning side pro-rata from the pool -- that's the next real piece
+of work here, once there's a live market with real stakes in it to pay
+out. Until then, staking is real (the VARA genuinely moves and is
+tracked) but one-directional.
+
 ## Data source: the unofficial FPL API
 
 FPL has no official public API, but a small set of unauthenticated,
@@ -430,13 +493,22 @@ every time, and the leaderboard is just "were they right", not a wagering
 mechanism.
 
 - **`agents.py`** — the "ask the models" half.
-  - `AGENT_MODELS`: five `AgentModel(slug, name)` entries, one per lab.
-    Prefers OpenRouter's self-updating `~lab/model-latest` aliases where
-    offered (OpenAI, Anthropic, Google) — these silently re-point to each
-    lab's new flagship, so the list doesn't quietly go stale the way a
-    dated slug eventually does. xAI and DeepSeek don't offer that alias
-    style at time of writing, so those two are pinned to explicit dated
-    slugs instead.
+  - `AGENT_MODELS`: five `AgentModel(slug, name, address)` entries, one
+    per lab. Prefers OpenRouter's self-updating `~lab/model-latest`
+    aliases where offered (OpenAI, Anthropic, Google) — these silently
+    re-point to each lab's new flagship, so the list doesn't quietly go
+    stale the way a dated slug eventually does. xAI and DeepSeek don't
+    offer that alias style at time of writing, so those two are pinned
+    to explicit dated slugs instead. Each `address` is a real Vara
+    mainnet wallet, generated once the same way a human's is
+    (`GearKeyring.create()`) — public, so safe to commit; the
+    mnemonics behind them are not stored anywhere in this repo,
+    delivered once directly to whoever's running this project. They
+    start funded with 0 VARA and currently do nothing on-chain — no
+    feature yet reads a model's pick and stakes from its own wallet on
+    it. That's the natural next step once market staking (see "Market
+    staking" above) has payout logic to actually be worth staking
+    into, not before.
   - `build_prompt()` — the exact same prompt for every model: the top-N
     most expensive players (`players.top_expensive_players`), each one's
     opponent for the target gameweek (derived from the cached fixture

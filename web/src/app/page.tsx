@@ -49,11 +49,20 @@ async function loadMarketPlayers(): Promise<(HeroPlayer & MarketPlayer)[]> {
     ]);
     const players: Player[] = topExpensivePlayers(bootstrap, MARKET_PLAYER_COUNT);
 
-    return players.map((player) => ({
-      player,
-      badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, player.team)),
-      opponent: resolveOpponent(bootstrap, fixtures, player.team),
-    }));
+    return players.map((player) => {
+      // Resolved once per player, not twice -- gw is threaded through
+      // separately from the opponent badge/name lookup below because a
+      // stake needs to know which gameweek it resolves against even in
+      // the (rare) case that lookup itself fails, e.g. an opponent team
+      // id not found in bootstrap-static.
+      const nextFixture = nextFixtureForTeam(player.team, fixtures);
+      return {
+        player,
+        badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, player.team)),
+        opponent: resolveOpponent(bootstrap, nextFixture),
+        gw: nextFixture?.gw ?? null,
+      };
+    });
   } catch (error) {
     console.error("Failed to load FPL player/fixture data:", error);
     return [];
@@ -62,16 +71,14 @@ async function loadMarketPlayers(): Promise<(HeroPlayer & MarketPlayer)[]> {
 
 function resolveOpponent(
   bootstrap: BootstrapStatic,
-  fixtures: Fixture[],
-  playerTeamId: number,
+  nextFixture: ReturnType<typeof nextFixtureForTeam>,
 ): MarketOpponent | null {
-  const opponent = nextFixtureForTeam(playerTeamId, fixtures);
-  if (!opponent) return null;
-  const opponentTeam = bootstrap.teams.find((t) => t.id === opponent.teamId);
+  if (!nextFixture) return null;
+  const opponentTeam = bootstrap.teams.find((t) => t.id === nextFixture.teamId);
   if (!opponentTeam) return null;
   return {
     badgeUrl: teamBadgeUrl(opponentTeam.code),
     shortName: opponentTeam.short_name,
-    isHome: opponent.isHome,
+    isHome: nextFixture.isHome,
   };
 }
