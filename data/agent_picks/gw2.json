@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-08-26T11:52:01.935788+00:00",
+  "gw": 2,
+  "models": [
+    {
+      "error": "OPENROUTER_API_KEY is not set -- it's a GitHub Actions secret the repo owner adds directly (Settings -> Secrets and variables -> Actions), never pasted into chat or committed. See docs/architecture.md.",
+      "name": "GPT (latest)",
+      "picks": [],
+      "slug": "~openai/gpt-latest"
+    },
+    {
+      "error": "OPENROUTER_API_KEY is not set -- it's a GitHub Actions secret the repo owner adds directly (Settings -> Secrets and variables -> Actions), never pasted into chat or committed. See docs/architecture.md.",
+      "name": "Claude Opus (latest)",
+      "picks": [],
+      "slug": "~anthropic/claude-opus-latest"
+    },
+    {
+      "error": "OPENROUTER_API_KEY is not set -- it's a GitHub Actions secret the repo owner adds directly (Settings -> Secrets and variables -> Actions), never pasted into chat or committed. See docs/architecture.md.",
+      "name": "Gemini Pro (latest)",
+      "picks": [],
+      "slug": "~google/gemini-pro-latest"
+    },
+    {
+      "error": "OPENROUTER_API_KEY is not set -- it's a GitHub Actions secret the repo owner adds directly (Settings -> Secrets and variables -> Actions), never pasted into chat or committed. See docs/architecture.md.",
+      "name": "Grok 4.20",
+      "picks": [],
+      "slug": "x-ai/grok-4.20"
+    },
+    {
+      "error": "OPENROUTER_API_KEY is not set -- it's a GitHub Actions secret the repo owner adds directly (Settings -> Secrets and variables -> Actions), never pasted into chat or committed. See docs/architecture.md.",
+      "name": "DeepSeek V4 Pro",
+      "picks": [],
+      "slug": "deepseek/deepseek-v4-pro"
+    }
+  ]
+}
