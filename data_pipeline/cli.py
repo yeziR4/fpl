@@ -180,8 +180,16 @@ def _next_pick_gameweek(bootstrap: dict) -> int | None:
     return min(upcoming, key=lambda e: e["id"])["id"]
 
 
+def _has_any_real_picks(saved: dict) -> bool:
+    """False if every model in a saved picks file errored out (e.g. a run
+    with OPENROUTER_API_KEY missing or every model transiently down) --
+    that's not a real generation to protect from being overwritten, it's
+    a failed attempt that should be retried on the next run."""
+    return any(model.get("picks") for model in saved.get("models", []))
+
+
 def cmd_auto_generate_picks(args: argparse.Namespace) -> None:
-    from .agents import PICKS_DIR, generate_picks_for_gameweek, save_picks
+    from .agents import PICKS_DIR, generate_picks_for_gameweek, load_picks, save_picks
 
     bootstrap = cache.load_latest_bootstrap_static()
     gw = _next_pick_gameweek(bootstrap)
@@ -191,8 +199,10 @@ def cmd_auto_generate_picks(args: argparse.Namespace) -> None:
 
     picks_path = PICKS_DIR / f"gw{gw}.json"
     if picks_path.exists() and not args.force:
-        print(f"GW{gw} picks already exist at {picks_path} -- skipping (pass --force to regenerate).")
-        return
+        if _has_any_real_picks(load_picks(gw, picks_dir=PICKS_DIR)):
+            print(f"GW{gw} picks already exist at {picks_path} -- skipping (pass --force to regenerate).")
+            return
+        print(f"GW{gw} picks exist at {picks_path} but every model errored last time -- retrying.")
 
     print(f"Generating agent picks for GW{gw}...")
     results = generate_picks_for_gameweek(gw, n_players=args.n)
