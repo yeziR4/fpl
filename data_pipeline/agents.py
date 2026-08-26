@@ -202,7 +202,10 @@ def parse_picks(
     Never fabricates a pick for a malformed or out-of-pool entry -- a
     model that returns garbage just yields fewer picks, never a wrong
     or invented one. Tolerates the reply being wrapped in markdown code
-    fences (some models do this despite being told JSON-only).
+    fences, or having commentary before/after the JSON object, despite
+    being told JSON-only in the prompt -- confirmed for real, not
+    hypothetical: `~google/gemini-pro-latest` did exactly this on its
+    first live run against real GW picks (see docs/architecture.md).
     """
     text = raw_text.strip()
     if text.startswith("```"):
@@ -214,7 +217,17 @@ def parse_picks(
     try:
         parsed = json.loads(text)
     except ValueError:
-        return []
+        # Fall back to the first top-level {...} object found anywhere
+        # in the reply, in case it's wrapped in leading/trailing prose
+        # that the code-fence handling above doesn't strip (that only
+        # catches a fence at the very start of the reply).
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return []
+        try:
+            parsed = json.loads(text[start : end + 1])
+        except ValueError:
+            return []
 
     entries = parsed.get("picks") if isinstance(parsed, dict) else None
     if not isinstance(entries, list):

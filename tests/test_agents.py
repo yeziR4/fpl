@@ -91,6 +91,21 @@ def test_parse_picks_strips_markdown_code_fences():
     assert len(picks) == 1
 
 
+def test_parse_picks_recovers_json_wrapped_in_commentary():
+    # Confirmed for real: ~google/gemini-pro-latest's first live reply
+    # (GW2, real run) prefaced its JSON with prose despite the prompt
+    # asking for JSON only -- the leading-fence check alone doesn't
+    # catch that, since the reply doesn't start with the JSON at all.
+    raw = (
+        "Sure, here are my predictions for this gameweek:\n\n"
+        + json.dumps({"picks": [{"player_id": 1, "threshold": 5, "pick": "yes"}]})
+        + "\n\nLet me know if you need anything else!"
+    )
+    picks = parse_picks(raw, valid_player_ids={1}, valid_thresholds={5})
+    assert len(picks) == 1
+    assert picks[0].player_id == 1
+
+
 def test_parse_picks_drops_entries_for_players_outside_the_pool():
     raw = json.dumps({"picks": [{"player_id": 999, "threshold": 5, "pick": "yes"}]})
     picks = parse_picks(raw, valid_player_ids={1}, valid_thresholds={5})

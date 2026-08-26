@@ -74,8 +74,11 @@ export class FaucetLedger implements DurableObject {
     // the intended { error: "send_failed" } response.
     let api: Awaited<ReturnType<typeof GearApi.create>> | undefined;
     try {
+      // Checked before even opening the chain connection -- a missing
+      // credential is a config error, not something a retry or a
+      // connection issue could ever fix.
+      const faucetKeyring = await loadFaucetKeyring(this.env);
       api = await GearApi.create({ providerAddress: VARA_MAINNET_ENDPOINT });
-      const faucetKeyring = await GearKeyring.fromMnemonic(this.env.FAUCET_MNEMONIC, "faucet");
 
       const faucetBalance = await api.balance.findOut(faucetKeyring.address);
       const faucetPlanck = BigInt(faucetBalance.toString());
@@ -113,6 +116,31 @@ export class FaucetLedger implements DurableObject {
       await api?.disconnect();
     }
   }
+}
+
+/**
+ * Builds the faucet's signing keyring from whichever credential shape
+ * is actually configured. Two shapes, because not every wallet gives
+ * up a mnemonic: Polkadot{.js} extension in particular never displays
+ * one for an account that already exists (created there or imported),
+ * only an encrypted "Export Account" JSON file -- see env.ts and
+ * docs/architecture.md.
+ *
+ * Deliberately checked and thrown here, before FaucetLedger.fetch
+ * even opens the chain connection -- a missing/malformed credential
+ * is a deploy-time config error, never something worth retrying.
+ */
+async function loadFaucetKeyring(env: Env) {
+  if (env.FAUCET_MNEMONIC) {
+    return GearKeyring.fromMnemonic(env.FAUCET_MNEMONIC, "faucet");
+  }
+  if (env.FAUCET_KEYSTORE_JSON && env.FAUCET_KEYSTORE_PASSWORD) {
+    return GearKeyring.fromJson(env.FAUCET_KEYSTORE_JSON, env.FAUCET_KEYSTORE_PASSWORD);
+  }
+  throw new Error(
+    "No faucet credential configured -- set either FAUCET_MNEMONIC, or both " +
+      "FAUCET_KEYSTORE_JSON and FAUCET_KEYSTORE_PASSWORD, as Worker secrets.",
+  );
 }
 
 function varaToPlanck(vara: string): bigint {

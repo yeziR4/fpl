@@ -251,6 +251,23 @@ no way to read or set the wallet's key. Fewer systems that ever see
 the plaintext key is strictly safer than one more automated hop, even
 a reputable one.
 
+**Two credential shapes, because not every wallet gives up a
+mnemonic**: `FaucetLedger.ts`'s `loadFaucetKeyring()` accepts either
+`FAUCET_MNEMONIC` *or* the pair `FAUCET_KEYSTORE_JSON` +
+`FAUCET_KEYSTORE_PASSWORD` (`GearKeyring.fromJson`, already built into
+`@gear-js/api` -- no extra dependency). The second shape exists because
+Polkadot{.js} extension (and some other wallets) never displays a seed
+phrase for an account that already exists in it, whether it was
+created there or imported -- only an encrypted "Export Account" JSON
+file. That JSON, plus the password chosen *at export time* (not a seed
+phrase), is enough to sign with -- set both as Worker secrets the same
+way: `wrangler secret put FAUCET_KEYSTORE_JSON` (paste the exported
+file's contents) and `wrangler secret put FAUCET_KEYSTORE_PASSWORD`.
+Never set `FAUCET_MNEMONIC` and the keystore pair at the same time
+for different wallets -- `loadFaucetKeyring()` prefers whichever is
+present, `FAUCET_MNEMONIC` first, so a stale one left over from an
+earlier setup would silently win.
+
 Real limits of this v1, stated plainly rather than implied to be
 solved: no CAPTCHA (Gear's own faucet uses Cloudflare Turnstile; this
 one relies on per-address-ever + coarse per-IP throttling only, which
