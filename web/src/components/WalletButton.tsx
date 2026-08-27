@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useWallet } from "@/lib/vara/WalletProvider";
 import { isValidMnemonic } from "@/lib/vara/mnemonicValidate";
 import { claimFaucet, faucetErrorMessage, isFaucetConfigured } from "@/lib/vara/faucet";
+import { loadStakeHistory, type StakeHistoryEntry } from "@/lib/vara/stakeHistory";
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -141,6 +142,8 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
         </div>
       </div>
 
+      <MyStakesSection />
+
       {isFaucetConfigured() && wallet.address && (
         <FaucetClaimSection address={wallet.address} onClaimed={() => void wallet.refreshBalance()} />
       )}
@@ -160,6 +163,51 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
       >
         Log out on this browser
       </button>
+    </div>
+  );
+}
+
+/**
+ * A local, per-browser record of what this wallet has staked on (see
+ * lib/vara/stakeHistory.ts) -- a convenience view, not the source of
+ * truth (that's on-chain plus MarketLedger's own storage). Requested
+ * directly after seeing staking actually work end to end: knowing
+ * what you've already bet on, per market, is real information a
+ * player wants, not just the aggregate totals every visitor sees.
+ * Hidden entirely when there's nothing to show yet, same as the
+ * faucet section hiding when unconfigured -- no bets is a normal
+ * state, not an empty-state message to design around.
+ */
+function MyStakesSection() {
+  // Lazy initial state, not an effect -- reading localStorage is a
+  // plain synchronous read, no need to synchronize with an external
+  // subscription. Re-reads on every mount (i.e. every time the menu
+  // opens, since WalletMenu is conditionally rendered, not just
+  // hidden), so a stake placed since the menu was last open shows up
+  // without needing a page refresh.
+  const [entries] = useState<StakeHistoryEntry[]>(() => loadStakeHistory());
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-col gap-1.5 border-t border-foreground/10 pt-3">
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-foreground/40">
+        My stakes
+      </span>
+      <div className="flex max-h-36 flex-col gap-1.5 overflow-y-auto pr-1">
+        {entries.map((entry) => (
+          <div key={entry.txHash} className="flex items-center justify-between gap-2 text-[12px]">
+            <span className="truncate text-foreground/75">
+              {entry.playerName} <span className="text-foreground/40">· {entry.label}</span>
+            </span>
+            <span
+              className={`shrink-0 font-semibold ${entry.side === "yes" ? "text-accent" : "text-foreground/50"}`}
+            >
+              {entry.side === "yes" ? "Yes" : "No"} · {entry.amountVara}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

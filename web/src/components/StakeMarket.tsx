@@ -25,6 +25,10 @@ import { fetchMarketTotals, stakeErrorMessage, type MarketTotals, type Side } fr
 
 interface StakeMarketProps {
   playerId: number;
+  /** Display-only, carried through to WalletProvider.placeStake so a
+   * recorded stake reads as "Haaland -- Over 5 pts" in "My Stakes"
+   * (see stakeHistory.ts) instead of a bare player id. */
+  playerName: string;
   /** null: no fixture this gameweek (blank/double gameweek, or not yet
    * scheduled) -- staking is disabled rather than guessing which
    * gameweek a stake would even resolve against. */
@@ -37,7 +41,7 @@ interface StakeMarketProps {
   agentPicks: AgentPickCounts | null;
 }
 
-export function StakeMarket({ playerId, gw, threshold, label, agentPicks }: StakeMarketProps) {
+export function StakeMarket({ playerId, playerName, gw, threshold, label, agentPicks }: StakeMarketProps) {
   const wallet = useWallet();
   const [totals, setTotals] = useState<MarketTotals | null>(null);
   const [pendingSide, setPendingSide] = useState<Side | null>(null);
@@ -67,7 +71,7 @@ export function StakeMarket({ playerId, gw, threshold, label, agentPicks }: Stak
     }
     setBusy(true);
     setFeedback(null);
-    const result = await wallet.placeStake({ playerId, gw, threshold, side, amountVara: amount });
+    const result = await wallet.placeStake({ playerId, playerName, gw, threshold, label, side, amountVara: amount });
     setBusy(false);
     if (result.ok) {
       setTotals({ yes: result.yes, no: result.no, yesCount: result.yesCount, noCount: result.noCount });

@@ -20,6 +20,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { cacheWallet, loadCachedWallet, clearCachedWallet } from "./walletCache";
 import { downloadSeedPhrase } from "./walletDownload";
+import { recordStake } from "./stakeHistory";
 import type { Side, StakeResult } from "./stake";
 // `./keyring` and `./api` both import @gear-js/api, which bundles
 // @polkadot/api's full RPC/metadata client alongside the (much
@@ -48,8 +49,10 @@ interface WalletState {
   dismissJustCreated: () => void;
   placeStake: (args: {
     playerId: number;
+    playerName: string;
     gw: number;
     threshold: number;
+    label: string;
     side: Side;
     amountVara: string;
   }) => Promise<StakeResult>;
@@ -141,8 +144,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const placeStake = useCallback(
     async (args: {
       playerId: number;
+      playerName: string;
       gw: number;
       threshold: number;
+      label: string;
       side: Side;
       amountVara: string;
     }): Promise<StakeResult> => {
@@ -153,6 +158,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const cached = await loadCachedWallet();
       if (!cached) return { ok: false, error: "wallet_locked" };
 
+      const { playerName, label, ...stakeArgs } = args;
+
       const [{ restoreWalletFromMnemonic }, { placeStake: signAndSubmitStake }] = await Promise.all([
         import("./keyring"),
         import("./stake"),
@@ -160,7 +167,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // Re-derives the keyring for this call only -- see the module
       // docstring above for why this isn't kept around in state.
       const wallet = await restoreWalletFromMnemonic(cached.mnemonic);
-      const result = await signAndSubmitStake({ keyring: wallet.keyring, faucetUrl, ...args });
+      const result = await signAndSubmitStake({ keyring: wallet.keyring, faucetUrl, ...stakeArgs });
+      if (result.ok) {
+        recordStake({
+          txHash: result.txHash,
+          playerId: args.playerId,
+          playerName,
+          gw: args.gw,
+          threshold: args.threshold,
+          label,
+          side: args.side,
+          amountVara: args.amountVara,
+          stakedAt: Date.now(),
+        });
+      }
       void fetchBalance(address); // a successful stake just moved this wallet's balance
       return result;
     },

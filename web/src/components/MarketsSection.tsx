@@ -123,6 +123,7 @@ function MarketCard({ player, badgeUrl, opponent, gw, agentPicks }: MarketPlayer
         <div className="mt-1 flex flex-col gap-3">
           <StakeMarket
             playerId={player.id}
+            playerName={player.webName}
             gw={gw}
             threshold={PRIMARY_POINTS_THRESHOLD}
             label="Over 5 pts"
@@ -130,6 +131,7 @@ function MarketCard({ player, badgeUrl, opponent, gw, agentPicks }: MarketPlayer
           />
           <StakeMarket
             playerId={player.id}
+            playerName={player.webName}
             gw={gw}
             threshold={SECONDARY_POINTS_THRESHOLD}
             label="Over 10 pts"
