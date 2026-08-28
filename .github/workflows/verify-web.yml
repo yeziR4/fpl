@@ -93,12 +93,15 @@ jobs:
             tags="smoke,manual"
           fi
           echo "Running tests tagged: $tags"
+          # NOTE: --agent and --timeout are kane-cli run flags, not
+          # kane-cli testrun run flags -- confirmed the hard way (run
+          # 1 of this workflow: "error: unknown option '--agent'").
+          # Sticking to exactly what Kane CLI's own CI example uses
+          # for testrun run: --match, --tags, --headless.
           kane-cli testrun run \
             --match ".testmuai/tests/.*_test\.md" \
             --tags "$tags" \
-            --headless \
-            --agent \
-            --timeout 300
+            --headless
 
       - name: Upload evidence pack
         if: always()
