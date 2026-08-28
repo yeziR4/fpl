@@ -1,0 +1,1241 @@
+{
+  "generated_at": "2026-08-28T22:39:38.334617+00:00",
+  "gw": 3,
+  "models": [
+    {
+      "error": null,
+      "name": "GPT (latest)",
+      "picks": [
+        {
+          "confidence": 0.78,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.56,
+          "pick": "no",
+          "player_id": 411,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.62,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.56,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.83,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.64,
+          "pick": "yes",
+          "player_id": 379,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.71,
+          "pick": "no",
+          "player_id": 379,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.56,
+          "pick": "yes",
+          "player_id": 397,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.78,
+          "pick": "no",
+          "player_id": 397,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.57,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.92,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.61,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.87,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.64,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.67,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.53,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.82,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.58,
+          "pick": "yes",
+          "player_id": 55,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.76,
+          "pick": "no",
+          "player_id": 55,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.69,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.89,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.58,
+          "pick": "yes",
+          "player_id": 399,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 399,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.73,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.92,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.84,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.69,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.93,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.56,
+          "pick": "yes",
+          "player_id": 366,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 366,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.94,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.58,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.84,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 10
+        }
+      ],
+      "slug": "~openai/gpt-latest"
+    },
+    {
+      "error": null,
+      "name": "Claude Opus (latest)",
+      "picks": [
+        {
+          "confidence": 0.62,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 411,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.62,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.52,
+          "pick": "yes",
+          "player_id": 379,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.82,
+          "pick": "no",
+          "player_id": 379,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 397,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 397,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.92,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.58,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.62,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.87,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.89,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 55,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 55,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.87,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.52,
+          "pick": "yes",
+          "player_id": 399,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.78,
+          "pick": "no",
+          "player_id": 399,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.62,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.92,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 366,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.87,
+          "pick": "no",
+          "player_id": 366,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.93,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 10
+        }
+      ],
+      "slug": "~anthropic/claude-opus-latest"
+    },
+    {
+      "error": null,
+      "name": "Gemini Pro (latest)",
+      "picks": [
+        {
+          "confidence": 0.9,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 426,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 154,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 12,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 379,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 379,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 397,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 397,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 427,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 106,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 55,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 55,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "pick": "yes",
+          "player_id": 399,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 399,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.95,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 366,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 366,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 10
+        }
+      ],
+      "slug": "~google/gemini-pro-latest"
+    },
+    {
+      "error": null,
+      "name": "Grok 4.20",
+      "picks": [
+        {
+          "confidence": 0.85,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 426,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.68,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.62,
+          "pick": "yes",
+          "player_id": 154,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.72,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.58,
+          "pick": "yes",
+          "player_id": 12,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.52,
+          "pick": "yes",
+          "player_id": 379,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.78,
+          "pick": "no",
+          "player_id": 379,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.48,
+          "pick": "yes",
+          "player_id": 397,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.82,
+          "pick": "no",
+          "player_id": 397,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 4,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.62,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.5,
+          "pick": "yes",
+          "player_id": 480,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.45,
+          "pick": "yes",
+          "player_id": 106,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 55,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 55,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 165,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.78,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "pick": "yes",
+          "player_id": 399,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.52,
+          "pick": "yes",
+          "player_id": 399,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.48,
+          "pick": "yes",
+          "player_id": 40,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.72,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.52,
+          "pick": "yes",
+          "player_id": 13,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.5,
+          "pick": "yes",
+          "player_id": 366,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.78,
+          "pick": "no",
+          "player_id": 366,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.68,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.92,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 10
+        }
+      ],
+      "slug": "x-ai/grok-4.20"
+    },
+    {
+      "error": null,
+      "name": "DeepSeek V4 Pro",
+      "picks": [
+        {
+          "confidence": 0.95,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "yes",
+          "player_id": 411,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 426,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 426,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "pick": "yes",
+          "player_id": 154,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "pick": "no",
+          "player_id": 154,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.8,
+          "pick": "yes",
+          "player_id": 12,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "pick": "no",
+          "player_id": 12,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 379,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 379,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "pick": "yes",
+          "player_id": 397,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 397,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 4,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "pick": "no",
+          "player_id": 4,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 427,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 427,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 428,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 428,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 480,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 480,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 106,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 55,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 55,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "pick": "yes",
+          "player_id": 165,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 165,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.85,
+          "pick": "yes",
+          "player_id": 399,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.6,
+          "pick": "no",
+          "player_id": 399,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 40,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 40,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "pick": "yes",
+          "player_id": 26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "pick": "no",
+          "player_id": 26,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "pick": "yes",
+          "player_id": 13,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 13,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 366,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 366,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "pick": "no",
+          "player_id": 78,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "pick": "yes",
+          "player_id": 380,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.75,
+          "pick": "no",
+          "player_id": 380,
+          "threshold": 10
+        }
+      ],
+      "slug": "deepseek/deepseek-v4-pro"
+    }
+  ]
+}
