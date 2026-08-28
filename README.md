@@ -50,6 +50,16 @@ section, fetching real player data/photos from the FPL API directly
 (see `docs/architecture.md` for why that's a short-term shortcut, not
 the intended long-term shape once a backend exists).
 
+## Verification
+
+Every deploy of `web/` is followed by [Kane CLI](https://github.com/LambdaTest/kane-cli)
+running real-browser checks against the live site — page rendering,
+wallet creation, and the stake dialog — using plain-English test flows
+in [`.testmuai/tests/`](.testmuai/tests/). See
+[`docs/architecture.md`](docs/architecture.md#verification-kane-cli)
+for what's checked, what's deliberately never automated (anything that
+moves real funds), and one-time setup.
+
 ## Layout
 
 ```
@@ -58,6 +68,7 @@ web/              Next.js frontend
 tests/            Unit tests + fixture JSON matching the real FPL API shape
 docs/             Architecture notes and open decisions
 data/cache/       Local snapshot store (gitignored, grows over time)
+.testmuai/tests/  Kane CLI browser-verification flows for the live site
 ```
 
 ## Status

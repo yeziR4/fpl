@@ -858,6 +858,60 @@ e.g. 88 pts) against the settled state (the real 210) with mock data
 via a local dev server, same pattern as the other UI verifications in
 this doc — not just "it compiles."
 
+## Verification: Kane CLI
+
+Everything the deploy pipeline checked before this was either "did the
+build succeed" (`deploy-web.yml`) or "does this Worker's HTTP shape
+look right" (`deploy-faucet.yml`'s curl-based smoke test). Neither one
+loads the deployed page in a real browser, so neither could catch a
+real rendering bug or a broken client-side flow -- both of which have
+actually happened during this project (see "Frontend: `web/`" above:
+the mobile empty-state gap, the hero card stagger, the `backdrop-blur`
+modal-clipping bug -- all found by hand, via a local dev server,
+because nothing automated was looking).
+
+`.github/workflows/verify-web.yml` closes that gap using
+[Kane CLI](https://github.com/LambdaTest/kane-cli) (TestMu AI, formerly
+LambdaTest): natural-language test flows, checked into
+`.testmuai/tests/*.md`, driven against a real headless Chrome pointed
+at the live GitHub Pages URL after every successful deploy. Three
+flows run automatically:
+
+- **`smoke_landing_test.md`** -- the page loads, the hero renders, the
+  markets grid shows real player data (not the "Markets unavailable"
+  fail-soft state).
+- **`wallet_creation_test.md`** -- clicking "Create Wallet" actually
+  generates a real in-browser keypair and renders it (the one flow a
+  curl-based check structurally cannot reach at all, since wallet
+  generation never touches a server -- see "Wallets: on-site,
+  non-custodial key generation" above).
+- **`stake_dialog_test.md`** -- clicking Yes/No opens the amount +
+  confirm UI and cancelling closes it cleanly.
+
+**Deliberately never confirms a stake or claims from the faucet in the
+automatic run.** Both of those sign and broadcast a real VARA transfer
+(see "Market staking" and "Demo faucet" above) -- an unattended job
+running on every deploy must never be the thing moving real funds, the
+same discipline `debug-faucet-claim.yml` already applies by being
+manual-only. `faucet_claim_test.md` (tagged `manual`) exercises the
+real faucet-claim path end to end, but only runs via
+`workflow_dispatch` with `include_fund_movement: true` set explicitly
+by a human -- never on a schedule, never on a push.
+
+**One-time setup this depends on**: a TestMu AI account with Kane CLI
+credits claimed, and `TESTMU_USERNAME` / `TESTMU_ACCESS_KEY` set as
+GitHub Actions secrets (Settings → Secrets and variables → Actions) --
+same discipline as every other credential in this repo (never pasted
+into chat, never committed).
+
+**Not verified from this sandbox**: this environment can't reach
+`testmuai.com` or launch a real Chrome browser (the same network
+policy that blocks `fantasy.premierleague.com` and `vara.network`
+elsewhere in this doc), so the workflow itself has only been checked
+by reading Kane CLI's own docs and reference, not by an actual run.
+Confirm it end to end from GitHub's runners (which do have both) once
+the two secrets above are set.
+
 ## Open items (not yet decided)
 
 - **Fee structure** for the parimutuel pool.

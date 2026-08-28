@@ -1,0 +1,109 @@
+name: Verify web (Kane CLI)
+
+# Real-browser verification of the *deployed* site, on top of
+# deploy-web.yml's own build/deploy steps. That workflow proves the
+# static export builds and publishes; it doesn't prove the page
+# renders correctly or that client-side flows (wallet creation, the
+# stake dialog) actually work once a real browser loads it -- nothing
+# in this repo checked that before this workflow. deploy-faucet.yml's
+# curl-based smoke test is the closest existing thing, but it only
+# exercises the faucet Worker's HTTP shape, never a real browser or
+# real UI.
+#
+# Kane CLI (https://github.com/LambdaTest/kane-cli) drives a real
+# Chrome browser against natural-language test flows checked into
+# .testmuai/tests/*.md -- see docs/architecture.md, "Verification:
+# Kane CLI" for the full rationale and what each flow does and does
+# not touch.
+#
+# Triggered by deploy-web.yml finishing (so this always tests the
+# commit that was just actually published, not an arbitrary push) --
+# not by push directly, since the Pages deploy itself takes a few
+# minutes and hitting the URL before it rolls out would be a false
+# failure. workflow_dispatch is available for a manual run any time,
+# and is the only way to also run the fund-moving faucet flow (see
+# below).
+#
+# Requires two repo secrets, set once after creating a TestMu AI
+# account and claiming Kane CLI credits: TESTMU_USERNAME,
+# TESTMU_ACCESS_KEY (Settings -> Keys on the TestMu AI dashboard).
+# Until those are set, this workflow will fail at the login step --
+# has not been run for real from this sandbox, which has no way to
+# reach testmuai.com or launch a real Chrome browser (same egress/
+# environment limits noted throughout docs/architecture.md).
+
+on:
+  workflow_run:
+    workflows: ["Deploy web to GitHub Pages"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      include_fund_movement:
+        description: >-
+          Also run the manual faucet-claim flow. This really claims
+          real demo VARA from the project's faucet wallet to a fresh,
+          disposable wallet -- see faucet_claim_test.md and
+          docs/architecture.md before enabling.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # Only one verification run at a time -- a second deploy landing
+  # mid-run isn't worth cancelling an in-flight browser session for,
+  # just queue behind it.
+  group: verify-web
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    # workflow_run fires on every completion, including a failed or
+    # cancelled build -- there's nothing new to verify in that case.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Check out the exact commit that was actually deployed, not
+          # whatever HEAD happens to be by the time this job starts.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Kane CLI
+        run: npm install -g @testmuai/kane-cli
+
+      - name: Authenticate
+        run: |
+          kane-cli login \
+            --username "${{ secrets.TESTMU_USERNAME }}" \
+            --access-key "${{ secrets.TESTMU_ACCESS_KEY }}"
+
+      - name: Run verification flows
+        id: run
+        run: |
+          tags="smoke"
+          if [ "${{ github.event.inputs.include_fund_movement }}" = "true" ]; then
+            tags="smoke,manual"
+          fi
+          echo "Running tests tagged: $tags"
+          kane-cli testrun run \
+            --match ".testmuai/tests/.*_test\.md" \
+            --tags "$tags" \
+            --headless \
+            --agent \
+            --timeout 300
+
+      - name: Upload evidence pack
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kane-evidence-${{ github.run_id }}
+          path: .testmuai/evidence/
+          if-no-files-found: ignore
