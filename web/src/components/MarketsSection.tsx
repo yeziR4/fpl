@@ -4,6 +4,7 @@ import type { AgentPickCounts } from "@/lib/agentPicks";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 import { StatCountUp } from "@/components/StatCountUp";
 import { StakeMarket } from "@/components/StakeMarket";
+import { KickoffCountdown } from "@/components/KickoffCountdown";
 
 export interface MarketOpponent {
   badgeUrl: string;
@@ -22,6 +23,11 @@ export interface MarketPlayer {
    * either way, staking is disabled rather than guessing which
    * gameweek to attribute it to (see StakeMarket). */
   gw: number | null;
+  /** ISO 8601 kickoff time for the fixture `gw`/`opponent` refer to --
+   * null under the same conditions `opponent` is null, or in the rarer
+   * case a fixture exists but FPL hasn't scheduled a kickoff time for
+   * it yet. Drives the live countdown (see KickoffCountdown.tsx). */
+  kickoffTime: string | null;
   /** How the 5 agent models picked each threshold market, read at
    * build time (see lib/agentPicks.ts). null per-threshold if no
    * picks exist yet for this gameweek. */
@@ -51,13 +57,14 @@ export function MarketsSection({ players }: MarketsSectionProps) {
 
         {players.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {players.map(({ player, badgeUrl, opponent, gw, agentPicks }) => (
+            {players.map(({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }) => (
               <MarketCard
                 key={player.id}
                 player={player}
                 badgeUrl={badgeUrl}
                 opponent={opponent}
                 gw={gw}
+                kickoffTime={kickoffTime}
                 agentPicks={agentPicks}
               />
             ))}
@@ -70,7 +77,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
   );
 }
 
-function MarketCard({ player, badgeUrl, opponent, gw, agentPicks }: MarketPlayer) {
+function MarketCard({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }: MarketPlayer) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50">
       <div className="relative aspect-[4/3] w-full bg-accent-dim">
@@ -117,6 +124,8 @@ function MarketCard({ player, badgeUrl, opponent, gw, agentPicks }: MarketPlayer
             <span className="text-[11px] text-foreground/35">No fixture</span>
           )}
         </div>
+
+        {kickoffTime && <KickoffCountdown kickoffTime={kickoffTime} />}
 
         <StatStrip player={player} />
 

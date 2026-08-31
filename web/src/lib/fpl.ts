@@ -124,6 +124,9 @@ export interface Opponent {
   teamId: number;
   isHome: boolean;
   gw: number | null;
+  /** ISO 8601, for a live countdown (see KickoffCountdown.tsx) -- null
+   * if the fixture doesn't have one yet (not fully scheduled). */
+  kickoffTime: string | null;
 }
 
 /**
@@ -157,7 +160,12 @@ export function nextFixtureForTeam(teamId: number, fixtures: Fixture[]): Opponen
   const fixture = upcoming[0];
   if (!fixture) return null;
   const isHome = fixture.team_h === teamId;
-  return { teamId: isHome ? fixture.team_a : fixture.team_h, isHome, gw: fixture.event };
+  return {
+    teamId: isHome ? fixture.team_a : fixture.team_h,
+    isHome,
+    gw: fixture.event,
+    kickoffTime: fixture.kickoff_time,
+  };
 }
 
 /**
