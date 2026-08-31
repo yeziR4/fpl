@@ -24,9 +24,36 @@
  * other the way every faucet claim deliberately does against one
  * global instance -- there's no shared mutable resource (a single
  * wallet's nonce) here that needs that.
+ *
+ * SETTLEMENT (added once a real gameweek had real stakes to pay out):
+ * once `resolve_points_threshold` (data_pipeline/resolution.py, called
+ * from the "Agent picks & leaderboard" GitHub Actions workflow -- see
+ * cli.py's `settle-gameweek`/`auto-settle`) says a market's outcome is
+ * final, it POSTs `{outcome}` to this DO's /settle route. This is a
+ * parimutuel split, computed entirely from stake records this DO
+ * already has -- every winning stake gets amountPlanck * totalPool /
+ * winningSideTotal, i.e. its own stake back plus its pro-rata share of
+ * the losing side's pool; losing stakes get nothing. If nobody picked
+ * the winning side (winningSideTotal is 0), there's nothing to
+ * distribute FROM, so everyone gets their own stake refunded instead
+ * of the pool vanishing into nothing.
+ *
+ * The actual transfers are signed from the same wallet the faucet
+ * pays out from (MARKET_POOL_ADDRESS *is* the faucet wallet -- see
+ * docs/architecture.md), so they're routed through FaucetLedger's
+ * single global instance via the FAUCET_LEDGER binding rather than
+ * called directly here: that's the one place in this codebase that's
+ * already safe to fire a signed transfer from without racing another
+ * in-flight transfer's on-chain nonce (a faucet claim, or another
+ * market's payout happening at the same moment). Settlement itself is
+ * idempotent -- re-POSTing the same outcome to an already-settled
+ * market returns the recorded result instead of paying twice, so the
+ * scheduled workflow can safely call this on every finished gameweek
+ * on every run, not just the first time.
  */
 
 import type { Env } from "./env";
+import { planckToVara } from "./units";
 
 type Side = "yes" | "no";
 
@@ -47,6 +74,23 @@ interface MarketTotals {
    * display, separate from the VARA-amount totals above. */
   yesCount: number;
   noCount: number;
+}
+
+interface PayoutResult {
+  address: string;
+  amountPlanck: string;
+  stakeTxHash: string;
+  ok: boolean;
+  txHash?: string;
+  error?: string;
+}
+
+interface Settlement {
+  outcome: Side;
+  settledAt: number;
+  totalPoolPlanck: string;
+  winningPlanck: string;
+  payouts: PayoutResult[];
 }
 
 const EMPTY_TOTALS: MarketTotals = { yesPlanck: "0", noPlanck: "0", yesCount: 0, noCount: 0 };
@@ -70,16 +114,31 @@ export class MarketLedger implements DurableObject {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/totals") {
-      return jsonResponse(await this.getTotals());
+      const totals = await this.getTotals();
+      const settlement = await this.getSettlement();
+      // `settlement` is omitted (not just null) while unsettled, so an
+      // older cached frontend response shape and "still open" both
+      // read the same way -- only a genuinely settled market ever
+      // carries this key. Payouts include addresses/amounts, which is
+      // fine to expose publicly: they're derived entirely from the
+      // yes/no totals this endpoint already returns.
+      return jsonResponse(settlement ? { ...totals, settlement } : totals);
     }
     if (request.method === "POST" && url.pathname === "/stake") {
       return this.handleStake(request);
+    }
+    if (request.method === "POST" && url.pathname === "/settle") {
+      return this.handleSettle(request);
     }
     return jsonResponse({ error: "not_found" }, 404);
   }
 
   private async getTotals(): Promise<MarketTotals> {
     return (await this.ctx.storage.get<MarketTotals>("totals")) ?? EMPTY_TOTALS;
+  }
+
+  private async getSettlement(): Promise<Settlement | null> {
+    return (await this.ctx.storage.get<Settlement>("settlement")) ?? null;
   }
 
   private async handleStake(request: Request): Promise<Response> {
@@ -173,6 +232,137 @@ export class MarketLedger implements DurableObject {
     await this.ctx.storage.put("totals", updated);
 
     return jsonResponse({ status: "staked", txHash, ...updated });
+  }
+
+  /**
+   * Resolves this market once and for all: computes each stake's
+   * payout (see the class docstring for the parimutuel formula) and
+   * pays every winner out, one transfer at a time, via FaucetLedger.
+   * Idempotent -- called again with the same outcome (the scheduled
+   * workflow re-checks every finished gameweek on every run) just
+   * returns the already-recorded result; called with a *different*
+   * outcome than what's already settled is a conflict, surfaced
+   * rather than silently accepted, since that would mean either this
+   * call or the original settlement was wrong about the real result.
+   */
+  private async handleSettle(request: Request): Promise<Response> {
+    const { outcome } = (await request.json().catch(() => ({}))) as { outcome?: unknown };
+    if (outcome !== "yes" && outcome !== "no") {
+      return jsonResponse({ error: "invalid_outcome" }, 400);
+    }
+
+    const existing = await this.getSettlement();
+    if (existing) {
+      if (existing.outcome !== outcome) {
+        return jsonResponse({ error: "outcome_mismatch", settled: existing }, 409);
+      }
+      return jsonResponse({ status: "already_settled", ...existing });
+    }
+
+    const totals = await this.getTotals();
+    const totalPoolPlanck = BigInt(totals.yesPlanck) + BigInt(totals.noPlanck);
+    const winningPlanck = BigInt(outcome === "yes" ? totals.yesPlanck : totals.noPlanck);
+    // Every entry this DO has ever stored under "stake:..." -- fine to
+    // pull all of them into memory at once, a market's real stake
+    // count here is tiny (this is a demo pool, not an exchange).
+    const stakeEntries = await this.ctx.storage.list<StakeRecord>({ prefix: "stake:" });
+
+    const payoutPlan: Array<{ address: string; amountPlanck: bigint; stakeTxHash: string }> = [];
+    for (const record of stakeEntries.values()) {
+      let amount: bigint;
+      if (winningPlanck === BigInt(0)) {
+        // Nobody staked the winning side -- there's no winning pool to
+        // redistribute FROM, so refund every stake rather than letting
+        // the pool simply vanish.
+        amount = BigInt(record.amountPlanck);
+      } else if (record.side === outcome) {
+        // Parimutuel: a winner's share of the *entire* pool (both
+        // sides) is proportional to their share of the winning side.
+        // Integer division -- any planck-level remainder from rounding
+        // is left in the pool rather than distributed, never invented.
+        amount = (BigInt(record.amountPlanck) * totalPoolPlanck) / winningPlanck;
+      } else {
+        continue; // losing stake -- no payout
+      }
+      if (amount <= BigInt(0)) continue;
+      payoutPlan.push({ address: record.address, amountPlanck: amount, stakeTxHash: record.txHash });
+    }
+
+    // One at a time, not Promise.all: each payout is itself a signed
+    // transfer from the shared faucet/pool wallet (see the class
+    // docstring), and FaucetLedger's single-instance serialization
+    // only protects against nonce races *between* separate calls into
+    // it, not against this DO firing several at once and racing itself
+    // before the first one's response (and therefore its dedup write)
+    // has landed.
+    const results: PayoutResult[] = [];
+    for (const payout of payoutPlan) {
+      results.push(await this.requestPayout(payout));
+    }
+
+    const settlement: Settlement = {
+      outcome,
+      settledAt: Date.now(),
+      totalPoolPlanck: totalPoolPlanck.toString(),
+      winningPlanck: winningPlanck.toString(),
+      payouts: results,
+    };
+    await this.ctx.storage.put("settlement", settlement);
+    return jsonResponse({ status: "settled", ...settlement });
+  }
+
+  private async requestPayout(payout: {
+    address: string;
+    amountPlanck: bigint;
+    stakeTxHash: string;
+  }): Promise<PayoutResult> {
+    // this.ctx.id is stable and unique to this one market (derived via
+    // idFromName from player:gw:threshold in index.ts) -- reused here
+    // as the payout idempotency key's namespace so FaucetLedger can
+    // tell "already paid this stake's settlement payout" apart from
+    // every other market's and every faucet claim's dedup keys,
+    // without this DO needing to know its own player/gw/threshold.
+    const idempotencyKey = `${this.ctx.id.toString()}:${payout.stakeTxHash}`;
+    const amountVara = planckToVara(payout.amountPlanck);
+    try {
+      const id = this.env.FAUCET_LEDGER.idFromName("faucet");
+      const stub = this.env.FAUCET_LEDGER.get(id);
+      const response = await stub.fetch("https://faucet-ledger.internal/payout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ address: payout.address, amountVara, idempotencyKey }),
+      });
+      const body = (await response.json().catch(() => ({}))) as {
+        status?: string;
+        txHash?: string;
+        error?: string;
+      };
+      if (response.ok && (body.status === "sent" || body.status === "already_paid") && body.txHash) {
+        return {
+          address: payout.address,
+          amountPlanck: payout.amountPlanck.toString(),
+          stakeTxHash: payout.stakeTxHash,
+          ok: true,
+          txHash: body.txHash,
+        };
+      }
+      return {
+        address: payout.address,
+        amountPlanck: payout.amountPlanck.toString(),
+        stakeTxHash: payout.stakeTxHash,
+        ok: false,
+        error: typeof body.error === "string" ? body.error : "send_failed",
+      };
+    } catch (error) {
+      console.error("Settlement payout request to FaucetLedger failed", error);
+      return {
+        address: payout.address,
+        amountPlanck: payout.amountPlanck.toString(),
+        stakeTxHash: payout.stakeTxHash,
+        ok: false,
+        error: "send_failed",
+      };
+    }
   }
 }
 

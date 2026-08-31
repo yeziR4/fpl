@@ -14,6 +14,7 @@
  *                                                 straight at this root)
  *   GET  /markets/:playerId/:gw/:threshold/totals
  *   POST /markets/:playerId/:gw/:threshold/stake
+ *   POST /markets/:playerId/:gw/:threshold/settle -- admin-only, see below
  */
 
 import type { Env } from "./env";
@@ -22,7 +23,7 @@ import { MarketLedger } from "./MarketLedger";
 
 export { FaucetLedger, MarketLedger };
 
-const MARKET_PATH = /^\/markets\/(\d+)\/(\d+)\/(\d+)\/(totals|stake)$/;
+const MARKET_PATH = /^\/markets\/(\d+)\/(\d+)\/(\d+)\/(totals|stake|settle)$/;
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -109,6 +110,37 @@ async function handleMarketRequest(
     });
   }
 
+  if (action === "settle") {
+    if (request.method !== "POST") {
+      return json({ error: "method_not_allowed" }, 405, cors);
+    }
+    // Admin-only: unlike totals (public, read-only) and stake (only
+    // ever moves the *staker's own* already-signed funds), settling a
+    // market decides real payouts out of the shared pool wallet --
+    // this must never be callable by an arbitrary visitor. Checked
+    // here, before a request ever reaches the Durable Object, same
+    // layering as CORS/method checks above.
+    if (!isSettlementAuthorized(request, env)) {
+      return json({ error: "unauthorized" }, 401, cors);
+    }
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "invalid_json" }, 400, cors);
+    }
+    const ledgerResponse = await stub.fetch("https://market-ledger.internal/settle", {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: { "content-type": "application/json" },
+    });
+    const responseBody = await ledgerResponse.text();
+    return new Response(responseBody, {
+      status: ledgerResponse.status,
+      headers: { ...cors, "content-type": "application/json" },
+    });
+  }
+
   // action === "stake"
   if (request.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405, cors);
@@ -129,6 +161,12 @@ async function handleMarketRequest(
     status: ledgerResponse.status,
     headers: { ...cors, "content-type": "application/json" },
   });
+}
+
+function isSettlementAuthorized(request: Request, env: Env): boolean {
+  if (!env.SETTLEMENT_API_KEY) return false; // fail closed if unconfigured
+  const header = request.headers.get("authorization") ?? "";
+  return header === `Bearer ${env.SETTLEMENT_API_KEY}`;
 }
 
 async function isRateLimited(env: Env, ip: string): Promise<boolean> {

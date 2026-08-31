@@ -5,7 +5,12 @@ from pathlib import Path
 
 from data_pipeline import cache
 from data_pipeline.agents import AGENT_MODELS, AgentPick, ModelPicksResult
-from data_pipeline.cli import _has_any_real_picks, _next_pick_gameweek, cmd_auto_generate_picks
+from data_pipeline.cli import (
+    _has_any_real_picks,
+    _markets_for_gw,
+    _next_pick_gameweek,
+    cmd_auto_generate_picks,
+)
 
 
 def _iso(dt: datetime) -> str:
@@ -122,3 +127,26 @@ def test_auto_generate_picks_retries_after_a_run_where_every_model_errored(tmp_p
 
     cmd_auto_generate_picks(args)  # 3rd run: real picks now saved -- skip
     assert call_count["n"] == 2
+
+
+# ---- _markets_for_gw: the settlement candidate set -----------------
+
+
+def test_markets_for_gw_collects_every_distinct_pick_across_models():
+    saved = {
+        "models": [
+            {"picks": [{"player_id": 1, "threshold": 5, "pick": "yes"}, {"player_id": 2, "threshold": 10, "pick": "no"}]},
+            {"picks": [{"player_id": 1, "threshold": 5, "pick": "no"}]},  # same market, different model -- not duplicated
+        ]
+    }
+    assert _markets_for_gw(saved) == [(1, 5), (2, 10)]
+
+
+def test_markets_for_gw_empty_when_no_models_or_picks():
+    assert _markets_for_gw({"models": []}) == []
+    assert _markets_for_gw({}) == []
+
+
+def test_markets_for_gw_ignores_errored_models_with_no_picks():
+    saved = {"models": [{"picks": [], "error": "boom"}, {"picks": [{"player_id": 5, "threshold": 10, "pick": "yes"}]}]}
+    assert _markets_for_gw(saved) == [(5, 10)]

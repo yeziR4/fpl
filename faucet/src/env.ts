@@ -24,6 +24,15 @@ export interface Env {
    * URL could trigger a real payout or broadcast directly, bypassing
    * every check (dedup, pause, rate limit) this Worker does first. */
   CHAIN_SIGNER_API_KEY: string;
+  /** Shared bearer token gating POST .../settle -- checked directly in
+   * index.ts before a request ever reaches a MarketLedger instance (see
+   * checkSettlementAuth there). A Worker *secret*
+   * (`wrangler secret put SETTLEMENT_API_KEY`), matching the same value
+   * set as a GitHub Actions secret for the "Agent picks & leaderboard"
+   * workflow, which is the only caller. Without this, anyone who found
+   * this Worker's URL could force a market to settle (and pay out) on
+   * whatever outcome they chose. */
+  SETTLEMENT_API_KEY: string;
   PAYOUT_VARA: string;
   MIN_RESERVE_VARA: string;
   ALLOWED_ORIGIN: string;

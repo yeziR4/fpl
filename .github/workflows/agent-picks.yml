@@ -14,16 +14,30 @@ name: Agent picks & leaderboard
 #   auto-score scores every gameweek that has saved picks but isn't in
 #     the leaderboard yet, gated on resolution.py's own
 #     is_gameweek_finished() -- never scores off a partial gameweek.
+#   auto-settle pays out every finished gameweek's real staked
+#     markets pro-rata to the winning side, via the faucet Worker's
+#     /settle endpoint (see faucet/src/MarketLedger.ts) -- also gated
+#     on is_gameweek_finished(), and safe to call every run since
+#     settlement is idempotent per market on the Worker's own side
+#     (see data_pipeline/cli.py's auto-settle docstring).
 #
-# Both are idempotent no-ops most runs (no open deadline yet, nothing
-# newly finished), so running this a few times a day is cheap and
-# doesn't need to be precisely timed to a deadline or a final whistle.
+# All three are idempotent no-ops most runs (no open deadline yet,
+# nothing newly finished), so running this a few times a day is cheap
+# and doesn't need to be precisely timed to a deadline or a final
+# whistle.
 #
 # OPENROUTER_API_KEY is a GitHub Actions secret the repo owner adds
 # directly (Settings -> Secrets and variables -> Actions) -- same
 # discipline as the faucet's wallet key: never pasted into chat, never
 # committed, used server-side only, never shipped to the browser
-# build. See docs/architecture.md.
+# build. SETTLEMENT_API_KEY (a GitHub Actions secret, matching the
+# same value set as a Cloudflare Worker secret via
+# `wrangler secret put SETTLEMENT_API_KEY --name overline-faucet`) is
+# the same kind of secret, gating who can force a market to settle --
+# not a wallet key itself. FAUCET_URL reuses the same
+# NEXT_PUBLIC_FAUCET_URL repo *variable* deploy-web.yml already bakes
+# into the frontend build (it's the same Worker, just a different
+# route on it), so nothing new to set there. See docs/architecture.md.
 
 on:
   schedule:
@@ -76,6 +90,12 @@ jobs:
 
       - name: Score any newly finished gameweeks
         run: python -m data_pipeline.cli auto-score
+
+      - name: Settle any finished gameweeks' real staked markets
+        run: python -m data_pipeline.cli auto-settle
+        env:
+          FAUCET_URL: ${{ vars.NEXT_PUBLIC_FAUCET_URL }}
+          SETTLEMENT_API_KEY: ${{ secrets.SETTLEMENT_API_KEY }}
 
       - name: Commit results
         run: |

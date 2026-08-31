@@ -14,6 +14,8 @@
     python -m data_pipeline.cli score-gameweek --gw 1
     python -m data_pipeline.cli auto-generate-picks
     python -m data_pipeline.cli auto-score
+    python -m data_pipeline.cli settle-gameweek --gw 1
+    python -m data_pipeline.cli auto-settle
 
 The `fetch-*` commands need outbound access to fantasy.premierleague.com
 and must be run from an environment that has it. The rest only read
@@ -34,6 +36,20 @@ that gameweek's picks already exist (pass --force to regenerate); the
 second scores every gameweek that has saved picks but isn't in the
 leaderboard yet, and only once resolution.py says it's actually safe
 to. See data_pipeline/agents.py and data_pipeline/leaderboard.py.
+
+`settle-gameweek` / `auto-settle` are the real-money counterpart to
+score-gameweek/auto-score: for every (player, threshold) market any
+agent was asked to pick for a gameweek (the settlement candidate set --
+a superset of whatever the site's markets grid ever actually showed),
+resolve its outcome and POST it to that market's own /settle endpoint
+on the faucet Worker, which pays winners out pro-rata from the real
+staked pool. Both need FAUCET_URL and SETTLEMENT_API_KEY set in the
+environment. Unlike auto-score, auto-settle keeps no local bookkeeping
+of what's already been settled -- the Worker's own per-market
+settlement state is authoritative and already idempotent (re-settling
+an already-settled market is a no-op, never a double payout), so it's
+safe to call this on every finished gameweek on every scheduled run.
+See faucet/src/MarketLedger.ts's settle handler for the payout math.
 """
 
 from __future__ import annotations
@@ -46,6 +62,7 @@ from datetime import datetime, timezone
 from . import cache
 from .players import top_expensive_players
 from .resolution import (
+    MarketOutcome,
     is_gameweek_finished,
     resolve_full90,
     resolve_gameweek_points_markets,
@@ -243,6 +260,103 @@ def cmd_auto_score(args: argparse.Namespace) -> None:
     print(f"Updated leaderboard -> {LEADERBOARD_PATH}")
 
 
+def _markets_for_gw(saved: dict) -> list[tuple[int, int]]:
+    """Every (player_id, threshold) pair any agent was asked to pick for
+    a gameweek -- the settlement candidate set. A superset of whatever
+    the site's markets grid actually showed (agents are asked about
+    more players than the frontend's top-N market cards render), which
+    is exactly what's wanted: settling a market nobody ever staked on
+    is a costless no-op (see MarketLedger's settle handler), so being
+    generous about which markets to check risks nothing.
+    """
+    markets: set[tuple[int, int]] = set()
+    for model in saved.get("models", []):
+        for pick in model.get("picks", []):
+            markets.add((pick["player_id"], pick["threshold"]))
+    return sorted(markets)
+
+
+def _settle_gameweek(gw: int) -> None:
+    import os
+
+    import requests
+
+    from .agents import PICKS_DIR, load_picks
+
+    faucet_url = os.environ.get("FAUCET_URL", "").strip().rstrip("/")
+    settlement_key = os.environ.get("SETTLEMENT_API_KEY", "").strip()
+    if not faucet_url or not settlement_key:
+        print(
+            f"GW{gw}: FAUCET_URL and/or SETTLEMENT_API_KEY not set in the environment -- "
+            "can't settle without them.",
+            file=sys.stderr,
+        )
+        return
+
+    saved = load_picks(gw, picks_dir=PICKS_DIR)
+    markets = _markets_for_gw(saved)
+    print(f"GW{gw}: settling {len(markets)} candidate market(s)...")
+    for player_id, threshold in markets:
+        outcome = resolve_points_threshold(player_id, gw, threshold)
+        if outcome == MarketOutcome.PENDING:
+            # Shouldn't happen -- the caller already checked
+            # is_gameweek_finished(gw) -- but never send a PENDING
+            # outcome to the Worker; /settle only accepts yes/no.
+            print(f"  player={player_id} over {threshold}: still PENDING, skipping")
+            continue
+
+        url = f"{faucet_url}/markets/{player_id}/{gw}/{threshold}/settle"
+        try:
+            resp = requests.post(
+                url,
+                json={"outcome": outcome.value},
+                headers={"authorization": f"Bearer {settlement_key}"},
+                # Generous: each call can involve one or more real,
+                # sequentially-broadcast on-chain transfers (see
+                # MarketLedger's settle handler) -- a market with
+                # several winners genuinely can take a while.
+                timeout=180,
+            )
+            body = resp.json()
+        except Exception as exc:  # network error, timeout, bad JSON, ...
+            print(f"  player={player_id} over {threshold}: ERROR {exc}")
+            continue
+
+        if resp.status_code >= 400:
+            print(f"  player={player_id} over {threshold}: {outcome.value} -- error: {body.get('error', resp.status_code)}")
+            continue
+
+        payouts = body.get("payouts", [])
+        paid = sum(1 for p in payouts if p.get("ok"))
+        print(
+            f"  player={player_id} over {threshold}: {outcome.value} -- "
+            f"{body.get('status')}, {paid}/{len(payouts)} payout(s) sent"
+        )
+
+
+def cmd_settle_gameweek(args: argparse.Namespace) -> None:
+    if not is_gameweek_finished(args.gw):
+        print(f"GW{args.gw} isn't finished yet -- can't settle a pending result.")
+        return
+    _settle_gameweek(args.gw)
+
+
+def cmd_auto_settle(_args: argparse.Namespace) -> None:
+    from .agents import PICKS_DIR
+
+    available = (
+        sorted(int(p.stem.removeprefix("gw")) for p in PICKS_DIR.glob("gw*.json"))
+        if PICKS_DIR.exists()
+        else []
+    )
+    finished = [gw for gw in available if is_gameweek_finished(gw)]
+    if not finished:
+        print("No finished gameweeks to settle.")
+        return
+    for gw in finished:
+        _settle_gameweek(gw)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="data_pipeline", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -325,6 +439,21 @@ def build_parser() -> argparse.ArgumentParser:
         "auto-score", help="Score every finished gameweek that has saved picks but isn't in the leaderboard yet"
     )
     auto_score.set_defaults(func=cmd_auto_score)
+
+    settle_gameweek = sub.add_parser(
+        "settle-gameweek",
+        help="Resolve and pay out every candidate market for one finished gameweek "
+        "(needs FAUCET_URL and SETTLEMENT_API_KEY in the environment)",
+    )
+    settle_gameweek.add_argument("--gw", type=int, required=True)
+    settle_gameweek.set_defaults(func=cmd_settle_gameweek)
+
+    auto_settle = sub.add_parser(
+        "auto-settle",
+        help="Settle every finished gameweek that has saved picks -- safe to call repeatedly, "
+        "settlement itself is idempotent per market",
+    )
+    auto_settle.set_defaults(func=cmd_auto_settle)
 
     return parser
 

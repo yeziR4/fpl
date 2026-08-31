@@ -32,6 +32,21 @@
  * Durable Object keeps exactly the part that's actually Cloudflare's
  * job: the dedup ledger, serialized so two simultaneous claims for the
  * same address can never both succeed.
+ *
+ * A second job landed here for the same reason, not because it's
+ * conceptually a "claim": settlement payouts (MarketLedger.ts, once a
+ * market resolves) also sign from this exact wallet --
+ * MARKET_POOL_ADDRESS is the faucet wallet's own address (see
+ * docs/architecture.md's "one operator-controlled wallet does double
+ * duty" note). A payout racing a faucet claim's nonce is exactly the
+ * bug this DO's single-global-instance serialization already exists to
+ * prevent, so payouts are routed through here too (MarketLedger calls
+ * this DO directly via the FAUCET_LEDGER binding, not over public
+ * HTTP) rather than opening a second, unserialized path to the same
+ * key. /payout has its own idempotency key (a market settlement can
+ * safely retry/resettle without double-paying), entirely separate from
+ * /claim's per-address dedup -- a payout is not a claim, the same
+ * address can legitimately be paid out by more than one market.
  */
 
 import { decodeAddress } from "@gear-js/api";
@@ -44,6 +59,14 @@ export class FaucetLedger implements DurableObject {
   ) {}
 
   async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === "/payout") {
+      return this.handlePayout(request);
+    }
+    return this.handleClaim(request);
+  }
+
+  private async handleClaim(request: Request): Promise<Response> {
     const { address } = (await request.json()) as { address: string };
 
     let canonical: string;
@@ -111,6 +134,81 @@ export class FaucetLedger implements DurableObject {
 
     await this.ctx.storage.put(`claim:${canonical}`, { txHash: signerBody.txHash, claimedAt: Date.now() });
     return jsonResponse({ status: "sent", txHash: signerBody.txHash, amount: signerBody.amount ?? payoutVara });
+  }
+
+  /**
+   * A settlement payout -- called by MarketLedger, never over public
+   * HTTP (index.ts never routes anything to this path; only reachable
+   * via the FAUCET_LEDGER binding). Reuses chain-signer's existing
+   * `/api/faucet-pay` endpoint unchanged: a payout is, mechanically,
+   * the exact same operation as a faucet claim's payout (send VARA
+   * from this wallet to an address, refuse if it would breach the
+   * reserve floor) -- no new chain-signer code needed for this.
+   *
+   * `idempotencyKey` is the caller's to choose (MarketLedger uses its
+   * own Durable Object id plus the winning stake's txHash, one per
+   * stake) -- scoped separately from /claim's `claim:${address}` keys
+   * so the same address can be paid out by more than one market
+   * without colliding, and so re-settling an already-settled market
+   * (the workflow's own idempotent retry) never pays twice.
+   */
+  private async handlePayout(request: Request): Promise<Response> {
+    const { address, amountVara, idempotencyKey } = (await request.json().catch(() => ({}))) as {
+      address?: unknown;
+      amountVara?: unknown;
+      idempotencyKey?: unknown;
+    };
+    if (
+      typeof address !== "string" ||
+      typeof amountVara !== "string" ||
+      typeof idempotencyKey !== "string" ||
+      !idempotencyKey
+    ) {
+      return jsonResponse({ error: "invalid_request" }, 400);
+    }
+
+    const key = `payout:${idempotencyKey}`;
+    const already = await this.ctx.storage.get<{ txHash: string; paidAt: number }>(key);
+    if (already) {
+      return jsonResponse({ status: "already_paid", txHash: already.txHash });
+    }
+
+    if (!this.env.CHAIN_SIGNER_URL || !this.env.CHAIN_SIGNER_API_KEY) {
+      console.error("CHAIN_SIGNER_URL / CHAIN_SIGNER_API_KEY not configured");
+      return jsonResponse({ error: "send_failed" }, 502);
+    }
+
+    const minReserveVara = this.env.MIN_RESERVE_VARA || "5";
+
+    let signerResponse: Response;
+    try {
+      signerResponse = await fetch(`${this.env.CHAIN_SIGNER_URL.replace(/\/$/, "")}/api/faucet-pay`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${this.env.CHAIN_SIGNER_API_KEY}`,
+        },
+        body: JSON.stringify({ address, payoutVara: amountVara, minReserveVara }),
+      });
+    } catch (error) {
+      console.error("Couldn't reach chain-signer", error);
+      return jsonResponse({ error: "send_failed" }, 502);
+    }
+
+    const signerBody = (await signerResponse.json().catch(() => ({}))) as {
+      status?: string;
+      txHash?: string;
+      amount?: string;
+      error?: string;
+    };
+
+    if (!signerResponse.ok || signerBody.status !== "sent" || !signerBody.txHash) {
+      const error = typeof signerBody.error === "string" ? signerBody.error : "send_failed";
+      return jsonResponse({ error }, signerResponse.status || 502);
+    }
+
+    await this.ctx.storage.put(key, { txHash: signerBody.txHash, paidAt: Date.now() });
+    return jsonResponse({ status: "sent", txHash: signerBody.txHash, amount: signerBody.amount ?? amountVara });
   }
 }
 

@@ -304,6 +304,17 @@ undocumented anywhere else, so recorded here in full):
    build. Until this is set, `WalletButton`'s claim section simply
    doesn't render -- a missing faucet is a handled, normal state, not
    a broken one.
+5. `wrangler secret put SETTLEMENT_API_KEY --name overline-faucet` run
+   once, to any long random string, **and** the same value set as the
+   `SETTLEMENT_API_KEY` GitHub Actions **secret** -- this is what lets
+   the "Agent picks & leaderboard" workflow's `auto-settle` step
+   authenticate to `POST .../settle` (see "Market staking" below).
+   Without this set on both sides, settlement isn't a security hole
+   (the Worker fails closed -- `isSettlementAuthorized` in index.ts
+   returns false with no key configured, same discipline as
+   chain-signer's own `isAuthorized`), it just never runs: `auto-settle`
+   prints a clear "not set" message and skips rather than settling with
+   no auth header.
 
 ## chain-signer: the actual on-chain signing service, on Vercel
 
@@ -435,16 +446,54 @@ behind it). Currently the same address as the faucet wallet
 (`kGgVNfy33G9kRscEtXmsffz7HzcBEvN1K9DggnyGj1fzBAkyG`): an accepted v1
 simplification (one operator-controlled wallet does double duty as
 both the faucet's payout source and the stake pool) rather than
-standing up a second wallet for no functional gain yet. Worth
-splitting once real payout logic exists and the two balances need to
-be reasoned about separately.
+standing up a second wallet for no functional gain yet. Real payout
+logic exists now (see below) and deliberately still uses this same
+shared wallet rather than splitting it -- worth revisiting once the
+two balances (faucet giveaways vs. staked pool) need to be reasoned
+about, funded, or monitored separately, not before.
 
-**Not built yet, stated plainly**: payout. A market's pool grows as
-people stake, but nothing yet reads `resolution.py`'s outcome and pays
-the winning side pro-rata from the pool -- that's the next real piece
-of work here, once there's a live market with real stakes in it to pay
-out. Until then, staking is real (the VARA genuinely moves and is
-tracked) but one-directional.
+**Settlement and payout**: once `resolution.py`'s
+`resolve_points_threshold()` says a (player, gw, threshold) market's
+outcome is final -- i.e. the whole gameweek has finished, never a
+partial or provisional result -- the "Agent picks & leaderboard"
+workflow's `auto-settle` step (`data_pipeline/cli.py`) `POST`s
+`{outcome}` to that market's own `/settle` route on this Worker,
+authenticated with `SETTLEMENT_API_KEY` (see the faucet Worker's
+one-time setup above; this is a shared bearer token gating who can
+force a settlement, not a wallet key). `MarketLedger.handleSettle`
+then does the actual parimutuel math from the stake records it already
+has: every winning stake is paid `amountPlanck * totalPool /
+winningSideTotal` -- its own stake back plus its pro-rata share of the
+losing side's pool; losing stakes get nothing. If nobody staked the
+winning side, there's no winning pool to redistribute *from*, so every
+stake is refunded instead of the pool just vanishing.
+
+The payouts themselves are real signed transfers, same as a faucet
+claim -- and for the same reason a faucet claim's payout is careful
+about nonces, so is this: `MARKET_POOL_ADDRESS` is the faucet wallet's
+own address (see below), so a settlement payout and a faucet claim (or
+another market's settlement, running concurrently -- different markets
+are different Durable Object instances, deliberately, see below) can
+race the exact same on-chain nonce if signed independently. Rather than
+teaching `MarketLedger` its own serialization scheme, settlement
+payouts are routed through `FaucetLedger`'s existing single global
+instance (via the `FAUCET_LEDGER` binding, not public HTTP) with a new
+`/payout` route alongside `/claim` -- the one place already safe to
+fire a signed transfer from this wallet without racing another
+in-flight one. `/payout` has its own idempotency key (a market's own
+Durable Object id plus the stake's txHash) so re-settling an
+already-settled market -- `auto-settle` runs on every scheduled
+workflow tick and never tracks locally what it already settled, the
+Worker's own per-market `settlement` state is what makes that safe --
+never pays the same stake out twice; asking it to settle with a
+*different* outcome than what's recorded returns a conflict instead of
+silently overwriting.
+
+`GET .../totals` includes a market's `settlement` (outcome, per-stake
+payout results, each with its own txHash) once one exists, so the
+frontend can eventually show "settled" state -- addresses and amounts
+in that response are fine to expose publicly, they're derivable from
+the yes/no totals the same endpoint already returns.
 
 ## Data source: the unofficial FPL API
 
@@ -590,9 +639,10 @@ mechanism.
     delivered once directly to whoever's running this project. They
     start funded with 0 VARA and currently do nothing on-chain — no
     feature yet reads a model's pick and stakes from its own wallet on
-    it. That's the natural next step once market staking (see "Market
-    staking" above) has payout logic to actually be worth staking
-    into, not before.
+    it. Market staking now has real payout logic behind it (see
+    "Market staking" above), so that blocker's gone; funding these
+    wallets and wiring picks to real stakes is the natural next step
+    whenever that's wanted, not something this pass touched.
   - `build_prompt()` — the exact same prompt for every model: the top-N
     most expensive players (`players.top_expensive_players`), each one's
     opponent for the target gameweek (derived from the cached fixture
@@ -638,7 +688,9 @@ mechanism.
   are safe no-ops most runs — nothing to pick yet, nothing newly finished
   to score — so the workflow (`.github/workflows/agent-picks.yml`) just
   runs on a schedule rather than needing to be timed precisely to a
-  deadline or a final whistle.
+  deadline or a final whistle. `settle-gameweek --gw N` / `auto-settle`
+  are the real-money sibling of score-gameweek/auto-score — see "Market
+  staking" above for what they actually trigger on the faucet Worker.
 
 **Security**: `OPENROUTER_API_KEY` is a GitHub Actions secret the repo
 owner adds directly (Settings → Secrets and variables → Actions), the
