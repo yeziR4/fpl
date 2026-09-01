@@ -1,0 +1,93 @@
+{
+  "gameweeks": {
+    "2": {
+      "gw": 2,
+      "models": [
+        {
+          "accuracy": 0.675,
+          "correct": 27,
+          "name": "GPT (latest)",
+          "pending": 0,
+          "slug": "~openai/gpt-latest",
+          "wrong": 13
+        },
+        {
+          "accuracy": 0.525,
+          "correct": 21,
+          "name": "Claude Opus (latest)",
+          "pending": 0,
+          "slug": "~anthropic/claude-opus-latest",
+          "wrong": 19
+        },
+        {
+          "accuracy": null,
+          "correct": 0,
+          "name": "Gemini Pro (latest)",
+          "pending": 0,
+          "slug": "~google/gemini-pro-latest",
+          "wrong": 0
+        },
+        {
+          "accuracy": 0.65,
+          "correct": 26,
+          "name": "Grok 4.20",
+          "pending": 0,
+          "slug": "x-ai/grok-4.20",
+          "wrong": 14
+        },
+        {
+          "accuracy": 0.675,
+          "correct": 27,
+          "name": "DeepSeek V4 Pro",
+          "pending": 0,
+          "slug": "deepseek/deepseek-v4-pro",
+          "wrong": 13
+        }
+      ],
+      "scored_at": "2026-09-01T12:00:02.005377+00:00"
+    }
+  },
+  "totals": {
+    "deepseek/deepseek-v4-pro": {
+      "accuracy": 0.675,
+      "correct": 27,
+      "name": "DeepSeek V4 Pro",
+      "pending": 0,
+      "slug": "deepseek/deepseek-v4-pro",
+      "wrong": 13
+    },
+    "x-ai/grok-4.20": {
+      "accuracy": 0.65,
+      "correct": 26,
+      "name": "Grok 4.20",
+      "pending": 0,
+      "slug": "x-ai/grok-4.20",
+      "wrong": 14
+    },
+    "~anthropic/claude-opus-latest": {
+      "accuracy": 0.525,
+      "correct": 21,
+      "name": "Claude Opus (latest)",
+      "pending": 0,
+      "slug": "~anthropic/claude-opus-latest",
+      "wrong": 19
+    },
+    "~google/gemini-pro-latest": {
+      "accuracy": null,
+      "correct": 0,
+      "name": "Gemini Pro (latest)",
+      "pending": 0,
+      "slug": "~google/gemini-pro-latest",
+      "wrong": 0
+    },
+    "~openai/gpt-latest": {
+      "accuracy": 0.675,
+      "correct": 27,
+      "name": "GPT (latest)",
+      "pending": 0,
+      "slug": "~openai/gpt-latest",
+      "wrong": 13
+    }
+  },
+  "updated_at": "2026-09-01T12:00:02.005456+00:00"
+}
