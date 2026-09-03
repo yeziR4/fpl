@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { GameweekHistory, LeaderboardTable } from "@/components/LeaderboardTable";
+import { ModelPicksSection } from "@/components/ModelPicksSection";
 import { loadLeaderboard, rankedGameweeks, rankedTotals } from "@/lib/leaderboard";
+import { latestAgentPicksGw, loadAgentPicksForGw, type ModelPicks } from "@/lib/agentPicks";
+import { fetchBootstrapStatic } from "@/lib/fpl";
 
 export const metadata: Metadata = {
   title: "Leaderboard — Overline",
@@ -8,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LeaderboardPage() {
-  const board = await loadLeaderboard();
+  const [board, picksSection] = await Promise.all([loadLeaderboard(), loadLatestPicksSection()]);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -48,8 +51,49 @@ export default async function LeaderboardPage() {
           )}
         </div>
       </section>
+
+      {picksSection && (
+        <ModelPicksSection
+          gw={picksSection.gw}
+          models={picksSection.models}
+          playerNames={picksSection.playerNames}
+        />
+      )}
     </main>
   );
+}
+
+/**
+ * The newest gameweek's agent picks, paired with the player names to
+ * render them with (bootstrap-static's the only place that mapping
+ * lives). Failing soft to null on either fetch -- picks with no names
+ * to show, or bootstrap-static being unreachable (see lib/fpl.ts's own
+ * caveat about this sandbox's egress) -- just means this section
+ * doesn't render, same "fail soft, not broken" contract loadMarketPlayers
+ * in app/page.tsx already follows.
+ */
+async function loadLatestPicksSection(): Promise<{
+  gw: number;
+  models: ModelPicks[];
+  playerNames: Record<number, string>;
+} | null> {
+  try {
+    const gw = await latestAgentPicksGw();
+    if (gw === null) return null;
+    const models = await loadAgentPicksForGw(gw);
+    if (!models) return null;
+
+    const bootstrap = await fetchBootstrapStatic();
+    const playerNames: Record<number, string> = {};
+    for (const element of bootstrap.elements) {
+      playerNames[element.id] = element.web_name;
+    }
+
+    return { gw, models, playerNames };
+  } catch (error) {
+    console.error("Failed to load model picks section:", error);
+    return null;
+  }
 }
 
 function LeaderboardUnavailable() {

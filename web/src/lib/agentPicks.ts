@@ -3,11 +3,19 @@
  * output, committed to the repo at data/agent_picks/gw<N>.json) at
  * build time -- the same static-export pattern as lib/leaderboard.ts.
  *
- * Used to fold "how many of the 5 models picked yes/no" into each
- * market's percentage display alongside real human stakes (see
- * StakeMarket.tsx) -- this is what "percentage of people/agents who
- * picked yes or no" actually means: participant counts, not staked
- * amounts (that's a separate figure, from lib/vara/stake.ts).
+ * Two different things this file backs, deliberately kept separate:
+ *   - agentPickCounts(): "how many of the 5 models picked yes/no" for
+ *     one market, folded into that market's percentage display
+ *     alongside real human stakes (see StakeMarket.tsx). Participant
+ *     counts, not staked amounts.
+ *   - loadAgentPicksForGw() / latestAgentPicksGw(): a whole model's
+ *     pick list for a gameweek -- what the leaderboard page's "Model
+ *     picks" section renders. Deliberately picks-and-confidence only,
+ *     no VARA figure: these wallets hold nothing and have never
+ *     staked (see docs/architecture.md) -- inventing a monetary-
+ *     looking number nothing backs would be exactly the kind of
+ *     "looks real, isn't" this project has gone out of its way to
+ *     avoid everywhere else (the faucet/staking verification work).
  */
 
 import { promises as fs } from "fs";
@@ -17,6 +25,7 @@ interface AgentPickRecord {
   player_id: number;
   threshold: number;
   pick: "yes" | "no";
+  confidence: number | null;
 }
 
 interface AgentPicksModel {
@@ -81,4 +90,64 @@ export async function agentPickCounts(
     }
   }
   return { yes, no };
+}
+
+export interface AgentPickDetail {
+  playerId: number;
+  threshold: number;
+  side: "yes" | "no";
+  /** 0-1, as the model reported it -- null if the model didn't give one
+   * (parse_picks in data_pipeline/agents.py doesn't require it). This
+   * is the model's own stated conviction, nothing more: no VARA is
+   * attached to it (see ModelPicksSection.tsx's own framing) -- these
+   * wallets hold nothing and have never staked, on purpose (see
+   * docs/architecture.md's "AI agent picks & leaderboard" section). */
+  confidence: number | null;
+}
+
+export interface ModelPicks {
+  slug: string;
+  name: string;
+  error: string | null;
+  picks: AgentPickDetail[];
+}
+
+/** Every model's full pick list for one gameweek, in the shape the
+ * frontend renders directly -- unlike agentPickCounts (one market's
+ * yes/no tally), this is a whole model's activity. Null under the same
+ * conditions agentPickCounts is. */
+export async function loadAgentPicksForGw(gw: number): Promise<ModelPicks[] | null> {
+  const file = await loadAgentPicksFile(gw);
+  if (!file) return null;
+  return file.models.map((model) => ({
+    slug: model.slug,
+    name: model.name,
+    error: model.error,
+    picks: model.picks.map((pick) => ({
+      playerId: pick.player_id,
+      threshold: pick.threshold,
+      side: pick.pick,
+      confidence: pick.confidence,
+    })),
+  }));
+}
+
+/** The highest gameweek number with a saved picks file -- "the most
+ * current thing the agents have said" for a picks/activity view,
+ * distinct from `gw` on any one player card (which is that player's
+ * own next fixture, not necessarily the newest picks file). Null if
+ * data/agent_picks/ doesn't exist or is empty. */
+export async function latestAgentPicksGw(): Promise<number | null> {
+  try {
+    const dir = path.join(process.cwd(), "..", "data", "agent_picks");
+    const entries = await fs.readdir(dir);
+    const gws = entries
+      .map((name) => /^gw(\d+)\.json$/.exec(name))
+      .filter((match): match is RegExpExecArray => match !== null)
+      .map((match) => Number.parseInt(match[1], 10));
+    if (gws.length === 0) return null;
+    return Math.max(...gws);
+  } catch {
+    return null;
+  }
 }
