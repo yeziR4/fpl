@@ -3,6 +3,7 @@
     python -m data_pipeline.cli fetch-bootstrap
     python -m data_pipeline.cli fetch-fixtures
     python -m data_pipeline.cli fetch-live 4
+    python -m data_pipeline.cli fetch-gameweek-history
     python -m data_pipeline.cli top20
     python -m data_pipeline.cli points 1 --gw 1
     python -m data_pipeline.cli full90 1 --gw 1
@@ -16,6 +17,7 @@
     python -m data_pipeline.cli auto-score
     python -m data_pipeline.cli settle-gameweek --gw 1
     python -m data_pipeline.cli auto-settle
+    python -m data_pipeline.cli price-market 1 --threshold 5 --gw 4
 
 The `fetch-*` commands need outbound access to fantasy.premierleague.com
 and must be run from an environment that has it. The rest only read
@@ -50,6 +52,14 @@ settlement state is authoritative and already idempotent (re-settling
 an already-settled market is a no-op, never a double payout), so it's
 safe to call this on every finished gameweek on every scheduled run.
 See faucet/src/MarketLedger.ts's settle handler for the payout math.
+
+`price-market` is Stage 1 of the market-maker pricing engine (see
+data_pipeline/pricing.py): the real, historical-data opening
+probability a market for one (player, threshold, gw) should start at,
+before any liquidity or trading enters into it. Nothing here decides
+how much money backs that price or how fast it can move -- that's
+Stage 2 (liquidity depth), a separate piece built once real capital is
+committed.
 """
 
 from __future__ import annotations
@@ -98,6 +108,43 @@ def cmd_fetch_live(args: argparse.Namespace) -> None:
     payload = fetch_event_live(args.gw)
     path = cache.save_event_live(args.gw, payload)
     print(f"Saved GW{args.gw} live snapshot -> {path}")
+
+
+def cmd_fetch_gameweek_history(_args: argparse.Namespace) -> None:
+    """Fetches and caches the live snapshot for every gameweek
+    resolution.py's own is_gameweek_finished() considers finished --
+    not just the ones with a saved picks file (that narrower fetch is
+    what score-gameweek/settle-gameweek need; this wider one is what
+    pricing.py's Stage-1 opening-probability formula needs: real
+    per-player history across a whole season, not just whichever 1-2
+    gameweeks happen to have agent picks). Deliberately gated on the
+    same fixture-level check everything else in this pipeline settles
+    against, rather than bootstrap-static's own event-level `finished`
+    flag, so there's exactly one definition of "finished" in play
+    anywhere in this codebase, not two that could in principle
+    disagree. Needs fresh bootstrap-static AND fixtures snapshots
+    already cached (fetch-bootstrap / fetch-fixtures first). Safe to
+    call every workflow run -- cache.py's snapshots aren't persisted
+    between runs (see .gitignore), so this genuinely re-fetches the
+    whole history fresh each time rather than incrementally topping up
+    a stale one.
+    """
+    from .fpl_client import fetch_event_live
+
+    bootstrap = cache.load_latest_bootstrap_static()
+    events = bootstrap.get("events", [])
+    if not events:
+        print("No gameweeks in the cached bootstrap-static snapshot.")
+        return
+    max_gw = max(e["id"] for e in events)
+    finished_gws = [gw for gw in range(1, max_gw + 1) if is_gameweek_finished(gw)]
+    if not finished_gws:
+        print("No finished gameweeks yet.")
+        return
+    for gw in finished_gws:
+        payload = fetch_event_live(gw)
+        path = cache.save_event_live(gw, payload)
+        print(f"Saved GW{gw} live snapshot -> {path}")
 
 
 def cmd_top20(args: argparse.Namespace) -> None:
@@ -357,6 +404,22 @@ def cmd_auto_settle(_args: argparse.Namespace) -> None:
         _settle_gameweek(gw)
 
 
+def cmd_price_market(args: argparse.Namespace) -> None:
+    from .pricing import market_open_probability
+
+    bootstrap = cache.load_latest_bootstrap_static()
+    element = next((e for e in bootstrap["elements"] if e["id"] == args.player_id), None)
+    if element is None:
+        print(f"error: player {args.player_id} not found in cached bootstrap-static data", file=sys.stderr)
+        sys.exit(1)
+
+    p = market_open_probability(args.player_id, element["element_type"], args.threshold, args.gw, bootstrap)
+    print(
+        f"Player {args.player_id} ({element['web_name']}), GW{args.gw}, over {args.threshold}: "
+        f"{p:.1%} implied opening probability"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="data_pipeline", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -371,6 +434,13 @@ def build_parser() -> argparse.ArgumentParser:
     fetch_live = sub.add_parser("fetch-live", help="Fetch and cache one gameweek's live stats")
     fetch_live.add_argument("gw", type=int, help="Gameweek number")
     fetch_live.set_defaults(func=cmd_fetch_live)
+
+    fetch_gameweek_history = sub.add_parser(
+        "fetch-gameweek-history",
+        help="Fetch and cache every finished gameweek's live stats -- the full history "
+        "pricing.py's Stage-1 opening-probability formula needs",
+    )
+    fetch_gameweek_history.set_defaults(func=cmd_fetch_gameweek_history)
 
     top20 = sub.add_parser("top20", help="List the most expensive players from the cached snapshot")
     top20.add_argument("--n", type=int, default=20)
@@ -454,6 +524,15 @@ def build_parser() -> argparse.ArgumentParser:
         "settlement itself is idempotent per market",
     )
     auto_settle.set_defaults(func=cmd_auto_settle)
+
+    price_market = sub.add_parser(
+        "price-market",
+        help="Stage-1 opening probability for one (player, threshold, gw) market, from real historical data",
+    )
+    price_market.add_argument("player_id", type=int)
+    price_market.add_argument("--threshold", type=int, required=True)
+    price_market.add_argument("--gw", type=int, required=True)
+    price_market.set_defaults(func=cmd_price_market)
 
     return parser
 

@@ -70,18 +70,15 @@ jobs:
           python -m data_pipeline.cli fetch-bootstrap
           python -m data_pipeline.cli fetch-fixtures
 
-      - name: Fetch live stats for any gameweek with saved picks
-        # Needed before auto-score can resolve outcomes for it. Safe
-        # to call on an in-progress or even not-yet-started gameweek --
-        # resolution.py only trusts this data once is_gameweek_finished
-        # says so, so an early/partial fetch here can't cause a
-        # premature score.
-        run: |
-          shopt -s nullglob
-          for f in data/agent_picks/gw*.json; do
-            gw=$(basename "$f" .json | sed 's/gw//')
-            python -m data_pipeline.cli fetch-live "$gw"
-          done
+      - name: Fetch every finished gameweek's live stats
+        # Needed before auto-score/auto-settle can resolve outcomes,
+        # AND before price-market's Stage-1 formula has real
+        # multi-gameweek history to work from (data_pipeline/pricing.py)
+        # -- superset of "just the gameweeks with saved picks", so one
+        # fetch now covers both needs. cache.py's snapshots aren't
+        # persisted between runs (see .gitignore), so this re-fetches
+        # the whole history fresh every time rather than incrementally.
+        run: python -m data_pipeline.cli fetch-gameweek-history
 
       - name: Generate picks for the next open gameweek
         run: python -m data_pipeline.cli auto-generate-picks

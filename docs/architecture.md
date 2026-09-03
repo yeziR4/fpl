@@ -520,7 +520,75 @@ affected `vara.network`, `openrouter.ai`, and others all project -- see
 this doc's own network-access caveats), so unverified from here; check
 it against the real deployed site.
 
-## Data source: the unofficial FPL API
+## Market maker: `data_pipeline/pricing.py` (Stage 1 -- opening price)
+
+The next real shift in mechanism, agreed on but only partly built: away
+from a pure parimutuel pool (no price exists until real stakers show
+up on both sides) toward a market MAKER -- a live, quotable probability
+from the moment a market opens, and a quotable potential-winnings
+figure before a bet is even placed. Two genuinely separate problems,
+solved by two separate pieces:
+
+- **Stage 1 -- what price does a market open at.** Built now, in
+  `pricing.py`. Answered from real history, never from the AI models'
+  own opinion (if the fair-value prior came from their consensus,
+  watching them trade against it would just be watching them trade
+  against themselves) and never from how much liquidity backs the
+  market (that's a completely separate dial, see Stage 2 below --
+  two markets can open at very different prices with identical
+  liquidity depth).
+- **Stage 2 -- how much can move that price, and the actual buy/sell
+  mechanics (LMSR).** Not built yet. Needs a real liquidity amount
+  actually committed before it's worth building the cost-function/
+  share-accounting layer on top of Stage 1's prices -- see "Not built
+  yet" below.
+
+**The Stage 1 formula**: for one (player, threshold, gw) market, look
+at every gameweek before `gw` that's both cached and confirmed
+finished (`resolution.py`'s own `is_gameweek_finished` -- the same
+payout-safe gate settlement itself uses, so there's exactly one
+definition of "finished" anywhere in this codebase). Across those
+gameweeks the player actually played (`minutes > 0` -- a blank
+gameweek or unused sub isn't a data point about their scoring, it's
+excluded from the sample entirely, not counted as a miss), what
+fraction cleared the threshold? That raw rate is unreliable on a thin
+sample (1 game at 1/1 isn't "100% likely", it's "no idea yet"), so it's
+shrunk toward a position-wide base rate (the same clear-rate pooled
+across every player sharing that position, over the same window) via a
+standard Bayesian blend:
+
+    p0 = (player_cleared + k * position_rate) / (player_played + k)
+
+`k` (`PRIOR_STRENGTH`, currently 6) is "how many games' worth of trust
+the prior gets" -- a real, tunable modeling choice stated as such, not
+a derived constant, worth revisiting once a season's worth of real
+settlements exists to check it against. `NO_DATA_FALLBACK_PROBABILITY`
+(0.5) is the absolute floor: only reachable before any gameweek this
+season has ever been fetched at all, an honest "we don't know yet"
+rather than a guessed realistic-looking number.
+
+`cli.py`'s `price-market <player_id> --threshold N --gw M` runs this
+by hand against whatever's cached. `fetch-gameweek-history` (wired into
+`agent-picks.yml` right after `fetch-bootstrap`/`fetch-fixtures`) is
+what actually gives this real history to work with -- it fetches every
+gameweek `is_gameweek_finished` considers done, not just the 1-2
+gameweeks that happen to have saved agent picks (`fetch-live`'s
+narrower job), superseding that narrower fetch entirely since it's now
+a strict superset of what settlement/scoring need too. Cache snapshots
+aren't persisted between workflow runs (see `.gitignore`), so this
+genuinely re-fetches the whole season's history fresh on every run
+rather than incrementally topping up a stale one -- cheap (one HTTP GET
+per finished gameweek), not something that needs optimizing yet.
+
+**Not built yet, stated plainly**: Stage 2 (LMSR liquidity depth and
+the actual buy/sell cost-function mechanics), the frontend showing a
+live price/potential-winnings instead of the parimutuel percentage
+bar, and replacing the parimutuel stake flow with LMSR share purchases
+for both humans and the AI models (agreed explicitly: this replaces
+the parimutuel design for both, once built, not runs alongside it).
+Blocked on one real decision, not a technical one: how much real VARA
+actually backs the market maker, since `b` (Stage 2's liquidity
+parameter) is sized directly from that committed amount.
 
 FPL has no official public API, but a small set of unauthenticated,
 read-only JSON endpoints under `fantasy.premierleague.com/api/` have been
