@@ -244,6 +244,15 @@ export class MarketLedger implements DurableObject {
    * outcome than what's already settled is a conflict, surfaced
    * rather than silently accepted, since that would mean either this
    * call or the original settlement was wrong about the real result.
+   *
+   * A settled market with a FAILED payout in it (e.g. the pool
+   * wallet was momentarily short) is not stuck forever: re-POSTing
+   * the same outcome retries only the payouts that didn't go through
+   * last time, via retrySettlement below. Successful payouts are
+   * never re-attempted -- each already has a real txHash that can't
+   * be un-sent, and FaucetLedger's own idempotency key means even a
+   * spurious retry of an already-paid stake just comes back
+   * "already_paid" rather than double-paying.
    */
   private async handleSettle(request: Request): Promise<Response> {
     const { outcome } = (await request.json().catch(() => ({}))) as { outcome?: unknown };
@@ -256,7 +265,10 @@ export class MarketLedger implements DurableObject {
       if (existing.outcome !== outcome) {
         return jsonResponse({ error: "outcome_mismatch", settled: existing }, 409);
       }
-      return jsonResponse({ status: "already_settled", ...existing });
+      if (existing.payouts.every((p) => p.ok)) {
+        return jsonResponse({ status: "already_settled", ...existing });
+      }
+      return this.retrySettlement(existing);
     }
 
     const totals = await this.getTotals();
@@ -307,6 +319,32 @@ export class MarketLedger implements DurableObject {
       winningPlanck: winningPlanck.toString(),
       payouts: results,
     };
+    await this.ctx.storage.put("settlement", settlement);
+    return jsonResponse({ status: "settled", ...settlement });
+  }
+
+  /** Re-attempts only the payouts recorded as failed in an already-
+   * settled market -- see handleSettle's docstring. Each retry goes
+   * through the exact same requestPayout path (and therefore the
+   * exact same idempotency key) a first attempt would, so this is
+   * always safe to call, whether or not the earlier failure actually
+   * went through on FaucetLedger's side. */
+  private async retrySettlement(existing: Settlement): Promise<Response> {
+    const toRetry = existing.payouts.filter((p) => !p.ok);
+    const retried: PayoutResult[] = [];
+    for (const payout of toRetry) {
+      retried.push(
+        await this.requestPayout({
+          address: payout.address,
+          amountPlanck: BigInt(payout.amountPlanck),
+          stakeTxHash: payout.stakeTxHash,
+        }),
+      );
+    }
+    const retriedByTxHash = new Map(retried.map((r) => [r.stakeTxHash, r]));
+    const payouts = existing.payouts.map((p) => (p.ok ? p : (retriedByTxHash.get(p.stakeTxHash) ?? p)));
+
+    const settlement: Settlement = { ...existing, payouts };
     await this.ctx.storage.put("settlement", settlement);
     return jsonResponse({ status: "settled", ...settlement });
   }

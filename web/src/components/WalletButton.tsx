@@ -6,6 +6,8 @@ import { useWallet } from "@/lib/vara/WalletProvider";
 import { isValidMnemonic } from "@/lib/vara/mnemonicValidate";
 import { claimFaucet, faucetErrorMessage, isFaucetConfigured } from "@/lib/vara/faucet";
 import { loadStakeHistory, type StakeHistoryEntry } from "@/lib/vara/stakeHistory";
+import { useVaraUsdPrice } from "@/lib/vara/useVaraUsdPrice";
+import { formatUsd } from "@/lib/vara/price";
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -32,6 +34,7 @@ function useOutsideClick(ref: RefObject<HTMLElement | null>, onOutside: () => vo
 
 export function WalletButton() {
   const wallet = useWallet();
+  const priceUsd = useVaraUsdPrice();
   const [menuOpen, setMenuOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
 
@@ -73,7 +76,18 @@ export function WalletButton() {
         <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
         {wallet.address && shortAddress(wallet.address)}
         <span className="text-foreground/40">
-          {wallet.balance !== null ? `${wallet.balance} VARA` : wallet.balanceError ? "—" : "…"}
+          {wallet.balance !== null ? (
+            <>
+              {wallet.balance} VARA
+              {priceUsd !== null && (
+                <span className="text-foreground/30"> · {formatUsd(wallet.balance, priceUsd)}</span>
+              )}
+            </>
+          ) : wallet.balanceError ? (
+            "—"
+          ) : (
+            "…"
+          )}
         </span>
       </button>
 
@@ -81,6 +95,7 @@ export function WalletButton() {
         <WalletMenu
           onClose={() => setMenuOpen(false)}
           onLoggedOut={() => setMenuOpen(false)}
+          priceUsd={priceUsd}
         />
       )}
 
@@ -89,7 +104,15 @@ export function WalletButton() {
   );
 }
 
-function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut: () => void }) {
+function WalletMenu({
+  onClose,
+  onLoggedOut,
+  priceUsd,
+}: {
+  onClose: () => void;
+  onLoggedOut: () => void;
+  priceUsd: number | null;
+}) {
   const wallet = useWallet();
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -129,8 +152,15 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
           Balance
         </span>
         <div className="flex items-center justify-between gap-2">
-          <span className="font-display text-lg font-black text-foreground">
-            {wallet.balance !== null ? `${wallet.balance} VARA` : wallet.balanceError ?? "Loading…"}
+          <span className="flex items-baseline gap-1.5">
+            <span className="font-display text-lg font-black text-foreground">
+              {wallet.balance !== null ? `${wallet.balance} VARA` : wallet.balanceError ?? "Loading…"}
+            </span>
+            {wallet.balance !== null && priceUsd !== null && (
+              <span className="text-[12px] font-medium text-foreground/40">
+                {formatUsd(wallet.balance, priceUsd)}
+              </span>
+            )}
           </span>
           <button
             type="button"
@@ -142,7 +172,7 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
         </div>
       </div>
 
-      <MyStakesSection />
+      <MyStakesSection priceUsd={priceUsd} />
 
       {isFaucetConfigured() && wallet.address && (
         <FaucetClaimSection address={wallet.address} onClaimed={() => void wallet.refreshBalance()} />
@@ -178,7 +208,7 @@ function WalletMenu({ onClose, onLoggedOut }: { onClose: () => void; onLoggedOut
  * faucet section hiding when unconfigured -- no bets is a normal
  * state, not an empty-state message to design around.
  */
-function MyStakesSection() {
+function MyStakesSection({ priceUsd }: { priceUsd: number | null }) {
   // Lazy initial state, not an effect -- reading localStorage is a
   // plain synchronous read, no need to synchronize with an external
   // subscription. Re-reads on every mount (i.e. every time the menu
@@ -204,6 +234,9 @@ function MyStakesSection() {
               className={`shrink-0 font-semibold ${entry.side === "yes" ? "text-accent" : "text-foreground/50"}`}
             >
               {entry.side === "yes" ? "Yes" : "No"} · {entry.amountVara}
+              {priceUsd !== null && (
+                <span className="font-normal text-foreground/35"> ({formatUsd(entry.amountVara, priceUsd)})</span>
+              )}
             </span>
           </div>
         ))}

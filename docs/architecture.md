@@ -487,13 +487,38 @@ workflow tick and never tracks locally what it already settled, the
 Worker's own per-market `settlement` state is what makes that safe --
 never pays the same stake out twice; asking it to settle with a
 *different* outcome than what's recorded returns a conflict instead of
-silently overwriting.
+silently overwriting. A settled market with a *failed* payout in it
+(e.g. the pool wallet was momentarily short of the reserve floor) is
+not stuck permanently either: re-POSTing the same outcome retries only
+the payouts recorded as failed (`retrySettlement`) -- successful ones
+are never touched again, and a retry of one that actually did land on
+FaucetLedger's side just comes back `already_paid` rather than
+double-sending, same idempotency key either way. This matters
+operationally now that a payout shortfall is meant to be resolved by
+topping up the pool wallet and re-running settlement, not by any
+special-cased manual payout outside the system.
 
 `GET .../totals` includes a market's `settlement` (outcome, per-stake
 payout results, each with its own txHash) once one exists, so the
 frontend can eventually show "settled" state -- addresses and amounts
 in that response are fine to expose publicly, they're derivable from
 the yes/no totals the same endpoint already returns.
+
+**Dollar display**: `web/src/lib/vara/price.ts` fetches VARA's USD
+price from CoinGecko's public `/simple/price` endpoint (coin id
+`vara-network`, confirmed against CoinGecko's own site) and shows it
+alongside VARA everywhere an amount appears -- wallet balance, the
+stake amount input, My Stakes, staked totals. Purely a display layer:
+every real transfer still moves a planck-precise VARA amount exactly
+as before (see `units.ts`, `stake.ts`); a $ figure is just a second
+label computed from the live rate, never itself the unit anything
+signs or transfers. Fails soft to VARA-only if the price can't be
+fetched (rate-limited, offline), the same "never show a number nothing
+backs" rule every other error state in this app already follows.
+Blocked from this dev sandbox's egress (same restriction that's
+affected `vara.network`, `openrouter.ai`, and others all project -- see
+this doc's own network-access caveats), so unverified from here; check
+it against the real deployed site.
 
 ## Data source: the unofficial FPL API
 

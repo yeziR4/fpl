@@ -22,6 +22,8 @@ import { useEffect, useState } from "react";
 import { useWallet } from "@/lib/vara/WalletProvider";
 import type { AgentPickCounts } from "@/lib/agentPicks";
 import { fetchMarketTotals, stakeErrorMessage, type MarketTotals, type Side } from "@/lib/vara/stake";
+import { useVaraUsdPrice } from "@/lib/vara/useVaraUsdPrice";
+import { formatUsd } from "@/lib/vara/price";
 
 interface StakeMarketProps {
   playerId: number;
@@ -43,6 +45,7 @@ interface StakeMarketProps {
 
 export function StakeMarket({ playerId, playerName, gw, threshold, label, agentPicks }: StakeMarketProps) {
   const wallet = useWallet();
+  const priceUsd = useVaraUsdPrice();
   const [totals, setTotals] = useState<MarketTotals | null>(null);
   const [pendingSide, setPendingSide] = useState<Side | null>(null);
   const [amount, setAmount] = useState("1");
@@ -116,6 +119,7 @@ export function StakeMarket({ playerId, playerName, gw, threshold, label, agentP
               ? `, ${humanYes + humanNo} ${humanYes + humanNo === 1 ? "person" : "people"}`
               : ""}
             {varaStaked > 0 && ` · ${totals!.yes}/${totals!.no} VARA`}
+            {varaStaked > 0 && priceUsd !== null && ` (${formatUsd(varaStaked, priceUsd)})`}
           </span>
         </>
       )}
@@ -126,15 +130,22 @@ export function StakeMarket({ playerId, playerName, gw, threshold, label, agentP
         </span>
       ) : pendingSide ? (
         <div className="flex items-center gap-1.5">
-          <input
-            type="number"
-            min="0.01"
-            step="0.1"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            aria-label="Stake amount in VARA"
-            className="w-16 rounded border border-foreground/20 bg-white/[0.03] px-1.5 py-1.5 text-[11.5px] text-foreground outline-none focus:border-accent/60"
-          />
+          <div className="flex flex-col">
+            <input
+              type="number"
+              min="0.01"
+              step="0.1"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              aria-label="Stake amount in VARA"
+              className="w-16 rounded border border-foreground/20 bg-white/[0.03] px-1.5 py-1.5 text-[11.5px] text-foreground outline-none focus:border-accent/60"
+            />
+            {priceUsd !== null && (
+              <span className="mt-0.5 text-center text-[9.5px] text-foreground/35">
+                {formatUsd(amount, priceUsd) ?? "—"}
+              </span>
+            )}
+          </div>
           <button
             type="button"
             disabled={busy}
