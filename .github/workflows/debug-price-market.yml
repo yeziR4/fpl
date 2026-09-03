@@ -1,0 +1,50 @@
+name: Debug price-market
+
+# One-off diagnostic: runs data_pipeline/cli.py's price-market against
+# real, freshly-fetched FPL data (bootstrap + every finished
+# gameweek's live stats) and echoes the result, so pricing.py's
+# Stage-1 formula can be checked against what real history actually
+# says, not just the synthetic fixtures in tests/test_pricing.py.
+# Manual-only -- read-only (fetches + prints, never writes back to the
+# repo), but no reason to run it on a schedule.
+
+on:
+  workflow_dispatch:
+    inputs:
+      player_id:
+        description: "FPL player id to price"
+        required: true
+      threshold:
+        description: "Points threshold (5 or 10)"
+        required: false
+        default: "5"
+      gw:
+        description: "Gameweek to price the market for"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  price:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Fetch fresh bootstrap + fixtures + gameweek history
+        run: |
+          python -m data_pipeline.cli fetch-bootstrap
+          python -m data_pipeline.cli fetch-fixtures
+          python -m data_pipeline.cli fetch-gameweek-history
+
+      - name: Price the market
+        run: |
+          python -m data_pipeline.cli price-market "${{ github.event.inputs.player_id }}" \
+            --threshold "${{ github.event.inputs.threshold }}" \
+            --gw "${{ github.event.inputs.gw }}"
