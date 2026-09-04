@@ -66,6 +66,27 @@ new_sqlite_classes = ["FaucetLedger"]
 tag = "v2"
 new_sqlite_classes = ["MarketLedger"]
 
+# v3/v4: an unauthorized commit ("Pivot Overline to free-to-play FPL
+# league", reverted -- see git log) briefly added and deployed a
+# GameLedger Durable Object class for an unrelated architecture pivot.
+# Cloudflare's migration history is permanent and append-only once a
+# tag has actually been applied to the live script -- confirmed the
+# hard way: simply deleting the v3 entry on revert broke every
+# subsequent deploy ("Cannot apply new-sqlite-class migration to class
+# 'FaucetLedger' that is already depended on by existing Durable
+# Objects", since wrangler no longer recognized the script's actual
+# migration history and tried to re-run v1 from scratch). v3 must stay
+# forever as the historical record of what was actually applied; v4
+# is the correct way to retire a class that's no longer wanted --
+# marking it deleted, not un-declaring it.
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["GameLedger"]
+
+[[migrations]]
+tag = "v4"
+deleted_classes = ["GameLedger"]
+
 [vars]
 # Non-secret configuration. CHAIN_SIGNER_API_KEY is set separately as
 # a Worker secret (`wrangler secret put CHAIN_SIGNER_API_KEY`), never here.
