@@ -5,7 +5,6 @@ export interface Env {
    * see MarketLedger.ts. Unlike FAUCET_LEDGER, never needs the wallet's
    * key: a stake arrives already signed by the staker's own wallet. */
   MARKET_LEDGER: DurableObjectNamespace;
-  GAME_LEDGER: DurableObjectNamespace;
   /** Where stakes are sent -- a plain address, not a secret (addresses
    * are public by nature). Currently the same address as the faucet
    * wallet; see docs/architecture.md for why that's an accepted v1

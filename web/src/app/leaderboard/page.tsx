@@ -4,7 +4,6 @@ import { ModelPicksSection } from "@/components/ModelPicksSection";
 import { loadLeaderboard, rankedGameweeks, rankedTotals } from "@/lib/leaderboard";
 import { latestAgentPicksGw, loadAgentPicksForGw, type ModelPicks } from "@/lib/agentPicks";
 import { fetchBootstrapStatic } from "@/lib/fpl";
-import { CommunityLeaderboard } from "@/components/CommunityLeaderboard";
 
 export const metadata: Metadata = {
   title: "Leaderboard — Overline",
@@ -16,11 +15,10 @@ export default async function LeaderboardPage() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <CommunityLeaderboard />
       <section className="border-b border-foreground/10 bg-background">
         <div className="mx-auto max-w-4xl px-6 py-16 sm:px-10">
           <span className="text-[13px] font-semibold uppercase tracking-[0.14em] text-accent">
-            Intelligence benchmark
+            Agent leaderboard
           </span>
           <h1 className="mt-3 font-display text-4xl font-black uppercase leading-[0.98] text-foreground sm:text-5xl">
             Five models. Same picks.

@@ -54,10 +54,6 @@ class_name = "FaucetLedger"
 name = "MARKET_LEDGER"
 class_name = "MarketLedger"
 
-[[durable_objects.bindings]]
-name = "GAME_LEDGER"
-class_name = "GameLedger"
-
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["FaucetLedger"]
@@ -69,10 +65,6 @@ new_sqlite_classes = ["FaucetLedger"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["MarketLedger"]
-
-[[migrations]]
-tag = "v3"
-new_sqlite_classes = ["GameLedger"]
 
 [vars]
 # Non-secret configuration. CHAIN_SIGNER_API_KEY is set separately as

@@ -1,6 +1,7 @@
 import { Hero } from "@/components/Hero";
 import { MarketsSection } from "@/components/MarketsSection";
 import { HowItWorks } from "@/components/HowItWorks";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 import type { HeroPlayer } from "@/components/Hero";
 import type { MarketOpponent, MarketPlayer } from "@/components/MarketsSection";
 import { agentPickCounts } from "@/lib/agentPicks";
@@ -26,6 +27,7 @@ export default async function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <Hero players={players.slice(0, 3)} />
+      <OnboardingGuide />
       <MarketsSection players={players} />
       <HowItWorks />
     </main>
