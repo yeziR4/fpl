@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
-import { VaraWordmark } from "@/components/VaraWordmark";
-import { WalletButton } from "@/components/WalletButton";
+import { AccountButton } from "@/components/AccountButton";
 
 export function Header() {
   return (
@@ -41,13 +40,8 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <div className="hidden items-center gap-1.5 rounded-full border border-foreground/18 px-3.5 py-1.5 sm:flex">
-            <VaraWordmark className="text-[13px] text-foreground" />
-            <span className="text-[11px] font-medium tracking-[0.03em] text-foreground/55">
-              Network
-            </span>
-          </div>
-          <WalletButton />
+          <div className="hidden rounded-full border border-accent/30 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-accent sm:block">Free to play</div>
+          <AccountButton />
         </div>
       </div>
     </header>

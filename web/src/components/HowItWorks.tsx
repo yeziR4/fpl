@@ -6,13 +6,13 @@ const STEPS = [
   },
   {
     number: "02",
-    title: "Stake your side",
-    body: "Everyone staking the same side pools together. There's no house setting the odds — the pool itself is the price.",
+    title: "Back your call",
+    body: "Use your free virtual credits on Yes or No. The live pool moves the displayed odds as the community makes predictions.",
   },
   {
     number: "03",
-    title: "Settled on-chain",
-    body: "The moment the gameweek's last match finishes, the market resolves against real data and payouts settle automatically.",
+    title: "Climb the table",
+    body: "Markets resolve against official FPL results. Correct calls grow your virtual balance and move you up the public leaderboard.",
   },
 ];
 

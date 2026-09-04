@@ -20,8 +20,9 @@
 import type { Env } from "./env";
 import { FaucetLedger } from "./FaucetLedger";
 import { MarketLedger } from "./MarketLedger";
+import { GameLedger } from "./GameLedger";
 
-export { FaucetLedger, MarketLedger };
+export { FaucetLedger, MarketLedger, GameLedger };
 
 const MARKET_PATH = /^\/markets\/(\d+)\/(\d+)\/(\d+)\/(totals|stake|settle)$/;
 
@@ -34,6 +35,35 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/game/")) {
+      const id = env.GAME_LEDGER.idFromName("overline-game");
+      const stub = env.GAME_LEDGER.get(id);
+      const forwarded = new URL(request.url);
+      forwarded.pathname = forwarded.pathname.slice("/game".length);
+      const betInput = url.pathname === "/game/bet"
+        ? await request.clone().json().catch(() => ({})) as { playerName?: unknown; label?: unknown; marketId?: unknown }
+        : null;
+      const ledgerResponse = await stub.fetch(new Request(forwarded, request));
+      const ledgerBody = await ledgerResponse.text();
+      if (url.pathname === "/game/bet" && ledgerResponse.ok) {
+        let telegraph: unknown = { ok: false, error: "telegraph_unavailable" };
+        try {
+          const input = betInput ?? {};
+          const gameweek = typeof input.marketId === "string" ? Number(input.marketId.split(":")[1]) : NaN;
+          const intelResponse = await fetch(`${env.CHAIN_SIGNER_URL.replace(/\/$/, "")}/api/telegraph-pick`, {
+            method: "POST",
+            headers: { "content-type": "application/json", authorization: `Bearer ${env.CHAIN_SIGNER_API_KEY}` },
+            body: JSON.stringify({ playerName: input.playerName, label: input.label, gameweek }),
+          });
+          telegraph = await intelResponse.json();
+        } catch (error) {
+          console.error("Telegraph pick enrichment failed", error);
+        }
+        const payload = JSON.parse(ledgerBody) as Record<string, unknown>;
+        return json({ ...payload, telegraph }, 200, cors);
+      }
+      return new Response(ledgerBody, { status: ledgerResponse.status, headers: { ...cors, "content-type": "application/json" } });
+    }
     const marketMatch = url.pathname.match(MARKET_PATH);
     if (marketMatch) {
       return handleMarketRequest(request, env, cors, marketMatch);
@@ -134,6 +164,19 @@ async function handleMarketRequest(
       body: JSON.stringify(body),
       headers: { "content-type": "application/json" },
     });
+    if (ledgerResponse.ok) {
+      const outcomeBody = body as { outcome?: unknown };
+      const outcome = outcomeBody.outcome === "YES" || outcomeBody.outcome === "yes" ? "yes"
+        : outcomeBody.outcome === "NO" || outcomeBody.outcome === "no" ? "no" : null;
+      if (outcome) {
+        const gameId = env.GAME_LEDGER.idFromName("overline-game");
+        await env.GAME_LEDGER.get(gameId).fetch("https://game-ledger.internal/settle", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ marketId: `${playerId}:${gw}:${threshold}`, outcome }),
+        });
+      }
+    }
     const responseBody = await ledgerResponse.text();
     return new Response(responseBody, {
       status: ledgerResponse.status,
@@ -190,7 +233,7 @@ function corsHeaders(allowedOrigin: string): HeadersInit {
   return {
     "access-control-allow-origin": allowedOrigin,
     "access-control-allow-methods": "GET, POST, OPTIONS",
-    "access-control-allow-headers": "content-type",
+    "access-control-allow-headers": "content-type, authorization",
   };
 }
 

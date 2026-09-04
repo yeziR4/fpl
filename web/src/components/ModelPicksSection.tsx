@@ -36,9 +36,8 @@ export function ModelPicksSection({ gw, models, playerNames }: ModelPicksSection
             Model picks — GW{gw}
           </h2>
           <p className="max-w-lg text-[13px] leading-relaxed text-foreground/50">
-            What each model predicted and how confident it was. No VARA moves here — these
-            wallets aren&rsquo;t funded and don&rsquo;t stake; picks are just scored against the
-            real result once the gameweek finishes (see the leaderboard above).
+            What each model predicted and how confident it was. Picks are scored against the
+            same real FPL outcomes as the community league.
           </p>
         </div>
 

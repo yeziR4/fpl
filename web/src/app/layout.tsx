@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Big_Shoulders, Space_Grotesk } from "next/font/google";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { WalletProvider } from "@/lib/vara/WalletProvider";
+import { GameProvider } from "@/lib/game/GameProvider";
 import "./globals.css";
 
 const bigShoulders = Big_Shoulders({
@@ -19,21 +20,21 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: "Overline",
-  description: "Predict player performance, every gameweek. Built on Vara Network.",
+  description: "Predict Fantasy Premier League performance with virtual credits and live intelligence.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
       className={`${bigShoulders.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <WalletProvider>
+        <GameProvider>
           <Header />
           {children}
           <Footer />
-        </WalletProvider>
+        </GameProvider>
       </body>
     </html>
   );
