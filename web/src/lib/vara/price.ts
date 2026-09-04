@@ -74,3 +74,18 @@ export function formatUsd(varaAmount: string | number, priceUsd: number): string
   if (usd > 0 && usd < 0.01) return "<$0.01";
   return `$${usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+/** The inverse of formatUsd's implicit conversion: how much VARA a
+ * dollar amount actually buys at the live rate -- what a bet-sizing
+ * input typed in dollars (see StakeMarket.tsx) needs to know before it
+ * can build the real transfer, since the chain only ever moves VARA.
+ * Null if the amount doesn't parse, same fail-soft contract as the
+ * rest of this module. */
+export function usdToVara(usdAmount: string | number, priceUsd: number): string | null {
+  const usd = typeof usdAmount === "number" ? usdAmount : Number(usdAmount);
+  if (!Number.isFinite(usd) || priceUsd <= 0) return null;
+  // 6 decimal places -- comfortably enough precision for a demo-scale
+  // stake, well short of VARA's own 12-decimal planck precision, and
+  // avoids float noise leaking into the submitted amount.
+  return (usd / priceUsd).toFixed(6);
+}
