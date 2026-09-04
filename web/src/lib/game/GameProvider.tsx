@@ -124,6 +124,8 @@ function friendlyError(error: unknown): string {
     invalid_username: "Use 3–20 letters, numbers or underscores.",
     invalid_password: "Password must contain at least 8 characters.",
     insufficient_credits: "You do not have enough credits.",
+    already_predicted: "You already made a prediction on this market.",
+    rate_limited: "Too many attempts. Please try again later.",
     invalid_bet: "Enter a valid prediction of at least 1 credit.",
   } as Record<string, string>)[code] ?? "Something went wrong. Please try again.";
 }

@@ -36,6 +36,10 @@ export default {
 
     const url = new URL(request.url);
     if (url.pathname.startsWith("/game/")) {
+      if (url.pathname === "/game/signup") {
+        const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
+        if (await isRateLimited(env, ip, "signup", 5)) return json({ error: "rate_limited" }, 429, cors);
+      }
       const id = env.GAME_LEDGER.idFromName("overline-game");
       const stub = env.GAME_LEDGER.get(id);
       const forwarded = new URL(request.url);
@@ -91,7 +95,7 @@ async function handleFaucetClaim(request: Request, env: Env, cors: HeadersInit):
   }
 
   const ip = request.headers.get("cf-connecting-ip") ?? "unknown";
-  const throttled = await isRateLimited(env, ip);
+  const throttled = await isRateLimited(env, ip, "faucet", Number.parseInt(env.IP_RATE_LIMIT_PER_HOUR || "3", 10));
   if (throttled) {
     return json({ error: "rate_limited" }, 429, cors);
   }
@@ -212,10 +216,9 @@ function isSettlementAuthorized(request: Request, env: Env): boolean {
   return header === `Bearer ${env.SETTLEMENT_API_KEY}`;
 }
 
-async function isRateLimited(env: Env, ip: string): Promise<boolean> {
+async function isRateLimited(env: Env, ip: string, namespace: string, limit: number): Promise<boolean> {
   if (ip === "unknown") return false; // fail open on IP -- the DO's per-address dedup is the real guard
-  const limit = Number.parseInt(env.IP_RATE_LIMIT_PER_HOUR || "3", 10);
-  const key = `ip:${await sha256(ip)}`;
+  const key = `${namespace}:ip:${await sha256(ip)}`;
   const current = Number.parseInt((await env.IP_THROTTLE.get(key)) ?? "0", 10);
   if (current >= limit) return true;
   await env.IP_THROTTLE.put(key, String(current + 1), { expirationTtl: 3600 });

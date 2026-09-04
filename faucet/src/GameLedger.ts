@@ -110,6 +110,8 @@ export class GameLedger implements DurableObject {
       return response({ error: "invalid_bet" }, 400);
     }
     if (stake > user.balance) return response({ error: "insufficient_credits" }, 400);
+    const existingBets = await this.state.storage.list<Bet>({ prefix: `bet:${marketId}:${user.username}:`, limit: 1 });
+    if (existingBets.size > 0) return response({ error: "already_predicted" }, 409);
 
     const marketKey = `market:${marketId}`;
     const totals = (await this.state.storage.get<{ yes: number; no: number }>(marketKey)) ?? {
