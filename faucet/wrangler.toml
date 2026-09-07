@@ -87,18 +87,30 @@ new_sqlite_classes = ["GameLedger"]
 tag = "v4"
 deleted_classes = ["GameLedger"]
 
-# v5: the live script has a "v5" migration tag applied that this file
-# never declared -- confirmed via a real deploy failing with "migration
-# tag 'v5', which was not found in your wrangler.toml file... Applying
-# all available migrations to the script," which then tried to re-run
-# v1's new_sqlite_classes against FaucetLedger's already-existing
-# Durable Objects (error 10074), same failure mode v3/v4's own history
-# above already hit once. No new/deleted class here -- there's nothing
-# to migrate beyond v4's two live classes (FaucetLedger, MarketLedger),
-# this is purely catching wrangler's own bookkeeping back up to what's
-# actually live so it stops trying to replay v1-v4 from scratch.
+# v5/v6: the live script had a "v5" migration tag applied that this
+# file never declared, from a deploy that happened outside this
+# workflow between the v4 fix above (2026-09-04) and now -- no commit
+# in this repo's history touched wrangler.toml in between. Recording
+# it as an empty no-op first (matching v3/v4's own "GameLedger already
+# deleted" comment above, an honest guess rather than a confirmed
+# fact) got the deploy past wrangler's "unknown migration tag,
+# replaying from scratch" confusion (error 10074) but surfaced the
+# real fact underneath: the live script still has actual GameLedger
+# Durable Object instances ("New version of script does not export
+# class 'GameLedger' which is depended on by existing Durable Objects"
+# [code: 10064]) -- so whatever ran outside this workflow re-created
+# GameLedger, it didn't leave it empty. v5 below records that
+# (matching what's actually live); v6 deletes it again, the same
+# correct way v4 did the first time -- this repo's own code has never
+# defined a GameLedger class since the revert, so there's nothing to
+# re-export, only to retire.
 [[migrations]]
 tag = "v5"
+new_sqlite_classes = ["GameLedger"]
+
+[[migrations]]
+tag = "v6"
+deleted_classes = ["GameLedger"]
 
 [vars]
 # Non-secret configuration. CHAIN_SIGNER_API_KEY is set separately as
