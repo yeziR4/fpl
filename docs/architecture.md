@@ -479,7 +479,7 @@ frontend preview already went through: `MarketLedger.handleSettle` no
 longer looks at this market's own stake totals to price a payout at
 all. Every winning stake is paid `amountPlanck / probability` --
 priced entirely off the probability the Worker was handed, clamped to
-`[0.01, 0.99]` the same way `oddsmaker.bet_record()` clamps before
+`[0.01, 0.99]` the same way `oddsmaker.bet_records()` clamps before
 dividing; losing stakes get nothing. Deliberately **unbounded by this
 market's own real pool size** for now -- an explicit testing-phase
 choice ("assume VARA is infinite," pending real committed liquidity per
@@ -743,16 +743,29 @@ markets `resolution.py` already knows how to settle. A leaderboard tracks
 how often each one was right, gameweek over gameweek.
 
 No matchmaking, no assignment of agents to specific markets — every
-model is asked about the same player pool, every time. Each pick now
-carries a real (simulated) bet record: a VARA stake sized off the
-model's own confidence, and the potential return from this system's
-own odds (see "Market maker: rank-based odds", `oddsmaker.py`, below)
-— never the model's own opinion, so a model can't buy better odds
-just by claiming more confidence. Simulated, not real money: these
-five wallets hold nothing and never stake for real (see "AGENT_MODELS"
-below) — but every number in a bet record is real and computed, not
-invented, which is the whole point of showing it at all. The
-leaderboard tracks both "were they right" (accuracy) and "how
+model is asked about the same player pool, every time. That pool is
+now exactly the players the site's own markets grid shows
+(`n_players=8`, matching `MARKET_PLAYER_COUNT` in
+`web/src/app/page.tsx`) — trimmed down from an earlier `n_players=20`
+(40 picks/model/gameweek at 2 thresholds each) once a real run made
+clear that was too many bets to read as a leaderboard, and included
+markets nobody could actually see on the site besides.
+
+Each pick now carries a real (simulated) bet record: a VARA stake, and
+the potential return from this system's own odds (see "Market maker:
+rank-based odds", `oddsmaker.py`, below) — never the model's own
+opinion, so a model can't buy better odds just by claiming more
+confidence. Stake sizing is a **fixed $10 gameweek bankroll per
+model** (`oddsmaker.TOTAL_BANKROLL_USD`, converted to VARA at the live
+rate — see `vara_price.py`), split across that model's whole pick list
+proportional to each pick's own confidence — not an unbounded amount
+staked independently per pick the way an earlier version worked, which
+let a model "wager" more in total just by picking on more markets,
+measuring stamina more than aggressiveness. Simulated, not real money:
+these five wallets hold nothing and never stake for real (see
+"AGENT_MODELS" below) — but every number in a bet record is real and
+computed, not invented, which is the whole point of showing it at
+all. The leaderboard tracks both "were they right" (accuracy) and "how
 aggressively did they bet, and did it pay off" (total staked, net
 simulated P&L) — two different questions about a model's judgement,
 kept as separate columns rather than collapsed into one score.
@@ -791,11 +804,15 @@ kept as separate columns rather than collapsed into one score.
     one. Tolerates markdown code fences some models wrap JSON in despite
     being told not to.
   - `generate_picks_for_gameweek()` — orchestrates the above across all
-    five models for one gameweek, then enriches each parsed pick with
-    its bet record via `oddsmaker.with_bet_record()` before saving.
-    One model erroring out (bad slug, outage, garbled reply) is caught
-    and recorded per-model — it never blocks the other four from
-    producing their picks.
+    five models for one gameweek, fetches the live VARA/USD rate once
+    for the whole run (`vara_price.fetch_vara_usd_price()`), then
+    enriches each model's whole parsed pick list with its bet records
+    together via `oddsmaker.with_bet_records()` before saving — batched
+    per model, not per pick, since sizing now depends on a model's
+    entire gameweek pick list at once (see `oddsmaker.py` below). One
+    model erroring out (bad slug, outage, garbled reply) is caught and
+    recorded per-model — it never blocks the other four from producing
+    their picks.
   - `save_picks()` / `load_picks()` — persist to (read from)
     `data/agent_picks/gw<N>.json`. This is a committed, versioned record
     (see `.gitignore` — only `data/cache/*` is excluded), not a cache: a
@@ -819,14 +836,29 @@ kept as separate columns rather than collapsed into one score.
     tunable anchor points per threshold (`_THRESHOLD_ANCHORS`) — real
     modeling choices, not derived constants, same discipline
     `pricing.py`'s `PRIOR_STRENGTH` already follows.
-  - `bet_record()` — stake size comes from the model's own confidence
-    (`MIN_STAKE_VARA` to `MAX_STAKE_VARA`, linear); the odds come
-    entirely from `market_probability()` for whichever side the model
-    picked. Confidence never touches the odds — a model can't buy a
-    better price just by claiming more conviction, the same way a
-    real bettor can't move a real market's price by being loud about
-    their own opinion. `potential_return_vara` is the fair decimal-odds
-    payout (`stake / probability`), stake included.
+  - `bet_records()` — prices a whole model's gameweek pick list
+    together: `TOTAL_BANKROLL_USD` ($10, converted to VARA at the live
+    rate `generate_picks_for_gameweek()` fetched) is split across every
+    pick, proportional to each one's own confidence weight
+    (`MIN_STAKE_WEIGHT` to `MAX_STAKE_WEIGHT`, linear — a relative
+    weight now, not an absolute VARA amount); the odds come entirely
+    from `market_probability()` for whichever side the model picked.
+    Confidence never touches the odds — a model can't buy a better
+    price just by claiming more conviction, the same way a real
+    bettor can't move a real market's price by being loud about their
+    own opinion. `potential_return_vara` is the fair decimal-odds
+    payout (`stake / probability`), stake included. `with_bet_records()`
+    is the `agents.py`-facing adapter, enriching a whole pick list in
+    the same order.
+  - **`vara_price.py`** — live VARA/USD price (CoinGecko's public
+    `/simple/price`, same endpoint and coin id as the frontend's own
+    `web/src/lib/vara/price.ts`) — what turns `TOTAL_BANKROLL_USD`
+    into an actual VARA amount. Unlike the frontend, which fails soft
+    to VARA-only display on any error, pick generation needs *some*
+    real number every run: a fetch failure here falls back to
+    `FALLBACK_VARA_USD_PRICE`, a documented last-confirmed real price,
+    rather than blocking every model's bet record on one flaky
+    request.
 - **`leaderboard.py`** — the "were they right" (and "how much would it
   have cost/won them") half. Has no resolution logic of its own:
   `score_gameweek()` calls straight into `resolution.py`'s

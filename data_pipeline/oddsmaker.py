@@ -98,10 +98,27 @@ def market_probability(player_id: int, threshold: int, bootstrap: dict) -> float
     return low + percentile * (high - low)
 
 
-# --- Bet sizing: turning a model's pick + confidence into a real record ---
+# --- Bet sizing: a fixed $10 gameweek bankroll per model, split by confidence ---
 
-MIN_STAKE_VARA = 1.0
-MAX_STAKE_VARA = 5.0
+# Each model gets this much total, converted to VARA at the live rate
+# (see vara_price.py), for its ENTIRE gameweek pick list -- not per
+# bet. A model making more picks doesn't get more real spending power
+# than one making fewer, it just slices the same $10 thinner. Chosen
+# so a model's aggressiveness still shows up as *how it divides* a
+# fixed budget, not as an unbounded total (an earlier version staked
+# 1-5 VARA independently per pick, with no cap on how many picks --
+# a model asked about enough markets could "wager" an unbounded
+# amount just by picking more often, which measured stamina more than
+# aggressiveness).
+TOTAL_BANKROLL_USD = 10.0
+
+# Relative weight only now, not an absolute VARA amount -- how much
+# more of the fixed gameweek bankroll a maximally-confident pick gets
+# over a minimally-confident one. Same shape (1x-5x) the old
+# MIN_STAKE_VARA/MAX_STAKE_VARA range used, reused here as a weight
+# instead of a currency amount.
+MIN_STAKE_WEIGHT = 1.0
+MAX_STAKE_WEIGHT = 5.0
 # A model that didn't return a usable confidence value still gets a
 # real bet record -- defaults to the midpoint rather than either
 # extreme, since "no stated confidence" isn't the same as "very
@@ -116,55 +133,68 @@ class BetRecord:
     potential_return_vara: float  # total VARA back if the pick is correct (stake included)
 
 
-def bet_record(
-    *, pick_yes: bool, confidence: float | None, player_id: int, threshold: int, bootstrap: dict
-) -> BetRecord:
-    """The full bet record for one model's one pick: how much it
-    "wagers" (simulated -- these five wallets hold nothing real and
-    never stake for real, see docs/architecture.md) scaled by its own
-    stated confidence, and what it stands to get back given this
-    system's own priced odds for the side it picked.
-
-    Confidence drives SIZE only -- the aggressiveness signal a
-    leaderboard can compare across models (one consistently staking
-    near MAX_STAKE_VARA reads as overconfident, not just often-right-
-    or-wrong). It never touches the odds themselves, which come
-    entirely from market_probability() above: a model can't "buy"
-    better odds just by claiming more confidence, any more than a real
-    bettor can move a real market's price by being loud about their
-    own opinion.
-    """
+def _stake_weight(confidence: float | None) -> float:
     c = confidence if confidence is not None else DEFAULT_CONFIDENCE
-    stake = MIN_STAKE_VARA + (MAX_STAKE_VARA - MIN_STAKE_VARA) * c
-
-    p_yes = market_probability(player_id, threshold, bootstrap)
-    p_side = p_yes if pick_yes else (1 - p_yes)
-    p_side = min(max(p_side, 0.01), 0.99)  # keep decimal odds finite even at the extremes
-
-    decimal_odds = 1 / p_side
-    return BetRecord(
-        stake_vara=round(stake, 2),
-        market_probability=round(p_side, 4),
-        potential_return_vara=round(stake * decimal_odds, 2),
-    )
+    return MIN_STAKE_WEIGHT + (MAX_STAKE_WEIGHT - MIN_STAKE_WEIGHT) * c
 
 
-def with_bet_record(pick, bootstrap: dict):
-    """Enriches an already-parsed AgentPick (see agents.py) with its
-    bet record. A thin adapter, not agents.py's own concern -- keeps
-    parse_picks() a pure parser of the model's reply with no pricing
-    logic of its own, and keeps this module ignorant of AgentPick's
-    exact shape beyond the four fields every caller already has."""
-    record = bet_record(
-        pick_yes=pick.pick,
-        confidence=pick.confidence,
-        player_id=pick.player_id,
-        threshold=pick.threshold,
-        bootstrap=bootstrap,
-    )
-    return replace(
-        pick,
-        market_probability=record.market_probability,
-        stake_vara=record.stake_vara,
-        potential_return_vara=record.potential_return_vara,
-    )
+def bet_records(picks: list, bootstrap: dict, vara_usd_price: float) -> list[BetRecord]:
+    """The full bet records for one model's ENTIRE gameweek pick list,
+    computed together rather than one at a time: TOTAL_BANKROLL_USD
+    worth of VARA is split across every pick in `picks`, proportional
+    to each one's own confidence weight (see _stake_weight) -- the
+    aggressiveness signal a leaderboard can compare across models is
+    now "how much of a fixed budget a model puts behind its most
+    confident picks," not an unbounded per-pick amount.
+
+    Confidence drives SIZE only -- it never touches the odds, which
+    come entirely from market_probability() above for whichever side
+    a pick took: a model can't "buy" better odds just by claiming more
+    confidence, any more than a real bettor can move a real market's
+    price by being loud about their own opinion. Returns one BetRecord
+    per pick, same order as `picks`; an empty `picks` list returns
+    `[]` rather than dividing by zero.
+    """
+    if not picks:
+        return []
+
+    weights = [_stake_weight(pick.confidence) for pick in picks]
+    total_weight = sum(weights)
+    bankroll_vara = TOTAL_BANKROLL_USD / vara_usd_price
+
+    records = []
+    for pick, weight in zip(picks, weights):
+        stake = bankroll_vara * weight / total_weight
+
+        p_yes = market_probability(pick.player_id, pick.threshold, bootstrap)
+        p_side = p_yes if pick.pick else (1 - p_yes)
+        p_side = min(max(p_side, 0.01), 0.99)  # keep decimal odds finite even at the extremes
+        decimal_odds = 1 / p_side
+
+        records.append(
+            BetRecord(
+                stake_vara=round(stake, 2),
+                market_probability=round(p_side, 4),
+                potential_return_vara=round(stake * decimal_odds, 2),
+            )
+        )
+    return records
+
+
+def with_bet_records(picks: list, bootstrap: dict, vara_usd_price: float) -> list:
+    """Enriches a whole model's already-parsed AgentPick list (see
+    agents.py) with each one's bet record, in the same order. A thin
+    adapter, not agents.py's own concern -- keeps parse_picks() a pure
+    parser of the model's reply with no pricing logic of its own, and
+    keeps this module ignorant of AgentPick's exact shape beyond the
+    four fields every caller already has."""
+    records = bet_records(picks, bootstrap, vara_usd_price)
+    return [
+        replace(
+            pick,
+            market_probability=record.market_probability,
+            stake_vara=record.stake_vara,
+            potential_return_vara=record.potential_return_vara,
+        )
+        for pick, record in zip(picks, records)
+    ]

@@ -513,7 +513,10 @@ def build_parser() -> argparse.ArgumentParser:
         "generate-picks", help="Ask the configured OpenRouter models for picks on one gameweek's player pool"
     )
     generate_picks.add_argument("--gw", type=int, required=True)
-    generate_picks.add_argument("--n", type=int, default=20)
+    # Matches generate_picks_for_gameweek()'s own default -- see its
+    # docstring in agents.py for why this now matches the frontend's
+    # own market-count, not a wider "candidate" pool.
+    generate_picks.add_argument("--n", type=int, default=8)
     generate_picks.set_defaults(func=cmd_generate_picks)
 
     score_gameweek_parser = sub.add_parser(
@@ -526,7 +529,7 @@ def build_parser() -> argparse.ArgumentParser:
         "auto-generate-picks",
         help="Generate picks for whichever gameweek's deadline hasn't passed yet (skips if already generated)",
     )
-    auto_generate_picks.add_argument("--n", type=int, default=20)
+    auto_generate_picks.add_argument("--n", type=int, default=8)
     auto_generate_picks.add_argument(
         "--force", action="store_true", help="Regenerate even if picks already exist for that gameweek"
     )

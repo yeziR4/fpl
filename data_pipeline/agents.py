@@ -23,7 +23,7 @@ from pathlib import Path
 
 import requests
 
-from . import cache, oddsmaker
+from . import cache, oddsmaker, vara_price
 from .players import Player, top_expensive_players
 from .settlement import PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD
 
@@ -207,7 +207,7 @@ class AgentPick:
     pick: bool  # True = model expects the player to clear the threshold
     confidence: float | None
     # Populated by generate_picks_for_gameweek() (via
-    # oddsmaker.with_bet_record()) after parse_picks() below returns
+    # oddsmaker.with_bet_records()) after parse_picks() below returns
     # the model's raw pick+confidence -- parse_picks() itself stays a
     # pure parser of the model's reply, with no pricing concerns of
     # its own. None here means "not priced yet" (e.g. an AgentPick
@@ -300,7 +300,13 @@ class ModelPicksResult:
 def generate_picks_for_gameweek(
     gw: int,
     *,
-    n_players: int = 20,
+    # Matches web/src/app/page.tsx's MARKET_PLAYER_COUNT -- models are
+    # asked about exactly the players real users can also see and
+    # stake on, no wider "candidate" pool. Was 20 (40 markets/model at
+    # 2 thresholds each); trimmed after a real run made it obvious 40
+    # picks per model per gameweek was too many to read as a leaderboard,
+    # not just too many to fit the site's own markets grid.
+    n_players: int = 8,
     thresholds: tuple[int, ...] = (PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD),
     cache_dir: Path | None = None,
     models: tuple[AgentModel, ...] = AGENT_MODELS,
@@ -321,6 +327,14 @@ def generate_picks_for_gameweek(
 
     prompt = build_prompt(players, bootstrap, fixtures, gw, thresholds=thresholds)
 
+    # Fetched once per gameweek, not once per model or per pick --
+    # every model's bet record this run should price VARA at the same
+    # rate, and CoinGecko's free tier is rate-limited enough that one
+    # call per gameweek is the right cadence anyway. See
+    # oddsmaker.TOTAL_BANKROLL_USD's docstring for why this is what
+    # turns "$10" into an actual VARA amount.
+    vara_usd_price = vara_price.fetch_vara_usd_price(session=session)
+
     results: list[ModelPicksResult] = []
     for model in models:
         try:
@@ -329,11 +343,14 @@ def generate_picks_for_gameweek(
             results.append(ModelPicksResult(model=model, picks=[], error=str(exc)))
             continue
         picks = parse_picks(raw, valid_player_ids=valid_player_ids, valid_thresholds=valid_thresholds)
-        # This system's own bet record, not the model's -- see
-        # oddsmaker.bet_record()'s docstring for why the odds come
-        # entirely from player standing, never from what the model
-        # itself claims to believe.
-        picks = [oddsmaker.with_bet_record(p, bootstrap) for p in picks]
+        # This system's own bet records, not the model's -- see
+        # oddsmaker.bet_records()'s docstring for why the odds come
+        # entirely from player standing (never from what the model
+        # itself claims to believe), and why the stakes across this
+        # one model's whole pick list are sized together (a fixed
+        # gameweek bankroll split by confidence), not independently
+        # per pick.
+        picks = oddsmaker.with_bet_records(picks, bootstrap, vara_usd_price)
         error = None if picks else f"parsed 0 usable picks from a {len(raw)}-char reply"
         results.append(ModelPicksResult(model=model, picks=picks, error=error))
     return results

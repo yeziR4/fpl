@@ -168,6 +168,17 @@ class _FakeSession:
         self.calls.append({"url": url, "headers": headers, "json": json, "timeout": timeout})
         return self._responder(json["model"])
 
+    def get(self, url, *, timeout):
+        # generate_picks_for_gameweek() also fetches VARA's USD price
+        # (vara_price.fetch_vara_usd_price) -- no test here cares what
+        # that price actually is, and simulating "network unreachable"
+        # exercises the same fallback path a real offline run would
+        # hit, deterministically, without a canned price response to
+        # maintain.
+        import requests
+
+        raise requests.ConnectionError("network disabled in tests")
+
 
 def _content_response(text: str) -> _FakeResponse:
     return _FakeResponse(200, {"choices": [{"message": {"content": text}}]})
