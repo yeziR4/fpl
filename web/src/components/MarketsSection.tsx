@@ -38,6 +38,12 @@ export interface MarketPlayer {
    * build time (see lib/agentPicks.ts). null per-threshold if no
    * picks exist yet for this gameweek. */
   agentPicks: { primary: AgentPickCounts | null; secondary: AgentPickCounts | null };
+  /** This system's own priced probability of "Yes" per threshold
+   * (data_pipeline/oddsmaker.py, read via lib/agentPicks.ts's
+   * agentMarketProbability) -- what StakeMarket.tsx's potential-
+   * winnings preview prices off of. null per-threshold under the same
+   * condition agentPicks is. */
+  marketProbability: { primary: number | null; secondary: number | null };
 }
 
 interface MarketsSectionProps {
@@ -63,7 +69,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
 
         {players.length > 0 ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {players.map(({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }) => (
+            {players.map(({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks, marketProbability }) => (
               <MarketCard
                 key={player.id}
                 player={player}
@@ -72,6 +78,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
                 gw={gw}
                 kickoffTime={kickoffTime}
                 agentPicks={agentPicks}
+                marketProbability={marketProbability}
               />
             ))}
           </div>
@@ -83,7 +90,7 @@ export function MarketsSection({ players }: MarketsSectionProps) {
   );
 }
 
-function MarketCard({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }: MarketPlayer) {
+function MarketCard({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks, marketProbability }: MarketPlayer) {
   return (
     <div className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50">
       <div className="relative aspect-[4/3] w-full bg-accent-dim">
@@ -143,6 +150,7 @@ function MarketCard({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }:
             threshold={PRIMARY_POINTS_THRESHOLD}
             label="Over 5 pts"
             agentPicks={agentPicks.primary}
+            marketProbability={marketProbability.primary}
           />
           <StakeMarket
             playerId={player.id}
@@ -151,6 +159,7 @@ function MarketCard({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }:
             threshold={SECONDARY_POINTS_THRESHOLD}
             label="Over 10 pts"
             agentPicks={agentPicks.secondary}
+            marketProbability={marketProbability.secondary}
           />
         </div>
       </div>

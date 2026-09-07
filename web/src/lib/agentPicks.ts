@@ -152,6 +152,44 @@ export async function loadAgentPicksForGw(gw: number): Promise<ModelPicks[] | nu
   }));
 }
 
+/**
+ * This system's own priced probability of "Yes" for one (player,
+ * threshold) market, pulled straight from whichever cached agent pick
+ * happens to reference it -- data_pipeline/oddsmaker.py computes
+ * market_probability once per (player, threshold, gw) from real
+ * player standing, the same value regardless of which model or side
+ * is asking (a pick's own `market_probability` is for the SIDE that
+ * model picked, so a "no" pick's value needs flipping back to "yes"
+ * terms here). Null if no agent picks exist yet for this gameweek, or
+ * they predate bet records (an older picks file with no
+ * market_probability field at all).
+ *
+ * This is what StakeMarket.tsx's potential-winnings preview actually
+ * prices off of -- the real current-stakes parimutuel projection
+ * degenerates to "you get exactly your stake back" whenever a market
+ * has no other real stakers yet (there's nothing else in the pool to
+ * redistribute from), which is mathematically correct but useless to
+ * show. This real, already-computed number is the fair-value seed a
+ * thin/empty market needs, same reasoning as the market-maker Stage 1
+ * design -- see docs/architecture.md.
+ */
+export async function agentMarketProbability(
+  gw: number,
+  playerId: number,
+  threshold: number,
+): Promise<number | null> {
+  const file = await loadAgentPicksFile(gw);
+  if (!file) return null;
+  for (const model of file.models) {
+    for (const pick of model.picks) {
+      if (pick.player_id === playerId && pick.threshold === threshold && pick.market_probability !== null) {
+        return pick.pick === "yes" ? pick.market_probability : 1 - pick.market_probability;
+      }
+    }
+  }
+  return null;
+}
+
 /** The highest gameweek number with a saved picks file -- "the most
  * current thing the agents have said" for a picks/activity view,
  * distinct from `gw` on any one player card (which is that player's

@@ -26,13 +26,22 @@
  * moves (see confirmStake), this only changes which figure a person
  * types into.
  *
- * "Potential winnings" is a live estimate, computed with the exact
- * same parimutuel formula MarketLedger.ts's settle handler actually
- * pays out with (amount * totalPool / winningSideTotal), projected
- * onto the CURRENT totals plus this hypothetical stake -- clearly
- * labeled "if it resolved right now", since more stakes arriving
- * before the real settlement changes the real payout. Not a promise,
- * an honest best-current-estimate.
+ * "Potential winnings" is a live estimate, priced primarily off
+ * marketProbability (data_pipeline/oddsmaker.py's rank-based fair
+ * odds for this market, read at build time via lib/agentPicks.ts) --
+ * NOT the raw current-stakes parimutuel projection that formula would
+ * otherwise degenerate to. Confirmed the hard way: a market with no
+ * other real stakers yet has nothing else in the pool to redistribute
+ * from, so that projection returns exactly your own stake back,
+ * always, regardless of odds -- mathematically correct, useless to
+ * show. marketProbability gives a real, already-computed fair-value
+ * price instead (payout = stake / probability, standard decimal
+ * odds), the same reasoning the market-maker Stage-1 design already
+ * uses for a thin/empty pool needing a seed price. Falls back to the
+ * old current-totals projection only when no agent picks exist yet
+ * for this gameweek (marketProbability is null). Always labeled "if
+ * it resolved right now" either way -- an estimate, never a promise,
+ * since real settlement still pays out from the real pool.
  */
 
 import { useEffect, useState } from "react";
@@ -58,9 +67,21 @@ interface StakeMarketProps {
    * null if no picks exist yet for this gameweek (not the same as
    * {yes: 0, no: 0}, which would look like they picked evenly). */
   agentPicks: AgentPickCounts | null;
+  /** This system's own priced probability of "Yes", read at build
+   * time (see lib/agentPicks.ts's agentMarketProbability). null under
+   * the same condition agentPicks is -- drives PotentialWinnings. */
+  marketProbability: number | null;
 }
 
-export function StakeMarket({ playerId, playerName, gw, threshold, label, agentPicks }: StakeMarketProps) {
+export function StakeMarket({
+  playerId,
+  playerName,
+  gw,
+  threshold,
+  label,
+  agentPicks,
+  marketProbability,
+}: StakeMarketProps) {
   const wallet = useWallet();
   const priceUsd = useVaraUsdPrice();
   const [totals, setTotals] = useState<MarketTotals | null>(null);
@@ -218,6 +239,7 @@ export function StakeMarket({ playerId, playerName, gw, threshold, label, agentP
             stakeVara={Number(effectiveAmountVara)}
             varaYes={varaYes}
             varaNo={varaNo}
+            marketProbability={marketProbability}
             priceUsd={priceUsd}
           />
         </div>
@@ -256,33 +278,47 @@ export function StakeMarket({ playerId, playerName, gw, threshold, label, agentP
 }
 
 /**
- * "If this side wins, right now, you'd get back roughly X" -- the
- * exact parimutuel formula MarketLedger.ts's settle handler actually
- * pays out with (amount * totalPool / winningSideTotal), projected
- * onto the current totals plus this hypothetical stake. Always an
- * estimate, never a promise: more stakes landing before real
- * settlement moves the real payout, which is why this is worded "if
- * it resolved right now" rather than a bare number.
+ * "If this side wins, right now, you'd get back roughly X". Prices
+ * primarily off marketProbability -- this system's own rank-based
+ * fair odds (data_pipeline/oddsmaker.py), real and already-computed,
+ * via standard decimal odds (payout = stake / probability). Falls
+ * back to the raw current-totals parimutuel projection
+ * (MarketLedger.ts's actual settle formula: amount * totalPool /
+ * winningSideTotal) only when no agent picks exist yet for this
+ * gameweek. Deliberately NOT the fallback by default: that formula
+ * degenerates to exactly the stake back, every time, on any market
+ * with no other real stakers yet -- correct math, useless number, the
+ * bug this whole priority order exists to avoid. Always an estimate,
+ * never a promise: real settlement still pays out from the real pool.
  */
 function PotentialWinnings({
   side,
   stakeVara,
   varaYes,
   varaNo,
+  marketProbability,
   priceUsd,
 }: {
   side: Side;
   stakeVara: number;
   varaYes: number;
   varaNo: number;
+  marketProbability: number | null;
   priceUsd: number | null;
 }) {
   if (!Number.isFinite(stakeVara) || stakeVara <= 0) return null;
 
-  const currentSideTotal = side === "yes" ? varaYes : varaNo;
-  const newSideTotal = currentSideTotal + stakeVara;
-  const newTotalPool = varaYes + varaNo + stakeVara;
-  const winningsVara = (stakeVara * newTotalPool) / newSideTotal;
+  let winningsVara: number;
+  if (marketProbability !== null) {
+    const pSide = side === "yes" ? marketProbability : 1 - marketProbability;
+    const decimalOdds = 1 / Math.min(Math.max(pSide, 0.01), 0.99);
+    winningsVara = stakeVara * decimalOdds;
+  } else {
+    const currentSideTotal = side === "yes" ? varaYes : varaNo;
+    const newSideTotal = currentSideTotal + stakeVara;
+    const newTotalPool = varaYes + varaNo + stakeVara;
+    winningsVara = (stakeVara * newTotalPool) / newSideTotal;
+  }
 
   return (
     <span className="text-[10.5px] leading-snug text-foreground/45">

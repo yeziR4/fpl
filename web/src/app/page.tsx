@@ -4,7 +4,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import type { HeroPlayer } from "@/components/Hero";
 import type { MarketOpponent, MarketPlayer } from "@/components/MarketsSection";
-import { agentPickCounts } from "@/lib/agentPicks";
+import { agentMarketProbability, agentPickCounts } from "@/lib/agentPicks";
 import {
   fetchBootstrapStatic,
   fetchFixtures,
@@ -64,16 +64,19 @@ async function loadMarketPlayers(): Promise<(HeroPlayer & MarketPlayer)[]> {
         const nextFixture = nextFixtureForTeam(player.team, fixtures);
         const gw = nextFixture?.gw ?? null;
 
-        // agentPickCounts reads a local file (see lib/agentPicks.ts) --
-        // cheap enough, and gw-scoped enough (most players share the
-        // same upcoming gameweek), that fetching both thresholds per
-        // player in parallel isn't worth deferring further.
-        const [primary, secondary] =
+        // agentPickCounts/agentMarketProbability both read a local file
+        // (see lib/agentPicks.ts) -- cheap enough, and gw-scoped enough
+        // (most players share the same upcoming gameweek), that
+        // fetching all four per player in parallel isn't worth
+        // deferring further.
+        const [primary, secondary, primaryProbability, secondaryProbability] =
           gw === null
-            ? [null, null]
+            ? [null, null, null, null]
             : await Promise.all([
                 agentPickCounts(gw, player.id, PRIMARY_POINTS_THRESHOLD),
                 agentPickCounts(gw, player.id, SECONDARY_POINTS_THRESHOLD),
+                agentMarketProbability(gw, player.id, PRIMARY_POINTS_THRESHOLD),
+                agentMarketProbability(gw, player.id, SECONDARY_POINTS_THRESHOLD),
               ]);
 
         return {
@@ -83,6 +86,7 @@ async function loadMarketPlayers(): Promise<(HeroPlayer & MarketPlayer)[]> {
           gw,
           kickoffTime: nextFixture?.kickoffTime ?? null,
           agentPicks: { primary, secondary },
+          marketProbability: { primary: primaryProbability, secondary: secondaryProbability },
         };
       }),
     );
