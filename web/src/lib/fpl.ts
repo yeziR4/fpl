@@ -42,6 +42,19 @@ export interface BootstrapElement {
   assists: number; // season-to-date
   code: number; // stable id -- what the photo CDN path actually keys on, see playerPhotoUrl
   has_temporary_code: boolean; // true for brand-new signings FPL hasn't got a real photo for yet
+  // Raw per-category stat counts, season-to-date -- everything
+  // pointsBreakdown() (below) needs to reconstruct where a player's
+  // total actually came from. None of these are themselves "points",
+  // just event counts FPL's published scoring rules turn into points.
+  clean_sheets: number;
+  goals_conceded: number;
+  own_goals: number;
+  penalties_saved: number;
+  penalties_missed: number;
+  yellow_cards: number;
+  red_cards: number;
+  saves: number;
+  bonus: number;
 }
 
 export interface BootstrapTeam {
@@ -84,6 +97,15 @@ export interface Player {
   totalPoints: number;
   goalsScored: number;
   assists: number;
+  cleanSheets: number;
+  goalsConceded: number;
+  ownGoals: number;
+  penaltiesSaved: number;
+  penaltiesMissed: number;
+  yellowCards: number;
+  redCards: number;
+  saves: number;
+  bonus: number;
   /** null: no real photo available yet (hasTemporaryCode) -- render your own placeholder. */
   photoUrl: string | null;
 }
@@ -197,6 +219,15 @@ function toPlayer(element: BootstrapElement): Player {
     totalPoints: element.total_points,
     goalsScored: element.goals_scored,
     assists: element.assists,
+    cleanSheets: element.clean_sheets,
+    goalsConceded: element.goals_conceded,
+    ownGoals: element.own_goals,
+    penaltiesSaved: element.penalties_saved,
+    penaltiesMissed: element.penalties_missed,
+    yellowCards: element.yellow_cards,
+    redCards: element.red_cards,
+    saves: element.saves,
+    bonus: element.bonus,
     photoUrl: element.has_temporary_code ? null : playerPhotoUrl(element.code),
   };
 }
@@ -211,6 +242,59 @@ const POSITION_LABELS: Record<number, string> = {
 /** Short position label for a player's element_type (1=GKP..4=FWD). */
 export function positionLabel(elementType: number): string {
   return POSITION_LABELS[elementType] ?? "?";
+}
+
+export interface PointsBreakdownEntry {
+  label: string;
+  points: number;
+}
+
+// FPL's own published scoring rules -- goal/clean-sheet values are
+// position-dependent, everything else isn't. Widely documented and
+// stable for years; still worth a real spot-check against a live
+// player once deployed (same "verify, don't just assume the FPL API"
+// discipline every other FPL-shape claim in this codebase follows),
+// since this file can't reach the real API from this dev sandbox.
+const GOAL_POINTS: Record<number, number> = { 1: 6, 2: 6, 3: 5, 4: 4 };
+const CLEAN_SHEET_POINTS: Record<number, number> = { 1: 4, 2: 4, 3: 1, 4: 0 };
+
+/**
+ * A season-to-date points breakdown by category -- not an FPL field
+ * (there isn't one; bootstrap-static only ever gives the final
+ * total), reconstructed by applying FPL's published scoring rules to
+ * this player's own raw stat counts (goals, clean sheets, cards, ...).
+ *
+ * The one thing NOT reconstructable this way: exactly how many
+ * appearance points (2 for 60+ minutes, 1 for 1-59) a player earned --
+ * that split isn't in bootstrap-static's season-aggregate stats, only
+ * per-gameweek minutes would show it. Rather than guess, every entry
+ * here uses a rule this file is actually confident about, and
+ * whatever's left over (appearance points foremost, but also anything
+ * about current scoring rules this hasn't kept up with) is folded into
+ * a final "Appearances & other" entry computed as a remainder -- so
+ * the breakdown always sums to exactly totalPoints, never silently
+ * drifts from the number the site shows everywhere else.
+ */
+export function pointsBreakdown(player: Player): PointsBreakdownEntry[] {
+  const isGoalkeeperOrDefender = player.elementType === 1 || player.elementType === 2;
+
+  const known: PointsBreakdownEntry[] = [
+    { label: "Goals", points: (GOAL_POINTS[player.elementType] ?? 4) * player.goalsScored },
+    { label: "Assists", points: 3 * player.assists },
+    { label: "Clean sheets", points: (CLEAN_SHEET_POINTS[player.elementType] ?? 0) * player.cleanSheets },
+    { label: "Goals conceded", points: isGoalkeeperOrDefender ? -Math.floor(player.goalsConceded / 2) : 0 },
+    { label: "Saves", points: player.elementType === 1 ? Math.floor(player.saves / 3) : 0 },
+    { label: "Penalties saved", points: 5 * player.penaltiesSaved },
+    { label: "Penalties missed", points: -2 * player.penaltiesMissed },
+    { label: "Cards", points: -1 * player.yellowCards - 3 * player.redCards },
+    { label: "Own goals", points: -2 * player.ownGoals },
+    { label: "Bonus", points: player.bonus },
+  ].filter((entry) => entry.points !== 0);
+
+  const accountedFor = known.reduce((sum, entry) => sum + entry.points, 0);
+  const remainder = player.totalPoints - accountedFor;
+
+  return remainder !== 0 ? [...known, { label: "Appearances & other", points: remainder }] : known;
 }
 
 /**

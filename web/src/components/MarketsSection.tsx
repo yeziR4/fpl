@@ -1,5 +1,11 @@
 import Image from "next/image";
-import { PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD, positionLabel, type Player } from "@/lib/fpl";
+import {
+  PRIMARY_POINTS_THRESHOLD,
+  SECONDARY_POINTS_THRESHOLD,
+  pointsBreakdown,
+  positionLabel,
+  type Player,
+} from "@/lib/fpl";
 import type { AgentPickCounts } from "@/lib/agentPicks";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 import { StatCountUp } from "@/components/StatCountUp";
@@ -160,7 +166,7 @@ function MarketCard({ player, badgeUrl, opponent, gw, kickoffTime, agentPicks }:
 function StatStrip({ player }: { player: Player }) {
   return (
     <div className="flex items-stretch rounded-md border border-foreground/10 bg-white/[0.03]">
-      <Stat label="Pts" value={player.totalPoints} />
+      <PointsStat player={player} />
       <div className="w-px shrink-0 bg-foreground/10" />
       <Stat label="Goals" value={player.goalsScored} />
       <div className="w-px shrink-0 bg-foreground/10" />
@@ -179,6 +185,47 @@ function Stat({ label, value }: { label: string; value: number }) {
         {label}
       </span>
     </div>
+  );
+}
+
+/**
+ * The Pts stat, tappable/clickable open into a breakdown of where
+ * those points actually came from (goals, clean sheets, bonus, ...) --
+ * see lib/fpl.ts's pointsBreakdown() for how it's computed. Plain
+ * `<details>`/`<summary>` rather than a JS hover state: works
+ * identically on tap (mobile) and click (desktop) with zero client
+ * JS, and stays a server component like the rest of this file.
+ */
+function PointsStat({ player }: { player: Player }) {
+  const breakdown = pointsBreakdown(player);
+
+  return (
+    <details className="group/pts relative flex-1 [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none flex-col items-center gap-0.5 py-1.5 outline-none">
+        <span className="font-display text-lg font-black leading-none text-accent">
+          <StatCountUp value={player.totalPoints} />
+        </span>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.09em] text-foreground/40 group-open/pts:text-accent">
+          Pts
+        </span>
+      </summary>
+
+      <div className="absolute left-1/2 top-[calc(100%+6px)] z-20 w-40 -translate-x-1/2 rounded-md border border-foreground/15 bg-background p-2.5 shadow-[0_12px_28px_rgba(0,0,0,0.45)]">
+        <span className="mb-1.5 block text-[9.5px] font-semibold uppercase tracking-[0.06em] text-foreground/40">
+          Points breakdown
+        </span>
+        <div className="flex flex-col gap-1">
+          {breakdown.map((entry) => (
+            <div key={entry.label} className="flex items-center justify-between gap-2 text-[11px]">
+              <span className="text-foreground/65">{entry.label}</span>
+              <span className={`font-semibold tabular-nums ${entry.points < 0 ? "text-foreground/50" : "text-accent"}`}>
+                {entry.points > 0 ? `+${entry.points}` : entry.points}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
   );
 }
 
