@@ -25,18 +25,29 @@
  * global instance -- there's no shared mutable resource (a single
  * wallet's nonce) here that needs that.
  *
- * SETTLEMENT (added once a real gameweek had real stakes to pay out):
- * once `resolve_points_threshold` (data_pipeline/resolution.py, called
- * from the "Agent picks & leaderboard" GitHub Actions workflow -- see
+ * SETTLEMENT (house-style, odds-based -- replaced the original
+ * parimutuel pool split once the app moved from peer-to-peer to a
+ * liquidity-position model, see docs/architecture.md): once
+ * `resolve_points_threshold` (data_pipeline/resolution.py, called from
+ * the "Agent picks & leaderboard" GitHub Actions workflow -- see
  * cli.py's `settle-gameweek`/`auto-settle`) says a market's outcome is
- * final, it POSTs `{outcome}` to this DO's /settle route. This is a
- * parimutuel split, computed entirely from stake records this DO
- * already has -- every winning stake gets amountPlanck * totalPool /
- * winningSideTotal, i.e. its own stake back plus its pro-rata share of
- * the losing side's pool; losing stakes get nothing. If nobody picked
- * the winning side (winningSideTotal is 0), there's nothing to
- * distribute FROM, so everyone gets their own stake refunded instead
- * of the pool vanishing into nothing.
+ * final, it POSTs `{outcome, probability}` to this DO's /settle route.
+ * `probability` is this system's own priced probability of the outcome
+ * that actually happened (data_pipeline/oddsmaker.py's rank-based
+ * formula, the same source that already backs the AI models' bet
+ * records and the frontend's potential-winnings preview), NOT derived
+ * from this market's own stake totals -- every winning stake gets
+ * amountPlanck / probability, independent of how much anyone else
+ * staked or which side they were on; losing stakes get nothing.
+ *
+ * Deliberately unbounded by this market's own real pool size for now:
+ * a testing-phase choice ("assume VARA is infinite"; see
+ * docs/architecture.md), not a permanent one -- a future phase bounds
+ * payouts by real liquidity committed per market. The MIN_RESERVE_VARA
+ * floor chain-signer checks before any real transfer is untouched by
+ * this -- that's the actual backstop against overpaying out of real
+ * funds; this class's own math just no longer pretends stake totals
+ * are that backstop too.
  *
  * The actual transfers are signed from the same wallet the faucet
  * pays out from (MARKET_POOL_ADDRESS *is* the faucet wallet -- see
@@ -88,8 +99,11 @@ interface PayoutResult {
 interface Settlement {
   outcome: Side;
   settledAt: number;
-  totalPoolPlanck: string;
-  winningPlanck: string;
+  /** This system's own priced probability of `outcome` -- what every
+   * winning payout in this settlement was computed against (amountPlanck
+   * / probability). Stored so a retry recomputes nothing and a settled
+   * market's /totals response can show what price it actually paid at. */
+  probability: number;
   payouts: PayoutResult[];
 }
 
@@ -235,15 +249,16 @@ export class MarketLedger implements DurableObject {
   }
 
   /**
-   * Resolves this market once and for all: computes each stake's
-   * payout (see the class docstring for the parimutuel formula) and
-   * pays every winner out, one transfer at a time, via FaucetLedger.
-   * Idempotent -- called again with the same outcome (the scheduled
-   * workflow re-checks every finished gameweek on every run) just
-   * returns the already-recorded result; called with a *different*
-   * outcome than what's already settled is a conflict, surfaced
-   * rather than silently accepted, since that would mean either this
-   * call or the original settlement was wrong about the real result.
+   * Resolves this market once and for all: computes each winning
+   * stake's payout (see the class docstring for the house-style
+   * formula) and pays every winner out, one transfer at a time, via
+   * FaucetLedger. Idempotent -- called again with the same outcome
+   * (the scheduled workflow re-checks every finished gameweek on
+   * every run) just returns the already-recorded result; called with
+   * a *different* outcome than what's already settled is a conflict,
+   * surfaced rather than silently accepted, since that would mean
+   * either this call or the original settlement was wrong about the
+   * real result.
    *
    * A settled market with a FAILED payout in it (e.g. the pool
    * wallet was momentarily short) is not stuck forever: re-POSTing
@@ -255,10 +270,21 @@ export class MarketLedger implements DurableObject {
    * "already_paid" rather than double-paying.
    */
   private async handleSettle(request: Request): Promise<Response> {
-    const { outcome } = (await request.json().catch(() => ({}))) as { outcome?: unknown };
+    const { outcome, probability } = (await request.json().catch(() => ({}))) as {
+      outcome?: unknown;
+      probability?: unknown;
+    };
     if (outcome !== "yes" && outcome !== "no") {
       return jsonResponse({ error: "invalid_outcome" }, 400);
     }
+    if (typeof probability !== "number" || !Number.isFinite(probability) || probability <= 0 || probability > 1) {
+      return jsonResponse({ error: "invalid_probability" }, 400);
+    }
+    // Same floor cli.py's oddsmaker.bet_record() clamps to before
+    // dividing -- keeps a payout finite even at the priced extremes,
+    // and keeps this DO's own math in agreement with the number the
+    // model/frontend was shown before the market ever settled.
+    const clampedProbability = Math.min(Math.max(probability, 0.01), 0.99);
 
     const existing = await this.getSettlement();
     if (existing) {
@@ -271,9 +297,6 @@ export class MarketLedger implements DurableObject {
       return this.retrySettlement(existing);
     }
 
-    const totals = await this.getTotals();
-    const totalPoolPlanck = BigInt(totals.yesPlanck) + BigInt(totals.noPlanck);
-    const winningPlanck = BigInt(outcome === "yes" ? totals.yesPlanck : totals.noPlanck);
     // Every entry this DO has ever stored under "stake:..." -- fine to
     // pull all of them into memory at once, a market's real stake
     // count here is tiny (this is a demo pool, not an exchange).
@@ -281,21 +304,16 @@ export class MarketLedger implements DurableObject {
 
     const payoutPlan: Array<{ address: string; amountPlanck: bigint; stakeTxHash: string }> = [];
     for (const record of stakeEntries.values()) {
-      let amount: bigint;
-      if (winningPlanck === BigInt(0)) {
-        // Nobody staked the winning side -- there's no winning pool to
-        // redistribute FROM, so refund every stake rather than letting
-        // the pool simply vanish.
-        amount = BigInt(record.amountPlanck);
-      } else if (record.side === outcome) {
-        // Parimutuel: a winner's share of the *entire* pool (both
-        // sides) is proportional to their share of the winning side.
-        // Integer division -- any planck-level remainder from rounding
-        // is left in the pool rather than distributed, never invented.
-        amount = (BigInt(record.amountPlanck) * totalPoolPlanck) / winningPlanck;
-      } else {
-        continue; // losing stake -- no payout
-      }
+      if (record.side !== outcome) continue; // losing stake -- no payout
+      // House-style: priced entirely off this system's own probability
+      // for the winning side, independent of this market's own stake
+      // totals (see the class docstring -- unbounded by real pool size
+      // for now, a deliberate testing-phase choice). Scaled by 1e4 --
+      // matching oddsmaker.bet_record()'s own round(p_side, 4) so this
+      // pays the same price the model/frontend was shown, not a coarser
+      // one. Integer division -- any planck-level remainder from
+      // rounding is never invented.
+      const amount = (BigInt(record.amountPlanck) * 10000n) / BigInt(Math.round(clampedProbability * 10000));
       if (amount <= BigInt(0)) continue;
       payoutPlan.push({ address: record.address, amountPlanck: amount, stakeTxHash: record.txHash });
     }
@@ -315,8 +333,7 @@ export class MarketLedger implements DurableObject {
     const settlement: Settlement = {
       outcome,
       settledAt: Date.now(),
-      totalPoolPlanck: totalPoolPlanck.toString(),
-      winningPlanck: winningPlanck.toString(),
+      probability: clampedProbability,
       payouts: results,
     };
     await this.ctx.storage.put("settlement", settlement);

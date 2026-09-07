@@ -79,7 +79,14 @@ substitution and check the actual cached `minutes` value. If it turns
 out FPL does report minutes above 90 in that case, the fix is a one-line
 threshold change in `resolution.py`'s docstring/logic, not a redesign.
 
-## Market mechanism: parimutuel, not a sportsbook
+## Market mechanism: parimutuel, not a sportsbook (superseded)
+
+**Superseded by a later, explicit pivot** -- what actually settles real
+stakes today is fixed-odds/house-style, not the parimutuel pool
+described below; see "Market staking" and "Market maker" further down
+for what's actually live. Left in place as the original reasoning for
+why this app didn't start out house-style, not as a description of the
+current mechanism.
 
 Explicitly **not** fixed-odds — we are not the house and don't want to
 carry the other side of every bet. Mechanism is **parimutuel pooling**:
@@ -452,21 +459,35 @@ shared wallet rather than splitting it -- worth revisiting once the
 two balances (faucet giveaways vs. staked pool) need to be reasoned
 about, funded, or monitored separately, not before.
 
-**Settlement and payout**: once `resolution.py`'s
-`resolve_points_threshold()` says a (player, gw, threshold) market's
-outcome is final -- i.e. the whole gameweek has finished, never a
-partial or provisional result -- the "Agent picks & leaderboard"
-workflow's `auto-settle` step (`data_pipeline/cli.py`) `POST`s
-`{outcome}` to that market's own `/settle` route on this Worker,
-authenticated with `SETTLEMENT_API_KEY` (see the faucet Worker's
-one-time setup above; this is a shared bearer token gating who can
-force a settlement, not a wallet key). `MarketLedger.handleSettle`
-then does the actual parimutuel math from the stake records it already
-has: every winning stake is paid `amountPlanck * totalPool /
-winningSideTotal` -- its own stake back plus its pro-rata share of the
-losing side's pool; losing stakes get nothing. If nobody staked the
-winning side, there's no winning pool to redistribute *from*, so every
-stake is refunded instead of the pool just vanishing.
+**Settlement and payout (house-style, odds-based)**: once
+`resolution.py`'s `resolve_points_threshold()` says a (player, gw,
+threshold) market's outcome is final -- i.e. the whole gameweek has
+finished, never a partial or provisional result -- the "Agent picks &
+leaderboard" workflow's `auto-settle` step (`data_pipeline/cli.py`)
+loads the current bootstrap-static snapshot, prices the outcome side
+with `oddsmaker.market_probability()` (the same rank-based formula
+that already backs the AI models' bet records and the frontend's
+potential-winnings preview -- see "Market maker" below), and `POST`s
+`{outcome, probability}` to that market's own `/settle` route on this
+Worker, authenticated with `SETTLEMENT_API_KEY` (see the faucet
+Worker's one-time setup above; this is a shared bearer token gating
+who can force a settlement, not a wallet key).
+
+This replaced the original parimutuel split as part of the same
+peer-to-peer-to-liquidity-position pivot the AI bet records and the
+frontend preview already went through: `MarketLedger.handleSettle` no
+longer looks at this market's own stake totals to price a payout at
+all. Every winning stake is paid `amountPlanck / probability` --
+priced entirely off the probability the Worker was handed, clamped to
+`[0.01, 0.99]` the same way `oddsmaker.bet_record()` clamps before
+dividing; losing stakes get nothing. Deliberately **unbounded by this
+market's own real pool size** for now -- an explicit testing-phase
+choice ("assume VARA is infinite," pending real committed liquidity per
+market bounding payouts in a future phase), not a permanent one. The
+`MIN_RESERVE_VARA` floor `chain-signer` checks before any real transfer
+is untouched by this pivot -- that's still the actual backstop against
+overpaying out of real funds; only the calculation of what *should* be
+paid changed.
 
 The payouts themselves are real signed transfers, same as a faucet
 claim -- and for the same reason a faucet claim's payout is careful
@@ -580,15 +601,24 @@ genuinely re-fetches the whole season's history fresh on every run
 rather than incrementally topping up a stale one -- cheap (one HTTP GET
 per finished gameweek), not something that needs optimizing yet.
 
+**Built since this section was first written**: the frontend's
+potential-winnings preview and real settlement itself (`MarketLedger`'s
+`/settle`) both now price off this system's own probability rather
+than a market's own stake pool -- see "Market staking" above. Real
+settlement is still deliberately **unbounded by real liquidity**
+("assume VARA is infinite," a stated testing-phase choice to verify
+the payout math itself works) -- bounding it by actual committed
+capital is exactly what's still not built.
+
 **Not built yet, stated plainly**: Stage 2 (LMSR liquidity depth and
-the actual buy/sell cost-function mechanics), the frontend showing a
-live price/potential-winnings instead of the parimutuel percentage
-bar, and replacing the parimutuel stake flow with LMSR share purchases
-for both humans and the AI models (agreed explicitly: this replaces
-the parimutuel design for both, once built, not runs alongside it).
-Blocked on one real decision, not a technical one: how much real VARA
-actually backs the market maker, since `b` (Stage 2's liquidity
-parameter) is sized directly from that committed amount.
+the actual buy/sell cost-function mechanics) -- bounding a market's
+price *and* its real settlement payouts by how much VARA is actually
+committed to it, for both humans and the AI models (agreed explicitly:
+this replaces the current unbounded odds-based design for both, once
+built, not runs alongside it). Blocked on one real decision, not a
+technical one: how much real VARA actually backs the market maker,
+since `b` (Stage 2's liquidity parameter) is sized directly from that
+committed amount.
 
 FPL has no official public API, but a small set of unauthenticated,
 read-only JSON endpoints under `fantasy.premierleague.com/api/` have been

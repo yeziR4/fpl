@@ -43,15 +43,20 @@ to. See data_pipeline/agents.py and data_pipeline/leaderboard.py.
 score-gameweek/auto-score: for every (player, threshold) market any
 agent was asked to pick for a gameweek (the settlement candidate set --
 a superset of whatever the site's markets grid ever actually showed),
-resolve its outcome and POST it to that market's own /settle endpoint
-on the faucet Worker, which pays winners out pro-rata from the real
-staked pool. Both need FAUCET_URL and SETTLEMENT_API_KEY set in the
-environment. Unlike auto-score, auto-settle keeps no local bookkeeping
-of what's already been settled -- the Worker's own per-market
-settlement state is authoritative and already idempotent (re-settling
-an already-settled market is a no-op, never a double payout), so it's
-safe to call this on every finished gameweek on every scheduled run.
-See faucet/src/MarketLedger.ts's settle handler for the payout math.
+resolve its outcome, price it with oddsmaker.market_probability(), and
+POST {outcome, probability} to that market's own /settle endpoint on
+the faucet Worker, which pays every winning stake `amountPlanck /
+probability` -- house-style, priced off this system's own odds rather
+than this market's own stake pool (deliberately unbounded by real
+liquidity for now, a stated testing-phase choice; see
+docs/architecture.md). Both need FAUCET_URL and SETTLEMENT_API_KEY set
+in the environment. Unlike auto-score, auto-settle keeps no local
+bookkeeping of what's already been settled -- the Worker's own
+per-market settlement state is authoritative and already idempotent
+(re-settling an already-settled market is a no-op, never a double
+payout), so it's safe to call this on every finished gameweek on every
+scheduled run. See faucet/src/MarketLedger.ts's settle handler for the
+payout math.
 
 `price-market` is Stage 1 of the market-maker pricing engine (see
 data_pipeline/pricing.py): the real, historical-data opening
@@ -328,7 +333,9 @@ def _settle_gameweek(gw: int) -> None:
 
     import requests
 
+    from . import cache
     from .agents import PICKS_DIR, load_picks
+    from .oddsmaker import market_probability
 
     faucet_url = os.environ.get("FAUCET_URL", "").strip().rstrip("/")
     settlement_key = os.environ.get("SETTLEMENT_API_KEY", "").strip()
@@ -339,6 +346,16 @@ def _settle_gameweek(gw: int) -> None:
             file=sys.stderr,
         )
         return
+
+    # Real settlement is house-style now, same as the AI bet records and
+    # the frontend's potential-winnings preview: every winning stake is
+    # paid `stake / probability of the winning side`, priced by this
+    # system's own oddsmaker.py rather than split from the pool (see
+    # MarketLedger.ts's settle handler docstring). Needs the current
+    # bootstrap-static snapshot to price against -- the same snapshot
+    # generate-picks already caches, so this is never the first thing to
+    # fetch it.
+    bootstrap = cache.load_latest_bootstrap_static()
 
     saved = load_picks(gw, picks_dir=PICKS_DIR)
     markets = _markets_for_gw(saved)
@@ -352,11 +369,21 @@ def _settle_gameweek(gw: int) -> None:
             print(f"  player={player_id} over {threshold}: still PENDING, skipping")
             continue
 
+        try:
+            p_yes = market_probability(player_id, threshold, bootstrap)
+        except ValueError:
+            # Player not in the cached bootstrap-static snapshot
+            # (delisted, or the snapshot predates them) -- can't price
+            # a market with no standing to price it from.
+            print(f"  player={player_id} over {threshold}: no bootstrap-static entry, skipping")
+            continue
+        probability = p_yes if outcome == MarketOutcome.YES else (1 - p_yes)
+
         url = f"{faucet_url}/markets/{player_id}/{gw}/{threshold}/settle"
         try:
             resp = requests.post(
                 url,
-                json={"outcome": outcome.value},
+                json={"outcome": outcome.value, "probability": probability},
                 headers={"authorization": f"Bearer {settlement_key}"},
                 # Generous: each call can involve one or more real,
                 # sequentially-broadcast on-chain transfers (see
