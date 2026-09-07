@@ -5,10 +5,20 @@ function formatAccuracy(accuracy: number | null): string {
   return accuracy === null ? "—" : `${Math.round(accuracy * 100)}%`;
 }
 
+/** "+12.4" / "-3.1" -- signed, so a loss reads unmistakably as a loss
+ * rather than just a smaller positive-looking number. Undefined
+ * (never staked, or scored before bet records existed) shows as "—",
+ * the same "absent isn't zero" rule ModelTotal itself documents. */
+function formatPnl(pnl: number | undefined): string {
+  if (pnl === undefined) return "—";
+  const sign = pnl > 0 ? "+" : "";
+  return `${sign}${pnl.toFixed(1)}`;
+}
+
 export function LeaderboardTable({ totals }: { totals: ModelTotal[] }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-foreground/12">
-      <table className="w-full border-collapse text-left">
+    <div className="overflow-x-auto rounded-lg border border-foreground/12">
+      <table className="w-full min-w-[640px] border-collapse text-left">
         <thead>
           <tr className="border-b border-foreground/12 bg-white/[0.03]">
             <Th className="w-12">#</Th>
@@ -17,6 +27,8 @@ export function LeaderboardTable({ totals }: { totals: ModelTotal[] }) {
             <Th className="text-right">Wrong</Th>
             <Th className="text-right">Pending</Th>
             <Th className="text-right">Accuracy</Th>
+            <Th className="text-right">Staked</Th>
+            <Th className="text-right">Simulated P&amp;L</Th>
           </tr>
         </thead>
         <tbody>
@@ -43,6 +55,18 @@ export function LeaderboardTable({ totals }: { totals: ModelTotal[] }) {
               </td>
               <td className="px-4 py-3 text-right font-display text-[15px] font-black text-foreground">
                 {formatAccuracy(model.accuracy)}
+              </td>
+              <td className="px-4 py-3 text-right text-[13.5px] font-medium text-foreground/50">
+                {model.staked_vara !== undefined ? `${model.staked_vara.toFixed(1)} VARA` : "—"}
+              </td>
+              <td
+                className={`px-4 py-3 text-right text-[13.5px] font-semibold tabular-nums ${
+                  model.simulated_pnl_vara !== undefined && model.simulated_pnl_vara < 0
+                    ? "text-foreground/50"
+                    : "text-accent"
+                }`}
+              >
+                {formatPnl(model.simulated_pnl_vara)}
               </td>
             </tr>
           ))}
@@ -78,6 +102,11 @@ export function GameweekHistory({ gameweeks }: { gameweeks: GameweekSummary[] })
                   {m.correct}/{m.correct + m.wrong}
                   {m.pending > 0 ? ` (+${m.pending} pending)` : ""}
                 </span>
+                {m.simulated_pnl_vara !== undefined && (
+                  <span className={m.simulated_pnl_vara < 0 ? "text-foreground/35" : "text-accent"}>
+                    {formatPnl(m.simulated_pnl_vara)}
+                  </span>
+                )}
               </div>
             ))}
           </div>

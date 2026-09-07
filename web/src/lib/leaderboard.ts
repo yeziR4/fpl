@@ -21,6 +21,15 @@ export interface ModelTotal {
   wrong: number;
   pending: number;
   accuracy: number | null;
+  /** Simulated VARA "wagered" (data_pipeline/oddsmaker.py) -- absent
+   * (undefined) on a gameweek/total scored before bet records
+   * existed, never a fabricated 0 for those. See ModelPicksSection.tsx
+   * for the per-pick breakdown this rolls up from. */
+  staked_vara?: number;
+  /** Net simulated profit/loss across every judged pick -- negative
+   * means this model would be down VARA if this were real. Same
+   * absent-not-zero rule as staked_vara. */
+  simulated_pnl_vara?: number;
 }
 
 export type GameweekModelScore = ModelTotal;

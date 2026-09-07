@@ -712,11 +712,20 @@ same snapshot of FPL data and asked to predict the same points-threshold
 markets `resolution.py` already knows how to settle. A leaderboard tracks
 how often each one was right, gameweek over gameweek.
 
-Deliberately narrow, per an explicit scoping decision: this is picks +
-leaderboard only. No matchmaking, no assignment of agents to specific
-markets, no stakes — every model is asked about the same player pool,
-every time, and the leaderboard is just "were they right", not a wagering
-mechanism.
+No matchmaking, no assignment of agents to specific markets — every
+model is asked about the same player pool, every time. Each pick now
+carries a real (simulated) bet record: a VARA stake sized off the
+model's own confidence, and the potential return from this system's
+own odds (see "Market maker: rank-based odds", `oddsmaker.py`, below)
+— never the model's own opinion, so a model can't buy better odds
+just by claiming more confidence. Simulated, not real money: these
+five wallets hold nothing and never stake for real (see "AGENT_MODELS"
+below) — but every number in a bet record is real and computed, not
+invented, which is the whole point of showing it at all. The
+leaderboard tracks both "were they right" (accuracy) and "how
+aggressively did they bet, and did it pay off" (total staked, net
+simulated P&L) — two different questions about a model's judgement,
+kept as separate columns rather than collapsed into one score.
 
 - **`agents.py`** — the "ask the models" half.
   - `AGENT_MODELS`: five `AgentModel(slug, name, address)` entries, one
@@ -752,26 +761,59 @@ mechanism.
     one. Tolerates markdown code fences some models wrap JSON in despite
     being told not to.
   - `generate_picks_for_gameweek()` — orchestrates the above across all
-    five models for one gameweek. One model erroring out (bad slug,
-    outage, garbled reply) is caught and recorded per-model — it never
-    blocks the other four from producing their picks.
+    five models for one gameweek, then enriches each parsed pick with
+    its bet record via `oddsmaker.with_bet_record()` before saving.
+    One model erroring out (bad slug, outage, garbled reply) is caught
+    and recorded per-model — it never blocks the other four from
+    producing their picks.
   - `save_picks()` / `load_picks()` — persist to (read from)
     `data/agent_picks/gw<N>.json`. This is a committed, versioned record
     (see `.gitignore` — only `data/cache/*` is excluded), not a cache: a
     pick, once made and saved, is never silently regenerated or
     overwritten by a later run (`auto-generate-picks` skips a gameweek
     that already has a saved file unless told `--force`).
-- **`leaderboard.py`** — the "were they right" half. Has no resolution
-  logic of its own: `score_gameweek()` calls straight into
-  `resolution.py`'s `is_gameweek_finished()` / `resolve_points_threshold()`
-  — the same payout-safe state machine everything else in this pipeline
-  settles against — and refuses to score a gameweek that isn't finished
-  yet, for the same reason a market wouldn't pay out early. `
-  update_leaderboard()` folds one gameweek's score into
-  `data/leaderboard.json`, keyed by gameweek plus a running `totals` per
-  model; re-scoring an already-scored gameweek (e.g. after a late
-  bonus-points correction) replaces that gameweek's entry and recomputes
-  totals from scratch rather than double-counting it.
+- **`oddsmaker.py`** — turns a pick into a bet record. Two independent
+  jobs:
+  - `market_probability()` — a **second, independent Stage-1 pricing
+    source** from `pricing.py`'s historical-clear-rate formula, not a
+    replacement for it: this one is rank-based, using nothing but a
+    player's CURRENT standing (`player_standing()`: percentile in
+    total points, both overall and within their own position, from
+    the live bootstrap-static snapshot already fetched this run) —
+    available from gameweek one with zero cached history, which
+    `pricing.py`'s Bayesian formula genuinely can't do (it degrades to
+    a flat 50/50 with nothing to shrink toward). Position-relative
+    standing is weighted higher than overall standing (`_POSITION_WEIGHT
+    = 0.75`): "will this defender clear 5" is a position-relative
+    question first. Percentile maps to probability via two stated,
+    tunable anchor points per threshold (`_THRESHOLD_ANCHORS`) — real
+    modeling choices, not derived constants, same discipline
+    `pricing.py`'s `PRIOR_STRENGTH` already follows.
+  - `bet_record()` — stake size comes from the model's own confidence
+    (`MIN_STAKE_VARA` to `MAX_STAKE_VARA`, linear); the odds come
+    entirely from `market_probability()` for whichever side the model
+    picked. Confidence never touches the odds — a model can't buy a
+    better price just by claiming more conviction, the same way a
+    real bettor can't move a real market's price by being loud about
+    their own opinion. `potential_return_vara` is the fair decimal-odds
+    payout (`stake / probability`), stake included.
+- **`leaderboard.py`** — the "were they right" (and "how much would it
+  have cost/won them") half. Has no resolution logic of its own:
+  `score_gameweek()` calls straight into `resolution.py`'s
+  `is_gameweek_finished()` / `resolve_points_threshold()` — the same
+  payout-safe state machine everything else in this pipeline settles
+  against — and refuses to score a gameweek that isn't finished yet,
+  for the same reason a market wouldn't pay out early. For every
+  judged (non-pending) pick it also tallies `staked_vara` and
+  `simulated_pnl_vara` (win: `potential_return_vara - stake_vara`,
+  loss: `-stake_vara`) — a pick saved before bet records existed just
+  contributes nothing to either, not a crash. `update_leaderboard()`
+  folds one gameweek's score into `data/leaderboard.json`, keyed by
+  gameweek plus a running `totals` per model (correct/wrong/pending
+  *and* staked/simulated P&L, accumulated the same way); re-scoring an
+  already-scored gameweek (e.g. after a late bonus-points correction)
+  replaces that gameweek's entry and recomputes totals from scratch
+  rather than double-counting it.
 - **CLI** (`cli.py`): `generate-picks --gw N` / `score-gameweek --gw N`
   target an explicit gameweek by hand. `auto-generate-picks` /
   `auto-score` are what the scheduled workflow actually calls:

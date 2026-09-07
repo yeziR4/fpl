@@ -23,7 +23,7 @@ from pathlib import Path
 
 import requests
 
-from . import cache
+from . import cache, oddsmaker
 from .players import Player, top_expensive_players
 from .settlement import PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD
 
@@ -174,6 +174,9 @@ def build_prompt(
     team_names = _team_names(bootstrap)
     lines = [
         f"You are picking outcomes for a Fantasy Premier League (FPL) prediction market, gameweek {gw}.",
+        "Your picks are tracked on a public leaderboard alongside four other AI models and scored",
+        "against the real results once this gameweek finishes -- you are being judged on prediction",
+        "accuracy across gameweeks, so answer as accurately as you actually can, not just plausibly.",
         "For each player below, predict whether they will score AT LEAST the given points threshold",
         "in this single gameweek (standard FPL scoring: goals, assists, clean sheets, bonus, etc).",
         "",
@@ -203,6 +206,15 @@ class AgentPick:
     threshold: int
     pick: bool  # True = model expects the player to clear the threshold
     confidence: float | None
+    # Populated by generate_picks_for_gameweek() (via
+    # oddsmaker.with_bet_record()) after parse_picks() below returns
+    # the model's raw pick+confidence -- parse_picks() itself stays a
+    # pure parser of the model's reply, with no pricing concerns of
+    # its own. None here means "not priced yet" (e.g. an AgentPick
+    # built directly in a test), never "no market exists".
+    market_probability: float | None = None
+    stake_vara: float | None = None
+    potential_return_vara: float | None = None
 
 
 def parse_picks(
@@ -317,6 +329,11 @@ def generate_picks_for_gameweek(
             results.append(ModelPicksResult(model=model, picks=[], error=str(exc)))
             continue
         picks = parse_picks(raw, valid_player_ids=valid_player_ids, valid_thresholds=valid_thresholds)
+        # This system's own bet record, not the model's -- see
+        # oddsmaker.bet_record()'s docstring for why the odds come
+        # entirely from player standing, never from what the model
+        # itself claims to believe.
+        picks = [oddsmaker.with_bet_record(p, bootstrap) for p in picks]
         error = None if picks else f"parsed 0 usable picks from a {len(raw)}-char reply"
         results.append(ModelPicksResult(model=model, picks=picks, error=error))
     return results
@@ -339,6 +356,9 @@ def save_picks(gw: int, results: list[ModelPicksResult], *, picks_dir: Path = PI
                         "threshold": p.threshold,
                         "pick": "yes" if p.pick else "no",
                         "confidence": p.confidence,
+                        "market_probability": p.market_probability,
+                        "stake_vara": p.stake_vara,
+                        "potential_return_vara": p.potential_return_vara,
                     }
                     for p in r.picks
                 ],

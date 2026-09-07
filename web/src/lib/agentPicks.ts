@@ -10,12 +10,14 @@
  *     counts, not staked amounts.
  *   - loadAgentPicksForGw() / latestAgentPicksGw(): a whole model's
  *     pick list for a gameweek -- what the leaderboard page's "Model
- *     picks" section renders. Deliberately picks-and-confidence only,
- *     no VARA figure: these wallets hold nothing and have never
- *     staked (see docs/architecture.md) -- inventing a monetary-
- *     looking number nothing backs would be exactly the kind of
- *     "looks real, isn't" this project has gone out of its way to
- *     avoid everywhere else (the faucet/staking verification work).
+ *     picks" section renders, including each pick's bet record
+ *     (data_pipeline/oddsmaker.py: a stake sized off the model's own
+ *     confidence, and the potential return from this system's own
+ *     rank-based odds -- never the model's opinion). Simulated, not
+ *     real money -- these wallets hold nothing and have never staked
+ *     for real (see docs/architecture.md) -- but a real, computed
+ *     number from a real formula, not an invented one, which is what
+ *     makes it worth showing at all.
  */
 
 import { promises as fs } from "fs";
@@ -26,6 +28,9 @@ interface AgentPickRecord {
   threshold: number;
   pick: "yes" | "no";
   confidence: number | null;
+  market_probability: number | null;
+  stake_vara: number | null;
+  potential_return_vara: number | null;
 }
 
 interface AgentPicksModel {
@@ -97,12 +102,24 @@ export interface AgentPickDetail {
   threshold: number;
   side: "yes" | "no";
   /** 0-1, as the model reported it -- null if the model didn't give one
-   * (parse_picks in data_pipeline/agents.py doesn't require it). This
-   * is the model's own stated conviction, nothing more: no VARA is
-   * attached to it (see ModelPicksSection.tsx's own framing) -- these
-   * wallets hold nothing and have never staked, on purpose (see
-   * docs/architecture.md's "AI agent picks & leaderboard" section). */
+   * (parse_picks in data_pipeline/agents.py doesn't require it). The
+   * model's own stated conviction -- drives stakeVara below, never
+   * marketProbability (see oddsmaker.bet_record's docstring for why a
+   * model can't "buy" better odds just by claiming more confidence). */
   confidence: number | null;
+  /** This system's own priced probability for the SIDE picked (not
+   * necessarily "yes") -- data_pipeline/oddsmaker.py's rank-based
+   * Stage-1 formula, entirely independent of the model's own opinion.
+   * Null for a pick saved before bet records existed. */
+  marketProbability: number | null;
+  /** Simulated VARA "wagered" -- these wallets hold nothing and never
+   * stake for real (see docs/architecture.md), but this is a real
+   * number from a real formula (confidence-scaled), not invented.
+   * Null under the same condition marketProbability is. */
+  stakeVara: number | null;
+  /** Total VARA this pick would return if correct, stake included --
+   * stakeVara / marketProbability. Null under the same condition. */
+  potentialReturnVara: number | null;
 }
 
 export interface ModelPicks {
@@ -128,6 +145,9 @@ export async function loadAgentPicksForGw(gw: number): Promise<ModelPicks[] | nu
       threshold: pick.threshold,
       side: pick.pick,
       confidence: pick.confidence,
+      marketProbability: pick.market_probability,
+      stakeVara: pick.stake_vara,
+      potentialReturnVara: pick.potential_return_vara,
     })),
   }));
 }

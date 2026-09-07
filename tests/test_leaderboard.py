@@ -55,6 +55,76 @@ def test_score_gameweek_counts_correct_and_wrong(tmp_path, populated_cache):
     assert model["accuracy"] == pytest.approx(0.75)
 
 
+def test_score_gameweek_tracks_staked_and_simulated_pnl(tmp_path, populated_cache):
+    picks_dir = tmp_path / "agent_picks"
+    _save_gw1_picks(
+        picks_dir,
+        model_name="Bettor",
+        model_slug="bettor/model",
+        picks=[
+            # Haaland: 12 pts -- over 5 is really YES. Picked YES
+            # (correct): staked 2, would return 5 if right -> profit +3.
+            AgentPick(
+                player_id=1,
+                threshold=5,
+                pick=True,
+                confidence=None,
+                market_probability=0.4,
+                stake_vara=2.0,
+                potential_return_vara=5.0,
+            ),
+            # Salah: 6 pts -- over 10 is really NO. Picked YES
+            # (wrong): staked 1 -> loses the whole stake, profit -1.
+            AgentPick(
+                player_id=2,
+                threshold=10,
+                pick=True,
+                confidence=None,
+                market_probability=0.3,
+                stake_vara=1.0,
+                potential_return_vara=3.33,
+            ),
+        ],
+    )
+
+    summary = score_gameweek(1, cache_dir=populated_cache, picks_dir=picks_dir)
+    model = summary["models"][0]
+    assert model["correct"] == 1
+    assert model["wrong"] == 1
+    assert model["staked_vara"] == pytest.approx(3.0)
+    assert model["simulated_pnl_vara"] == pytest.approx(2.0)  # +3 win, -1 loss
+
+
+def test_score_gameweek_pending_picks_dont_count_toward_stake_or_pnl(tmp_path, populated_cache):
+    picks_dir = tmp_path / "agent_picks"
+    _save_gw1_picks(
+        picks_dir,
+        model_name="Bettor",
+        model_slug="bettor/model",
+        picks=[
+            # Saka (id=4): fixture finished at GW1, but no live
+            # snapshot was ever cached for them (see populated_cache's
+            # own docstring) -- PENDING on our own pipeline, not on
+            # the match, same case test_resolution.py exercises.
+            AgentPick(
+                player_id=4,
+                threshold=5,
+                pick=True,
+                confidence=None,
+                market_probability=0.5,
+                stake_vara=4.0,
+                potential_return_vara=8.0,
+            ),
+        ],
+    )
+
+    summary = score_gameweek(1, cache_dir=populated_cache, picks_dir=picks_dir)
+    model = summary["models"][0]
+    assert model["pending"] == 1
+    assert model["staked_vara"] == 0.0
+    assert model["simulated_pnl_vara"] == 0.0
+
+
 def test_score_gameweek_raises_if_not_finished(tmp_path, populated_cache):
     picks_dir = tmp_path / "agent_picks"
     _save_gw1_picks(
@@ -91,6 +161,66 @@ def test_update_leaderboard_accumulates_across_gameweeks(tmp_path):
     assert totals["wrong"] == 4
     assert totals["pending"] == 0
     assert totals["accuracy"] == pytest.approx(0.5)
+
+
+def test_update_leaderboard_accumulates_stake_and_pnl_across_gameweeks(tmp_path):
+    leaderboard_path = tmp_path / "leaderboard.json"
+
+    gw1_summary = {
+        "gw": 1,
+        "scored_at": "2026-01-01T00:00:00+00:00",
+        "models": [
+            {
+                "slug": "a/model",
+                "name": "A Model",
+                "correct": 1,
+                "wrong": 0,
+                "pending": 0,
+                "accuracy": 1.0,
+                "staked_vara": 3.0,
+                "simulated_pnl_vara": 2.0,
+            }
+        ],
+    }
+    gw2_summary = {
+        "gw": 2,
+        "scored_at": "2026-01-08T00:00:00+00:00",
+        "models": [
+            {
+                "slug": "a/model",
+                "name": "A Model",
+                "correct": 0,
+                "wrong": 1,
+                "pending": 0,
+                "accuracy": 0.0,
+                "staked_vara": 4.0,
+                "simulated_pnl_vara": -4.0,
+            }
+        ],
+    }
+
+    update_leaderboard(gw1_summary, leaderboard_path=leaderboard_path)
+    path = update_leaderboard(gw2_summary, leaderboard_path=leaderboard_path)
+
+    totals = json.loads(path.read_text())["totals"]["a/model"]
+    assert totals["staked_vara"] == pytest.approx(7.0)
+    assert totals["simulated_pnl_vara"] == pytest.approx(-2.0)
+
+
+def test_update_leaderboard_tolerates_a_gameweek_scored_before_bet_records_existed(tmp_path):
+    leaderboard_path = tmp_path / "leaderboard.json"
+    # No staked_vara/simulated_pnl_vara keys at all -- the shape
+    # score_gameweek produced before this feature existed. Must not
+    # raise, and must contribute 0 rather than crash on a missing key.
+    old_shape_summary = {
+        "gw": 1,
+        "scored_at": "2026-01-01T00:00:00+00:00",
+        "models": [{"slug": "a/model", "name": "A Model", "correct": 1, "wrong": 0, "pending": 0, "accuracy": 1.0}],
+    }
+    path = update_leaderboard(old_shape_summary, leaderboard_path=leaderboard_path)
+    totals = json.loads(path.read_text())["totals"]["a/model"]
+    assert totals["staked_vara"] == 0.0
+    assert totals["simulated_pnl_vara"] == 0.0
 
 
 def test_update_leaderboard_rescoring_a_gameweek_replaces_not_doubles(tmp_path):

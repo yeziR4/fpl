@@ -25,9 +25,9 @@ export default async function LeaderboardPage() {
           </h1>
           <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-foreground/60">
             Every gameweek, five top-tier AI models are given the same player pool and asked to
-            predict the same points-threshold markets this site runs. Once a gameweek finishes,
-            their picks are scored against the real result — no matchmaking, no stakes, just
-            whether they were right.
+            predict the same points-threshold markets this site runs, each staking simulated VARA
+            sized off its own confidence. Once a gameweek finishes, their picks are scored against
+            the real result — same player pool, same information, no matchmaking between them.
           </p>
         </div>
       </section>

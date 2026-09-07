@@ -51,15 +51,34 @@ def score_gameweek(
     model_summaries = []
     for model_entry in saved["models"]:
         correct = wrong = pending = 0
+        staked_vara = simulated_pnl_vara = 0.0
         for pick in model_entry["picks"]:
             outcome = outcome_for(pick["player_id"], pick["threshold"])
             picked_yes = pick["pick"] == "yes"
+
             if outcome == MarketOutcome.PENDING:
                 pending += 1
-            elif (outcome == MarketOutcome.YES) == picked_yes:
+                continue
+
+            won = (outcome == MarketOutcome.YES) == picked_yes
+            if won:
                 correct += 1
             else:
                 wrong += 1
+
+            # Simulated only -- see agents.py/oddsmaker.py and
+            # docs/architecture.md: these five wallets hold nothing
+            # real and never stake for real. `.get(...)` rather than
+            # a direct key access since picks saved before bet records
+            # existed won't have these fields -- a missing stake just
+            # doesn't contribute to either total, same as a pick that
+            # was never staked at all.
+            stake = pick.get("stake_vara")
+            potential_return = pick.get("potential_return_vara")
+            if stake is not None:
+                staked_vara += stake
+                simulated_pnl_vara += (potential_return - stake) if won else -stake
+
         judged = correct + wrong
         model_summaries.append(
             {
@@ -69,6 +88,8 @@ def score_gameweek(
                 "wrong": wrong,
                 "pending": pending,
                 "accuracy": correct / judged if judged else None,
+                "staked_vara": round(staked_vara, 2),
+                "simulated_pnl_vara": round(simulated_pnl_vara, 2),
             }
         )
 
@@ -98,16 +119,31 @@ def update_leaderboard(gw_summary: dict, *, leaderboard_path: Path = LEADERBOARD
         for model in gw_data["models"]:
             slug = model["slug"]
             t = totals.setdefault(
-                slug, {"slug": slug, "name": model["name"], "correct": 0, "wrong": 0, "pending": 0}
+                slug,
+                {
+                    "slug": slug,
+                    "name": model["name"],
+                    "correct": 0,
+                    "wrong": 0,
+                    "pending": 0,
+                    "staked_vara": 0.0,
+                    "simulated_pnl_vara": 0.0,
+                },
             )
             t["correct"] += model["correct"]
             t["wrong"] += model["wrong"]
             t["pending"] += model["pending"]
+            # .get(...): a gameweek scored before bet records existed
+            # won't have these fields -- contributes 0, not a KeyError.
+            t["staked_vara"] += model.get("staked_vara", 0.0)
+            t["simulated_pnl_vara"] += model.get("simulated_pnl_vara", 0.0)
             t["name"] = model["name"]  # keep the most recently seen display name
 
     for t in totals.values():
         judged = t["correct"] + t["wrong"]
         t["accuracy"] = t["correct"] / judged if judged else None
+        t["staked_vara"] = round(t["staked_vara"], 2)
+        t["simulated_pnl_vara"] = round(t["simulated_pnl_vara"], 2)
 
     board["totals"] = totals
     board["updated_at"] = datetime.now(timezone.utc).isoformat()

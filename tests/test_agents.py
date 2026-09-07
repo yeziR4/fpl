@@ -263,7 +263,19 @@ def test_save_and_load_picks_round_trip(tmp_path):
     assert loaded["gw"] == 4
     assert loaded["models"][0]["slug"] == "some/model"
     assert loaded["models"][0]["picks"] == [
-        {"player_id": 1, "threshold": 5, "pick": "yes", "confidence": 0.9}
+        {
+            "player_id": 1,
+            "threshold": 5,
+            "pick": "yes",
+            "confidence": 0.9,
+            # Not enriched with a bet record here -- that's
+            # generate_picks_for_gameweek()'s job (see
+            # test_oddsmaker.py), not save_picks()'s. An AgentPick
+            # built directly, as this test does, is never priced.
+            "market_probability": None,
+            "stake_vara": None,
+            "potential_return_vara": None,
+        }
     ]
 
 
