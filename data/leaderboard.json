@@ -45,49 +45,95 @@
         }
       ],
       "scored_at": "2026-09-01T12:00:02.005377+00:00"
+    },
+    "3": {
+      "gw": 3,
+      "models": [
+        {
+          "accuracy": 0.8,
+          "correct": 32,
+          "name": "GPT (latest)",
+          "pending": 0,
+          "slug": "~openai/gpt-latest",
+          "wrong": 8
+        },
+        {
+          "accuracy": 0.825,
+          "correct": 33,
+          "name": "Claude Opus (latest)",
+          "pending": 0,
+          "slug": "~anthropic/claude-opus-latest",
+          "wrong": 7
+        },
+        {
+          "accuracy": 0.725,
+          "correct": 29,
+          "name": "Gemini Pro (latest)",
+          "pending": 0,
+          "slug": "~google/gemini-pro-latest",
+          "wrong": 11
+        },
+        {
+          "accuracy": 0.65,
+          "correct": 26,
+          "name": "Grok 4.20",
+          "pending": 0,
+          "slug": "x-ai/grok-4.20",
+          "wrong": 14
+        },
+        {
+          "accuracy": 0.675,
+          "correct": 27,
+          "name": "DeepSeek V4 Pro",
+          "pending": 0,
+          "slug": "deepseek/deepseek-v4-pro",
+          "wrong": 13
+        }
+      ],
+      "scored_at": "2026-09-07T13:00:17.943552+00:00"
     }
   },
   "totals": {
     "deepseek/deepseek-v4-pro": {
       "accuracy": 0.675,
-      "correct": 27,
+      "correct": 54,
       "name": "DeepSeek V4 Pro",
       "pending": 0,
       "slug": "deepseek/deepseek-v4-pro",
-      "wrong": 13
+      "wrong": 26
     },
     "x-ai/grok-4.20": {
       "accuracy": 0.65,
-      "correct": 26,
+      "correct": 52,
       "name": "Grok 4.20",
       "pending": 0,
       "slug": "x-ai/grok-4.20",
-      "wrong": 14
+      "wrong": 28
     },
     "~anthropic/claude-opus-latest": {
-      "accuracy": 0.525,
-      "correct": 21,
+      "accuracy": 0.675,
+      "correct": 54,
       "name": "Claude Opus (latest)",
       "pending": 0,
       "slug": "~anthropic/claude-opus-latest",
-      "wrong": 19
+      "wrong": 26
     },
     "~google/gemini-pro-latest": {
-      "accuracy": null,
-      "correct": 0,
+      "accuracy": 0.725,
+      "correct": 29,
       "name": "Gemini Pro (latest)",
       "pending": 0,
       "slug": "~google/gemini-pro-latest",
-      "wrong": 0
+      "wrong": 11
     },
     "~openai/gpt-latest": {
-      "accuracy": 0.675,
-      "correct": 27,
+      "accuracy": 0.7375,
+      "correct": 59,
       "name": "GPT (latest)",
       "pending": 0,
       "slug": "~openai/gpt-latest",
-      "wrong": 13
+      "wrong": 21
     }
   },
-  "updated_at": "2026-09-01T12:00:02.005456+00:00"
+  "updated_at": "2026-09-07T13:00:17.943666+00:00"
 }
