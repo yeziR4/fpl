@@ -87,6 +87,19 @@ new_sqlite_classes = ["GameLedger"]
 tag = "v4"
 deleted_classes = ["GameLedger"]
 
+# v5: the live script has a "v5" migration tag applied that this file
+# never declared -- confirmed via a real deploy failing with "migration
+# tag 'v5', which was not found in your wrangler.toml file... Applying
+# all available migrations to the script," which then tried to re-run
+# v1's new_sqlite_classes against FaucetLedger's already-existing
+# Durable Objects (error 10074), same failure mode v3/v4's own history
+# above already hit once. No new/deleted class here -- there's nothing
+# to migrate beyond v4's two live classes (FaucetLedger, MarketLedger),
+# this is purely catching wrangler's own bookkeeping back up to what's
+# actually live so it stops trying to replay v1-v4 from scratch.
+[[migrations]]
+tag = "v5"
+
 [vars]
 # Non-secret configuration. CHAIN_SIGNER_API_KEY is set separately as
 # a Worker secret (`wrangler secret put CHAIN_SIGNER_API_KEY`), never here.
