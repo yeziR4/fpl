@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import { GameweekHistory, LeaderboardTable } from "@/components/LeaderboardTable";
-import { ModelPicksSection } from "@/components/ModelPicksSection";
+import { ModelPicksSection, type PickPlayerInfo } from "@/components/ModelPicksSection";
 import { loadLeaderboard, rankedGameweeks, rankedTotals } from "@/lib/leaderboard";
 import { latestAgentPicksGw, loadAgentPicksForGw, type ModelPicks } from "@/lib/agentPicks";
-import { fetchBootstrapStatic } from "@/lib/fpl";
+import {
+  fetchBootstrapStatic,
+  fetchFixtures,
+  fixturesForTeamInGw,
+  playerPhotoUrl,
+  teamBadgeUrl,
+  teamCodeForId,
+} from "@/lib/fpl";
 import { fetchVaraUsdPrice } from "@/lib/vara/price";
 
 export const metadata: Metadata = {
@@ -70,7 +77,7 @@ export default async function LeaderboardPage() {
         <ModelPicksSection
           gw={picksSection.gw}
           models={picksSection.models}
-          playerNames={picksSection.playerNames}
+          playerInfo={picksSection.playerInfo}
           varaUsdPrice={varaUsdPrice}
         />
       )}
@@ -79,18 +86,21 @@ export default async function LeaderboardPage() {
 }
 
 /**
- * The newest gameweek's agent picks, paired with the player names to
- * render them with (bootstrap-static's the only place that mapping
- * lives). Failing soft to null on either fetch -- picks with no names
- * to show, or bootstrap-static being unreachable (see lib/fpl.ts's own
- * caveat about this sandbox's egress) -- just means this section
- * doesn't render, same "fail soft, not broken" contract loadMarketPlayers
- * in app/page.tsx already follows.
+ * The newest gameweek's agent picks, paired with each referenced
+ * player's name/photo/opponent (bootstrap-static + the fixture list
+ * are the only places that data lives) -- what lets ModelPicksSection
+ * show a face and a match per pick, not just a bare name. Only resolved
+ * for players actually referenced by at least one pick, not the whole
+ * player pool. Failing soft to null on any fetch -- picks with nothing
+ * to render them with, or bootstrap-static/fixtures being unreachable
+ * (see lib/fpl.ts's own caveat about this sandbox's egress) -- just
+ * means this section doesn't render, same "fail soft, not broken"
+ * contract loadMarketPlayers in app/page.tsx already follows.
  */
 async function loadLatestPicksSection(): Promise<{
   gw: number;
   models: ModelPicks[];
-  playerNames: Record<number, string>;
+  playerInfo: Record<number, PickPlayerInfo>;
 } | null> {
   try {
     const gw = await latestAgentPicksGw();
@@ -98,13 +108,36 @@ async function loadLatestPicksSection(): Promise<{
     const models = await loadAgentPicksForGw(gw);
     if (!models) return null;
 
-    const bootstrap = await fetchBootstrapStatic();
-    const playerNames: Record<number, string> = {};
-    for (const element of bootstrap.elements) {
-      playerNames[element.id] = element.web_name;
+    const [bootstrap, fixtures] = await Promise.all([fetchBootstrapStatic(), fetchFixtures()]);
+
+    const playerIds = new Set<number>();
+    for (const model of models) {
+      for (const pick of model.picks) playerIds.add(pick.playerId);
     }
 
-    return { gw, models, playerNames };
+    const playerInfo: Record<number, PickPlayerInfo> = {};
+    for (const id of playerIds) {
+      const element = bootstrap.elements.find((e) => e.id === id);
+      if (!element) continue; // moved out of bootstrap-static's pool since picks were generated
+
+      const fixture = fixturesForTeamInGw(element.team, gw, fixtures)[0] ?? null;
+      const opponentTeam = fixture ? bootstrap.teams.find((t) => t.id === fixture.teamId) : undefined;
+
+      playerInfo[id] = {
+        webName: element.web_name,
+        photoUrl: element.has_temporary_code ? null : playerPhotoUrl(element.code, "40x40"),
+        opponent:
+          fixture && opponentTeam
+            ? {
+                badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, fixture.teamId)),
+                shortName: opponentTeam.short_name,
+                isHome: fixture.isHome,
+              }
+            : null,
+      };
+    }
+
+    return { gw, models, playerInfo };
   } catch (error) {
     console.error("Failed to load model picks section:", error);
     return null;

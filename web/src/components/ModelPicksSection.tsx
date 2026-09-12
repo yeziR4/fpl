@@ -1,5 +1,7 @@
+import Image from "next/image";
 import type { ModelPicks } from "@/lib/agentPicks";
 import { formatUsd } from "@/lib/vara/price";
+import { PlayerPhoto } from "@/components/PlayerPhoto";
 
 /**
  * Each model's full pick list for the most current gameweek, now as a
@@ -21,17 +23,30 @@ import { formatUsd } from "@/lib/vara/price";
  * the only time we will need vara is when they want to pay or get
  * paid" -- nothing here pays or gets paid, it's simulated, so there's
  * no reason to make a reader do the VARA arithmetic themselves.
+ *
+ * Each pick now carries a face, not just a name -- a player photo and
+ * their actual opponent for this specific gameweek (see
+ * lib/fpl.ts's fixturesForTeamInGw), the same visual language the
+ * markets grid itself uses -- requested directly after the plain-text
+ * version shipped: "visualize the model picks better add player
+ * picture and matches". A pick for a player this build's playerInfo
+ * map doesn't cover (bootstrap-static's pool moved between when picks
+ * were generated and when this page builds) falls back to a bare id
+ * and no photo/opponent, never hides the pick.
  */
+
+export interface PickPlayerInfo {
+  webName: string;
+  photoUrl: string | null;
+  opponent: { badgeUrl: string; shortName: string; isHome: boolean } | null;
+}
 
 interface ModelPicksSectionProps {
   gw: number;
   models: ModelPicks[];
-  /** player_id -> display name, resolved from bootstrap-static at
-   * build time. A pick for an id not in this map (should only happen
-   * if bootstrap-static's player pool moved between when picks were
-   * generated and when this page builds) falls back to the raw id
-   * rather than hiding the pick. */
-  playerNames: Record<number, string>;
+  /** player_id -> name/photo/opponent, resolved from bootstrap-static
+   * and the fixture list at build time (see lib/fpl.ts). */
+  playerInfo: Record<number, PickPlayerInfo>;
   /** Live VARA/USD rate this page fetched once, or null if that fetch
    * failed -- every dollar figure in this section is `stakeVara *
    * varaUsdPrice`, computed at render time rather than stored, so it
@@ -41,10 +56,10 @@ interface ModelPicksSectionProps {
   varaUsdPrice: number | null;
 }
 
-export function ModelPicksSection({ gw, models, playerNames, varaUsdPrice }: ModelPicksSectionProps) {
+export function ModelPicksSection({ gw, models, playerInfo, varaUsdPrice }: ModelPicksSectionProps) {
   return (
     <section className="bg-background">
-      <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">
+      <div className="mx-auto max-w-5xl px-6 py-12 sm:px-10">
         <div className="mb-6 flex flex-col gap-2">
           <h2 className="font-display text-xl font-black uppercase tracking-[0.02em] text-foreground">
             Model bets — GW{gw}
@@ -56,9 +71,9 @@ export function ModelPicksSection({ gw, models, playerNames, varaUsdPrice }: Mod
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {models.map((model) => (
-            <ModelPickCard key={model.slug} model={model} playerNames={playerNames} varaUsdPrice={varaUsdPrice} />
+            <ModelPickCard key={model.slug} model={model} playerInfo={playerInfo} varaUsdPrice={varaUsdPrice} />
           ))}
         </div>
       </div>
@@ -79,11 +94,11 @@ function money(varaAmount: number, varaUsdPrice: number | null): string {
 
 function ModelPickCard({
   model,
-  playerNames,
+  playerInfo,
   varaUsdPrice,
 }: {
   model: ModelPicks;
-  playerNames: Record<number, string>;
+  playerInfo: Record<number, PickPlayerInfo>;
   varaUsdPrice: number | null;
 }) {
   const totalStaked = model.picks.reduce((sum, p) => sum + (p.stakeVara ?? 0), 0);
@@ -103,50 +118,98 @@ function ModelPickCard({
           Errored this gameweek — <span className="font-mono text-[11px]">{model.error}</span>
         </p>
       ) : model.picks.length === 0 ? (
-        <p className="mt-3 text-[12px] text-foreground/40">No picks recorded.</p>
+        <p className="mt-3 text-[12px] text-foreground/40">
+          No bets this gameweek — saw no real edge anywhere.
+        </p>
       ) : (
-        <ul className="mt-3 flex max-h-72 flex-col gap-2 overflow-y-auto pr-1">
+        <ul className="mt-3 flex max-h-96 flex-col gap-2.5 overflow-y-auto pr-1">
           {model.picks.map((pick) => (
-            <li
+            <PickRow
               key={`${pick.playerId}-${pick.threshold}`}
-              className="flex flex-col gap-0.5 border-b border-foreground/5 pb-2 text-[12px] last:border-b-0 last:pb-0"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-foreground/75">
-                  {playerNames[pick.playerId] ?? `Player ${pick.playerId}`}{" "}
-                  <span className="text-foreground/40">Over {pick.threshold}</span>
-                </span>
-                <span
-                  className={`shrink-0 font-semibold ${pick.side === "yes" ? "text-accent" : "text-foreground/50"}`}
-                >
-                  {pick.side === "yes" ? "Yes" : "No"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-2 text-[10.5px] text-foreground/40">
-                <span>
-                  {pick.stakeVara !== null ? (
-                    <>
-                      Staked <span className="font-medium text-foreground/60">{money(pick.stakeVara, varaUsdPrice)}</span>
-                      {pick.potentialReturnVara !== null && (
-                        <>
-                          {" "}
-                          → wins{" "}
-                          <span className="font-medium text-accent">
-                            {money(pick.potentialReturnVara, varaUsdPrice)}
-                          </span>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    "No bet record"
-                  )}
-                </span>
-                {pick.confidence !== null && <span>{Math.round(pick.confidence * 100)}% confident</span>}
-              </div>
-            </li>
+              pick={pick}
+              info={playerInfo[pick.playerId]}
+              varaUsdPrice={varaUsdPrice}
+            />
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+function PickRow({
+  pick,
+  info,
+  varaUsdPrice,
+}: {
+  pick: ModelPicks["picks"][number];
+  info: PickPlayerInfo | undefined;
+  varaUsdPrice: number | null;
+}) {
+  return (
+    <li className="flex items-center gap-2.5 border-b border-foreground/5 pb-2.5 text-[12px] last:border-b-0 last:pb-0">
+      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-accent-dim">
+        <PlayerPhoto
+          photoUrl={info?.photoUrl ?? null}
+          alt={info?.webName ?? `Player ${pick.playerId}`}
+          sizes="36px"
+          className="object-top"
+        />
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="truncate text-foreground/75">
+            <span className="font-medium text-foreground/85">{info?.webName ?? `Player ${pick.playerId}`}</span>{" "}
+            <span className="text-foreground/40">Over {pick.threshold}</span>
+          </span>
+          <span
+            className={`shrink-0 font-semibold ${pick.side === "yes" ? "text-accent" : "text-foreground/50"}`}
+          >
+            {pick.side === "yes" ? "Yes" : "No"}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 text-[10.5px] text-foreground/40">
+          <span className="flex items-center gap-1">
+            {info?.opponent ? (
+              <>
+                <span className="relative h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-foreground/10">
+                  <Image
+                    src={info.opponent.badgeUrl}
+                    alt={info.opponent.shortName}
+                    fill
+                    sizes="14px"
+                    className="object-contain p-0.5"
+                    unoptimized
+                  />
+                </span>
+                {info.opponent.isHome ? "vs" : "@"} {info.opponent.shortName}
+              </>
+            ) : (
+              "No fixture"
+            )}
+          </span>
+          {pick.confidence !== null && <span>{Math.round(pick.confidence * 100)}% confident</span>}
+        </div>
+
+        <div className="text-[10.5px] text-foreground/40">
+          {pick.stakeVara !== null ? (
+            <>
+              Staked <span className="font-medium text-foreground/60">{money(pick.stakeVara, varaUsdPrice)}</span>
+              {pick.potentialReturnVara !== null && (
+                <>
+                  {" "}
+                  → wins{" "}
+                  <span className="font-medium text-accent">{money(pick.potentialReturnVara, varaUsdPrice)}</span>
+                </>
+              )}
+            </>
+          ) : (
+            "No bet record"
+          )}
+        </div>
+      </div>
+    </li>
   );
 }

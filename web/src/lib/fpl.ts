@@ -190,6 +190,32 @@ export function nextFixtureForTeam(teamId: number, fixtures: Fixture[]): Opponen
   };
 }
 
+export interface GwFixture {
+  teamId: number;
+  isHome: boolean;
+  kickoffTime: string | null;
+}
+
+/**
+ * A team's fixture(s) in one SPECIFIC gameweek -- usually one,
+ * occasionally two (double gameweek) or zero (blank gameweek). Unlike
+ * nextFixtureForTeam (which finds whichever unplayed match comes next,
+ * regardless of gameweek), this pins to exactly the gameweek asked
+ * for: what a picks list already scoped to one gameweek needs, so a
+ * team whose fixture in that gameweek has already been played still
+ * shows *that* match, not a different, later gameweek's opponent.
+ * Same fixture-lookup rule data_pipeline/agents.py's
+ * `_opponent_summary` uses for the AI prompt itself.
+ */
+export function fixturesForTeamInGw(teamId: number, gw: number, fixtures: Fixture[]): GwFixture[] {
+  return fixtures
+    .filter((f) => f.event === gw && (f.team_h === teamId || f.team_a === teamId))
+    .map((f) => {
+      const isHome = f.team_h === teamId;
+      return { teamId: isHome ? f.team_a : f.team_h, isHome, kickoffTime: f.kickoff_time };
+    });
+}
+
 /**
  * The `n` most expensive players by current price.
  *
