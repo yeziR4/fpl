@@ -170,32 +170,76 @@ def build_prompt(
     Deliberately identical across all five models -- the leaderboard is
     meant to compare their judgement given the same information, not
     who happened to get a better prompt.
+
+    Two changes from an earlier version, both requested directly after
+    watching real gameweeks run with the old prompt:
+
+    1. A model is no longer required to cover every (player, threshold)
+       pair -- it's shown this system's own market price for each one
+       and told plainly it's scored on P&L from the bets it actually
+       places, not raw accuracy across a forced full board. Forcing a
+       pick on a market it has no real opinion on was a guardrail that
+       actively worked against the thing the leaderboard is supposed
+       to measure: a model with no edge anywhere is free to submit an
+       empty `picks` list (see PicksParseError -- that's a valid
+       answer, not a parse failure).
+    2. The prompt now explains its own economy -- a fixed gameweek
+       bankroll, and how confidence sizes a bet against it -- so a
+       model can reason about sizing and edge together, not just
+       direction. Still true, and now said out loud: confidence never
+       touches the odds (`oddsmaker.market_probability` prices every
+       market from real player standing, before any model ever sees
+       it), so a model can't buy a better price by claiming more
+       conviction -- only a bigger stake on a pick it's actually right
+       about.
     """
     team_names = _team_names(bootstrap)
+    n_pairs = len(players) * len(thresholds)
     lines = [
         f"You are picking outcomes for a Fantasy Premier League (FPL) prediction market, gameweek {gw}.",
         "Your picks are tracked on a public leaderboard alongside four other AI models and scored",
-        "against the real results once this gameweek finishes -- you are being judged on prediction",
-        "accuracy across gameweeks, so answer as accurately as you actually can, not just plausibly.",
-        "For each player below, predict whether they will score AT LEAST the given points threshold",
-        "in this single gameweek (standard FPL scoring: goals, assists, clean sheets, bonus, etc).",
+        "against the real results once this gameweek finishes -- you are judged on total profit and",
+        "loss (P&L) from the bets you actually place, NOT on how many markets you attempt or your",
+        "raw accuracy across the board. There is no reward for guessing on a market you have no real",
+        "edge in, and no penalty for leaving one alone -- only bet where you believe the true",
+        "probability is meaningfully different from the market price already shown below for it.",
         "",
-        "Players (id, name, team, opponent this gameweek, price, season total points so far):",
+        f"Your bankroll this gameweek is a fixed ${oddsmaker.TOTAL_BANKROLL_USD:.0f}, split across",
+        "whatever picks you actually make -- each pick's own confidence (0-1) sizes its share of that",
+        "bankroll relative to your other picks this gameweek (higher confidence = a bigger share,",
+        "never a guarantee of being right). Betting on every market dilutes your best ideas instead",
+        "of sizing them up; betting on none is a fully valid answer if you see no real edge anywhere.",
+        "A correct pick pays back 1 / (the market price of the side you took) times its stake; a",
+        "wrong one pays nothing. The market price is this system's own -- never your opinion -- so you",
+        "cannot buy better odds by claiming more confidence, only a bigger stake on a pick you're",
+        "actually right about.",
+        "",
+        "For each player below, decide whether they will score AT LEAST the given points threshold",
+        "in this single gameweek (standard FPL scoring: goals, assists, clean sheets, bonus, etc),",
+        "against this system's own market price for that outcome.",
+        "",
+        "Players (id, name, team, opponent this gameweek, price, season points, market price per",
+        "threshold -- the probability this system already prices that outcome at):",
     ]
     for p in players:
         opp = _opponent_summary(fixtures, gw, p.team, team_names)
+        market = ", ".join(
+            f"{round(oddsmaker.market_probability(p.id, t, bootstrap) * 100)}% Yes on {t}+"
+            for t in thresholds
+        )
         lines.append(
             f"- id={p.id} {p.web_name} ({team_names.get(p.team, '?')}) {opp}, "
-            f"£{p.price_millions:.1f}m, {p.total_points} pts this season"
+            f"£{p.price_millions:.1f}m, {p.total_points} pts this season -- market: {market}"
         )
     lines += [
         "",
-        f"Thresholds to judge for every player: {', '.join(str(t) for t in thresholds)}.",
+        f"Thresholds: {', '.join(str(t) for t in thresholds)}.",
         "",
         "Respond with ONLY a JSON object of this exact shape, no other text, no markdown fences:",
         '{"picks": [{"player_id": <int>, "threshold": <int>, "pick": "yes"|"no", "confidence": <0-1 float>}, ...]}',
-        f"Include one entry for every (player, threshold) pair above -- {len(players)} players x "
-        f"{len(thresholds)} thresholds = {len(players) * len(thresholds)} entries total.",
+        "Include an entry ONLY for the (player, threshold) pairs you actually want to bet on -- zero,",
+        f'some, or all of the {n_pairs} possible pairs above. An empty list ("picks": []) is a valid',
+        "answer if you see no edge anywhere this gameweek.",
     ]
     return "\n".join(lines)
 
@@ -217,6 +261,17 @@ class AgentPick:
     potential_return_vara: float | None = None
 
 
+class PicksParseError(ValueError):
+    """Raised when a model's reply can't be read as the required JSON
+    shape at all (no JSON object found, or no "picks" list in it) --
+    as opposed to parsing into a `picks` list that's simply empty, or
+    whose entries don't individually validate. That's a normal,
+    deliberate "no bets this gameweek" reply (see build_prompt()'s
+    docstring for why that's now a valid answer, not an error), never
+    raised for it -- only for a reply that didn't follow the required
+    shape at all."""
+
+
 def parse_picks(
     raw_text: str,
     *,
@@ -232,6 +287,14 @@ def parse_picks(
     being told JSON-only in the prompt -- confirmed for real, not
     hypothetical: `~google/gemini-pro-latest` did exactly this on its
     first live run against real GW picks (see docs/architecture.md).
+
+    Raises PicksParseError when the reply doesn't even follow the
+    required shape (no JSON object, or no "picks" list) -- a real
+    parsing failure. Returns an empty list, not an error, when the
+    shape is right but there's nothing usable in it (an empty "picks"
+    list, or every entry in it failing validation): a model that
+    looked at every market and chose to bet on none is behaving
+    exactly as asked, not malfunctioning.
     """
     text = raw_text.strip()
     if text.startswith("```"):
@@ -249,15 +312,15 @@ def parse_picks(
         # catches a fence at the very start of the reply).
         start, end = text.find("{"), text.rfind("}")
         if start == -1 or end == -1 or end <= start:
-            return []
+            raise PicksParseError(f"no JSON object found in a {len(raw_text)}-char reply")
         try:
             parsed = json.loads(text[start : end + 1])
-        except ValueError:
-            return []
+        except ValueError as exc:
+            raise PicksParseError(f"embedded JSON object failed to parse: {exc}") from exc
 
     entries = parsed.get("picks") if isinstance(parsed, dict) else None
     if not isinstance(entries, list):
-        return []
+        raise PicksParseError('reply JSON has no "picks" list')
 
     picks: list[AgentPick] = []
     for entry in entries:
@@ -294,7 +357,12 @@ def parse_picks(
 class ModelPicksResult:
     model: AgentModel
     picks: list[AgentPick]
-    error: str | None  # set on a failed call, or a reply that parsed to zero picks
+    # Set on a failed call or a reply that didn't follow the required
+    # JSON shape at all (see PicksParseError). An empty `picks` list
+    # with `error is None` is a valid, deliberate "no edge anywhere
+    # this gameweek" result, not a failure -- see build_prompt()'s
+    # docstring.
+    error: str | None
 
 
 def generate_picks_for_gameweek(
@@ -316,7 +384,12 @@ def generate_picks_for_gameweek(
 
     One model failing (bad slug, outage, malformed reply) never blocks
     the others -- each is caught and recorded individually, so a
-    partial result is still a useful, honest result.
+    partial result is still a useful, honest result. A model that
+    replies with valid JSON but an empty (or entirely-filtered) picks
+    list is NOT a failure -- see build_prompt()'s docstring for why
+    "no edge anywhere this gameweek" is now a deliberately valid
+    answer, distinct from PicksParseError's "didn't even follow the
+    required shape."
     """
     kwargs = {"cache_dir": cache_dir} if cache_dir is not None else {}
     bootstrap = cache.load_latest_bootstrap_static(**kwargs)
@@ -342,17 +415,22 @@ def generate_picks_for_gameweek(
         except OpenRouterError as exc:
             results.append(ModelPicksResult(model=model, picks=[], error=str(exc)))
             continue
-        picks = parse_picks(raw, valid_player_ids=valid_player_ids, valid_thresholds=valid_thresholds)
+        try:
+            picks = parse_picks(raw, valid_player_ids=valid_player_ids, valid_thresholds=valid_thresholds)
+        except PicksParseError as exc:
+            results.append(ModelPicksResult(model=model, picks=[], error=str(exc)))
+            continue
         # This system's own bet records, not the model's -- see
         # oddsmaker.bet_records()'s docstring for why the odds come
         # entirely from player standing (never from what the model
         # itself claims to believe), and why the stakes across this
         # one model's whole pick list are sized together (a fixed
         # gameweek bankroll split by confidence), not independently
-        # per pick.
+        # per pick. bet_records() already returns [] for an empty
+        # `picks` list, so an intentional "no bets" reply needs no
+        # special-casing here.
         picks = oddsmaker.with_bet_records(picks, bootstrap, vara_usd_price)
-        error = None if picks else f"parsed 0 usable picks from a {len(raw)}-char reply"
-        results.append(ModelPicksResult(model=model, picks=picks, error=error))
+        results.append(ModelPicksResult(model=model, picks=picks, error=None))
     return results
 
 

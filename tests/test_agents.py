@@ -8,6 +8,7 @@ from data_pipeline.agents import (
     AgentModel,
     ModelPicksResult,
     OpenRouterError,
+    PicksParseError,
     build_prompt,
     call_model,
     generate_picks_for_gameweek,
@@ -45,8 +46,27 @@ def test_build_prompt_lists_every_player_and_threshold():
     assert "id=1 Haaland" in prompt
     assert "id=2 Salah" in prompt
     assert "id=3 Palmer" in prompt
-    assert "Thresholds to judge for every player: 5, 10" in prompt
-    assert "3 players x 2 thresholds = 6 entries total" in prompt
+    assert "Thresholds: 5, 10" in prompt
+    assert "all of the 6 possible pairs above" in prompt
+
+
+def test_build_prompt_shows_each_players_market_price_per_threshold():
+    players = top_expensive_players(load_bootstrap(), n=1)
+    prompt = build_prompt(players, load_bootstrap(), load_fixtures(), gw=1, thresholds=(5, 10))
+    assert "% Yes on 5+" in prompt
+    assert "% Yes on 10+" in prompt
+
+
+def test_build_prompt_states_the_fixed_bankroll_and_allows_betting_on_nothing():
+    from data_pipeline.oddsmaker import TOTAL_BANKROLL_USD
+
+    players = top_expensive_players(load_bootstrap(), n=3)
+    prompt = build_prompt(players, load_bootstrap(), load_fixtures(), gw=1)
+    assert f"${TOTAL_BANKROLL_USD:.0f}" in prompt
+    assert '"picks": []' in prompt
+    # No longer required to cover every pair -- the old, stricter
+    # wording is gone.
+    assert "Include one entry for every" not in prompt
 
 
 def test_build_prompt_shows_opponent_for_a_fixture_team():
@@ -130,10 +150,24 @@ def test_parse_picks_ignores_out_of_range_confidence():
     assert picks[0].confidence is None
 
 
-def test_parse_picks_returns_empty_on_garbage():
-    assert parse_picks("not json at all", valid_player_ids={1}, valid_thresholds={5}) == []
-    assert parse_picks("{}", valid_player_ids={1}, valid_thresholds={5}) == []
-    assert parse_picks(json.dumps({"picks": "nope"}), valid_player_ids={1}, valid_thresholds={5}) == []
+def test_parse_picks_raises_when_no_json_object_is_found():
+    with pytest.raises(PicksParseError):
+        parse_picks("not json at all", valid_player_ids={1}, valid_thresholds={5})
+
+
+def test_parse_picks_raises_when_the_picks_key_is_missing_or_the_wrong_shape():
+    with pytest.raises(PicksParseError):
+        parse_picks("{}", valid_player_ids={1}, valid_thresholds={5})
+    with pytest.raises(PicksParseError):
+        parse_picks(json.dumps({"picks": "nope"}), valid_player_ids={1}, valid_thresholds={5})
+
+
+def test_parse_picks_empty_or_all_invalid_entries_is_not_an_error():
+    # The shape is right (a "picks" list) even though there's nothing
+    # usable in it -- a deliberate "no bets" reply, or one where every
+    # entry failed validation, is not the same failure as a reply that
+    # never had a "picks" list at all (see the two tests above).
+    assert parse_picks(json.dumps({"picks": []}), valid_player_ids={1}, valid_thresholds={5}) == []
     assert parse_picks(json.dumps({"picks": ["nope"]}), valid_player_ids={1}, valid_thresholds={5}) == []
 
 
@@ -250,6 +284,21 @@ def test_generate_picks_for_gameweek_malformed_reply_yields_no_picks_and_an_erro
     )
     assert results[0].picks == []
     assert results[0].error is not None
+
+
+def test_generate_picks_for_gameweek_deliberate_empty_picks_is_not_an_error(monkeypatch, populated_cache):
+    # A model that looked at every market and chose to bet on none --
+    # valid JSON, an empty "picks" list -- is behaving exactly as the
+    # prompt now asks, not malfunctioning (see build_prompt()'s
+    # docstring). Distinct from the malformed-reply case above.
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    model = AgentModel("some/model", "Some Model")
+    session = _FakeSession(lambda model: _content_response(json.dumps({"picks": []})))
+    results = generate_picks_for_gameweek(
+        1, n_players=3, thresholds=(5,), cache_dir=populated_cache, models=(model,), session=session
+    )
+    assert results[0].picks == []
+    assert results[0].error is None
 
 
 # ---- save_picks / load_picks --------------------------------------------

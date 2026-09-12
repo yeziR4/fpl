@@ -791,18 +791,34 @@ kept as separate columns rather than collapsed into one score.
   - `build_prompt()` — the exact same prompt for every model: the top-N
     most expensive players (`players.top_expensive_players`), each one's
     opponent for the target gameweek (derived from the cached fixture
-    list, including blank/double-gameweek cases), price, and season
-    points so far. Asks for a single JSON object back — a `pick` (yes/no)
-    and `confidence` per (player, threshold) pair.
+    list, including blank/double-gameweek cases), price, season points
+    so far, and — since a real gameweek run made the old version's
+    guardrails obvious — this system's own market price
+    (`oddsmaker.market_probability()`) for each (player, threshold) pair,
+    computed before the model ever sees the prompt. The prompt also now
+    states its own economy out loud: a fixed `oddsmaker.TOTAL_BANKROLL_USD`
+    bankroll for the gameweek, how confidence sizes a pick's share of it,
+    and that a model can't buy a better price by claiming more
+    confidence, only a bigger stake on a pick it's actually right about.
+    A model is no longer required to cover every (player, threshold)
+    pair — it's told plainly it's scored on P&L from the bets it
+    actually places, not raw accuracy across a forced full board, and
+    an empty `"picks": []` reply is a valid "no edge anywhere this
+    gameweek" answer, not a failure.
   - `call_model()` — one HTTP call to OpenRouter's OpenAI-compatible
     `/chat/completions` endpoint. Raises `OpenRouterError` on any
     failure; never fabricates a fallback reply.
-  - `parse_picks()` — defensively parses a model's JSON reply. A
-    malformed reply, an out-of-pool player id, an unknown threshold, or
-    a non-yes/no pick value is dropped, never guessed at — a model that
-    returns garbage just yields fewer picks, never a wrong or invented
-    one. Tolerates markdown code fences some models wrap JSON in despite
-    being told not to.
+  - `parse_picks()` — defensively parses a model's JSON reply. An
+    out-of-pool player id, an unknown threshold, or a non-yes/no pick
+    value is dropped entry-by-entry, never guessed at — a model that
+    returns some garbage entries just yields fewer picks, never a wrong
+    or invented one. Tolerates markdown code fences some models wrap
+    JSON in despite being told not to. Raises `PicksParseError` only
+    when the reply doesn't follow the required JSON shape at all (no
+    JSON object found, or no `"picks"` list in it) — a real parsing
+    failure, kept deliberately distinct from a reply that parses fine
+    into an empty (or entirely filtered-out) picks list, which is now a
+    normal, scored-as-such "sat this gameweek out" answer.
   - `generate_picks_for_gameweek()` — orchestrates the above across all
     five models for one gameweek, fetches the live VARA/USD rate once
     for the whole run (`vara_price.fetch_vara_usd_price()`), then
