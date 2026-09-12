@@ -78,10 +78,8 @@ export function WalletButton() {
         <span className="text-foreground/40">
           {wallet.balance !== null ? (
             <>
-              {wallet.balance} VARA
-              {priceUsd !== null && (
-                <span className="text-foreground/30"> · {formatUsd(wallet.balance, priceUsd)}</span>
-              )}
+              {priceUsd !== null ? formatUsd(wallet.balance, priceUsd) ?? `${wallet.balance} VARA` : `${wallet.balance} VARA`}
+              {priceUsd !== null && <span className="text-foreground/30"> · {wallet.balance} VARA</span>}
             </>
           ) : wallet.balanceError ? (
             "—"
@@ -154,12 +152,12 @@ function WalletMenu({
         <div className="flex items-center justify-between gap-2">
           <span className="flex items-baseline gap-1.5">
             <span className="font-display text-lg font-black text-foreground">
-              {wallet.balance !== null ? `${wallet.balance} VARA` : wallet.balanceError ?? "Loading…"}
+              {wallet.balance !== null
+                ? (priceUsd !== null ? formatUsd(wallet.balance, priceUsd) : null) ?? `${wallet.balance} VARA`
+                : (wallet.balanceError ?? "Loading…")}
             </span>
             {wallet.balance !== null && priceUsd !== null && (
-              <span className="text-[12px] font-medium text-foreground/40">
-                {formatUsd(wallet.balance, priceUsd)}
-              </span>
+              <span className="text-[12px] font-medium text-foreground/40">{wallet.balance} VARA</span>
             )}
           </span>
           <button
@@ -233,10 +231,8 @@ function MyStakesSection({ priceUsd }: { priceUsd: number | null }) {
             <span
               className={`shrink-0 font-semibold ${entry.side === "yes" ? "text-accent" : "text-foreground/50"}`}
             >
-              {entry.side === "yes" ? "Yes" : "No"} · {entry.amountVara}
-              {priceUsd !== null && (
-                <span className="font-normal text-foreground/35"> ({formatUsd(entry.amountVara, priceUsd)})</span>
-              )}
+              {entry.side === "yes" ? "Yes" : "No"} ·{" "}
+              {(priceUsd !== null ? formatUsd(entry.amountVara, priceUsd) : null) ?? `${entry.amountVara} VARA`}
             </span>
           </div>
         ))}

@@ -4,6 +4,7 @@ import { ModelPicksSection } from "@/components/ModelPicksSection";
 import { loadLeaderboard, rankedGameweeks, rankedTotals } from "@/lib/leaderboard";
 import { latestAgentPicksGw, loadAgentPicksForGw, type ModelPicks } from "@/lib/agentPicks";
 import { fetchBootstrapStatic } from "@/lib/fpl";
+import { fetchVaraUsdPrice } from "@/lib/vara/price";
 
 export const metadata: Metadata = {
   title: "Leaderboard — Overline",
@@ -11,7 +12,19 @@ export const metadata: Metadata = {
 };
 
 export default async function LeaderboardPage() {
-  const [board, picksSection] = await Promise.all([loadLeaderboard(), loadLatestPicksSection()]);
+  // Fetched once, shared by every VARA figure on this page -- VARA is
+  // the real unit these bet records are stored in, but the page reads
+  // in dollars throughout (requested directly: "just use $$$... the
+  // only time we will need vara is when they want to pay or get
+  // paid" -- nothing on this page pays or gets paid, it's simulated).
+  // null (fetch failed) falls back to showing VARA, never a fabricated
+  // dollar figure -- same discipline every other price-derived display
+  // in this app already follows.
+  const [board, picksSection, varaUsdPrice] = await Promise.all([
+    loadLeaderboard(),
+    loadLatestPicksSection(),
+    fetchVaraUsdPrice(),
+  ]);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -25,9 +38,10 @@ export default async function LeaderboardPage() {
           </h1>
           <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-foreground/60">
             Every gameweek, five top-tier AI models are given the same player pool and asked to
-            predict the same points-threshold markets this site runs, each staking simulated VARA
-            sized off its own confidence. Once a gameweek finishes, their picks are scored against
-            the real result — same player pool, same information, no matchmaking between them.
+            predict the same points-threshold markets this site runs, each staking a simulated
+            amount sized off its own confidence. Once a gameweek finishes, their picks are scored
+            against the real result — same player pool, same information, no matchmaking between
+            them.
           </p>
         </div>
       </section>
@@ -36,7 +50,7 @@ export default async function LeaderboardPage() {
         <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">
           {board ? (
             <>
-              <LeaderboardTable totals={rankedTotals(board)} />
+              <LeaderboardTable totals={rankedTotals(board)} varaUsdPrice={varaUsdPrice} />
               <div className="mt-3 text-[11.5px] text-foreground/35">
                 Updated {new Date(board.updated_at).toUTCString()}
               </div>
@@ -44,7 +58,7 @@ export default async function LeaderboardPage() {
               <h2 className="mb-4 mt-12 font-display text-xl font-black uppercase tracking-[0.02em] text-foreground">
                 By gameweek
               </h2>
-              <GameweekHistory gameweeks={rankedGameweeks(board)} />
+              <GameweekHistory gameweeks={rankedGameweeks(board)} varaUsdPrice={varaUsdPrice} />
             </>
           ) : (
             <LeaderboardUnavailable />
@@ -57,6 +71,7 @@ export default async function LeaderboardPage() {
           gw={picksSection.gw}
           models={picksSection.models}
           playerNames={picksSection.playerNames}
+          varaUsdPrice={varaUsdPrice}
         />
       )}
     </main>

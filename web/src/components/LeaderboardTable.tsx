@@ -1,21 +1,43 @@
 import type { ReactNode } from "react";
 import type { GameweekSummary, ModelTotal } from "@/lib/leaderboard";
+import { formatUsd } from "@/lib/vara/price";
 
 function formatAccuracy(accuracy: number | null): string {
   return accuracy === null ? "—" : `${Math.round(accuracy * 100)}%`;
 }
 
-/** "+12.4" / "-3.1" -- signed, so a loss reads unmistakably as a loss
- * rather than just a smaller positive-looking number. Undefined
- * (never staked, or scored before bet records existed) shows as "—",
- * the same "absent isn't zero" rule ModelTotal itself documents. */
-function formatPnl(pnl: number | undefined): string {
-  if (pnl === undefined) return "—";
-  const sign = pnl > 0 ? "+" : "";
-  return `${sign}${pnl.toFixed(1)}`;
+/** `staked_vara`/`simulated_pnl_vara` as a dollar string at
+ * `varaUsdPrice`, or the raw VARA figure (never a fabricated dollar
+ * amount) if that price is null -- see ModelPicksSection.tsx's own
+ * `money()` for the same fallback contract. */
+function money(varaAmount: number, varaUsdPrice: number | null): string {
+  if (varaUsdPrice !== null) {
+    const usd = formatUsd(varaAmount, varaUsdPrice);
+    if (usd !== null) return usd;
+  }
+  return `${varaAmount.toFixed(1)} VARA`;
 }
 
-export function LeaderboardTable({ totals }: { totals: ModelTotal[] }) {
+/** "+$12.40" / "-$3.10" -- signed, so a loss reads unmistakably as a
+ * loss rather than just a smaller positive-looking number. Undefined
+ * (never staked, or scored before bet records existed) shows as "—",
+ * the same "absent isn't zero" rule ModelTotal itself documents. */
+function formatPnl(pnl: number | undefined, varaUsdPrice: number | null): string {
+  if (pnl === undefined) return "—";
+  const sign = pnl > 0 ? "+" : pnl < 0 ? "-" : "";
+  return `${sign}${money(Math.abs(pnl), varaUsdPrice)}`;
+}
+
+export function LeaderboardTable({
+  totals,
+  varaUsdPrice,
+}: {
+  totals: ModelTotal[];
+  /** Live VARA/USD rate, or null if unavailable -- see
+   * ModelPicksSection.tsx's prop of the same name for the full
+   * contract (fails soft to VARA, never a fabricated dollar figure). */
+  varaUsdPrice: number | null;
+}) {
   return (
     <div className="overflow-x-auto rounded-lg border border-foreground/12">
       <table className="w-full min-w-[640px] border-collapse text-left">
@@ -57,7 +79,7 @@ export function LeaderboardTable({ totals }: { totals: ModelTotal[] }) {
                 {formatAccuracy(model.accuracy)}
               </td>
               <td className="px-4 py-3 text-right text-[13.5px] font-medium text-foreground/50">
-                {model.staked_vara !== undefined ? `${model.staked_vara.toFixed(1)} VARA` : "—"}
+                {model.staked_vara !== undefined ? money(model.staked_vara, varaUsdPrice) : "—"}
               </td>
               <td
                 className={`px-4 py-3 text-right text-[13.5px] font-semibold tabular-nums ${
@@ -66,7 +88,7 @@ export function LeaderboardTable({ totals }: { totals: ModelTotal[] }) {
                     : "text-accent"
                 }`}
               >
-                {formatPnl(model.simulated_pnl_vara)}
+                {formatPnl(model.simulated_pnl_vara, varaUsdPrice)}
               </td>
             </tr>
           ))}
@@ -86,7 +108,14 @@ function Th({ children, className = "" }: { children: ReactNode; className?: str
   );
 }
 
-export function GameweekHistory({ gameweeks }: { gameweeks: GameweekSummary[] }) {
+export function GameweekHistory({
+  gameweeks,
+  varaUsdPrice,
+}: {
+  gameweeks: GameweekSummary[];
+  /** See LeaderboardTable's prop of the same name. */
+  varaUsdPrice: number | null;
+}) {
   return (
     <div className="flex flex-col gap-4">
       {gameweeks.map((gw) => (
@@ -104,7 +133,7 @@ export function GameweekHistory({ gameweeks }: { gameweeks: GameweekSummary[] })
                 </span>
                 {m.simulated_pnl_vara !== undefined && (
                   <span className={m.simulated_pnl_vara < 0 ? "text-foreground/35" : "text-accent"}>
-                    {formatPnl(m.simulated_pnl_vara)}
+                    {formatPnl(m.simulated_pnl_vara, varaUsdPrice)}
                   </span>
                 )}
               </div>

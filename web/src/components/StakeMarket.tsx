@@ -13,18 +13,21 @@
  * deliberately not collapsed into one number:
  *   - participant counts (this bar): how many of the 5 agents plus how
  *     many distinct human stakers picked each side -- one vote each,
- *     a whale staking 100 VARA doesn't outweigh someone staking 1.
- *   - VARA amounts (the caption underneath): how much is actually
+ *     a whale staking $100 doesn't outweigh someone staking $1.
+ *   - staked amounts (the caption underneath): how much is actually
  *     staked on each side -- what the eventual payout math cares about.
  *
- * The amount input is dollar-first, VARA second (once a live price is
- * available -- see lib/vara/price.ts): typing "10" means $10, with the
- * real VARA amount that actually gets signed and transferred shown
- * underneath as the secondary figure. Requested directly after this
- * read backwards ("I press 10 and it's 10 VARA, the price in $ is
- * shown below") -- VARA is still the only unit that ever actually
- * moves (see confirmStake), this only changes which figure a person
- * types into.
+ * Dollar-first throughout, VARA kept only where it's the literal unit
+ * about to move -- requested directly: "the vara mechanism should be
+ * at the backend... the only time we will need vara is when they want
+ * to pay or get paid." That's the amount input (typing "10" means
+ * $10, the real VARA amount that actually gets signed and transferred
+ * shown underneath it as the small-print figure to double-check
+ * before confirming) and the post-confirm feedback message (states
+ * exactly what got debited). Every other figure on this card --
+ * current totals, potential winnings -- is dollars only, falling back
+ * to VARA only if no live price is available (see lib/vara/price.ts),
+ * never a fabricated dollar figure.
  *
  * "Potential winnings" is a live estimate, priced primarily off
  * marketProbability (data_pipeline/oddsmaker.py's rank-based fair
@@ -179,8 +182,7 @@ export function StakeMarket({
             {totals && humanYes + humanNo > 0
               ? `, ${humanYes + humanNo} ${humanYes + humanNo === 1 ? "person" : "people"}`
               : ""}
-            {varaStaked > 0 && ` · ${totals!.yes}/${totals!.no} VARA`}
-            {varaStaked > 0 && priceUsd !== null && ` (${formatUsd(varaStaked, priceUsd)})`}
+            {varaStaked > 0 && ` · ${stakedCaption(totals!.yes, totals!.no, priceUsd)}`}
           </span>
         </>
       )}
@@ -277,6 +279,18 @@ export function StakeMarket({
   );
 }
 
+/** "$12.40/$3.10" (dollars staked per side) when a live price is
+ * available, falling back to the raw "{yes}/{no} VARA" figure only
+ * when it isn't -- never a fabricated dollar amount. */
+function stakedCaption(yesPlanck: string, noPlanck: string, priceUsd: number | null): string {
+  if (priceUsd !== null) {
+    const yesUsd = formatUsd(yesPlanck, priceUsd);
+    const noUsd = formatUsd(noPlanck, priceUsd);
+    if (yesUsd !== null && noUsd !== null) return `${yesUsd}/${noUsd}`;
+  }
+  return `${yesPlanck}/${noPlanck} VARA`;
+}
+
 /**
  * "If this side wins, right now, you'd get back roughly X". Prices
  * primarily off marketProbability -- this system's own rank-based
@@ -320,12 +334,13 @@ function PotentialWinnings({
     winningsVara = (stakeVara * newTotalPool) / newSideTotal;
   }
 
+  const winningsUsd = priceUsd !== null ? formatUsd(winningsVara, priceUsd) : null;
+
   return (
     <span className="text-[10.5px] leading-snug text-foreground/45">
       If {side === "yes" ? "Yes" : "No"} wins right now, you&rsquo;d get back{" "}
       <span className="font-semibold text-accent">
-        {winningsVara.toFixed(4)} VARA
-        {priceUsd !== null && ` (${formatUsd(winningsVara, priceUsd)})`}
+        {winningsUsd ?? `${winningsVara.toFixed(4)} VARA`}
       </span>{" "}
       -- estimate, moves as more people stake.
     </span>

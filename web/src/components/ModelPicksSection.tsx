@@ -1,4 +1,5 @@
 import type { ModelPicks } from "@/lib/agentPicks";
+import { formatUsd } from "@/lib/vara/price";
 
 /**
  * Each model's full pick list for the most current gameweek, now as a
@@ -8,12 +9,18 @@ import type { ModelPicks } from "@/lib/agentPicks";
  * aware of the amount that can be won". Simulated, not real money
  * (these five wallets hold nothing and never stake for real, see
  * docs/architecture.md's "AI agent picks & leaderboard" section), but
- * a real, computed number now: stakeVara is the model's own confidence
- * scaled into a bet size, marketProbability/potentialReturnVara come
- * from this system's own rank-based odds (data_pipeline/oddsmaker.py),
- * never the model's opinion -- a model can't buy better odds just by
- * claiming more confidence. Total staked per model doubles as a plain
- * "how aggressive is this one" signal at a glance.
+ * a real, computed number now: stakeVara is a model's own confidence
+ * slicing up its fixed gameweek bankroll (data_pipeline/oddsmaker.py),
+ * marketProbability/potentialReturnVara come from this system's own
+ * rank-based odds, never the model's opinion -- a model can't buy
+ * better odds just by claiming more confidence. Total staked per model
+ * doubles as a plain "how aggressive is this one" signal at a glance.
+ *
+ * Shown in dollars throughout, VARA kept purely as the backend unit --
+ * requested directly: "the vara mechanism should be at the backend...
+ * the only time we will need vara is when they want to pay or get
+ * paid" -- nothing here pays or gets paid, it's simulated, so there's
+ * no reason to make a reader do the VARA arithmetic themselves.
  */
 
 interface ModelPicksSectionProps {
@@ -25,9 +32,16 @@ interface ModelPicksSectionProps {
    * generated and when this page builds) falls back to the raw id
    * rather than hiding the pick. */
   playerNames: Record<number, string>;
+  /** Live VARA/USD rate this page fetched once, or null if that fetch
+   * failed -- every dollar figure in this section is `stakeVara *
+   * varaUsdPrice`, computed at render time rather than stored, so it
+   * reflects today's rate, not necessarily the rate in effect the
+   * moment a model's bet was sized. Falls back to showing the raw
+   * VARA amount when null, never a fabricated dollar figure. */
+  varaUsdPrice: number | null;
 }
 
-export function ModelPicksSection({ gw, models, playerNames }: ModelPicksSectionProps) {
+export function ModelPicksSection({ gw, models, playerNames, varaUsdPrice }: ModelPicksSectionProps) {
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-4xl px-6 py-12 sm:px-10">
@@ -36,15 +50,15 @@ export function ModelPicksSection({ gw, models, playerNames }: ModelPicksSection
             Model bets — GW{gw}
           </h2>
           <p className="max-w-lg text-[13px] leading-relaxed text-foreground/50">
-            Each model&rsquo;s pick, the VARA it staked (sized off its own confidence), and what it
-            stands to win at this system&rsquo;s own odds. Simulated — no real VARA moves here — but
-            every number is real, computed from a real formula, not invented.
+            Each model&rsquo;s pick, what it staked (sized off its own confidence), and what it
+            stands to win at this system&rsquo;s own odds. Simulated — no real money moves here —
+            but every number is real, computed from a real formula, not invented.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {models.map((model) => (
-            <ModelPickCard key={model.slug} model={model} playerNames={playerNames} />
+            <ModelPickCard key={model.slug} model={model} playerNames={playerNames} varaUsdPrice={varaUsdPrice} />
           ))}
         </div>
       </div>
@@ -52,12 +66,25 @@ export function ModelPicksSection({ gw, models, playerNames }: ModelPicksSection
   );
 }
 
+/** `stakeVara`/`returnVara` as a dollar string at `varaUsdPrice`, or
+ * the raw VARA amount (never a fabricated dollar figure) if that
+ * price is null. */
+function money(varaAmount: number, varaUsdPrice: number | null): string {
+  if (varaUsdPrice !== null) {
+    const usd = formatUsd(varaAmount, varaUsdPrice);
+    if (usd !== null) return usd;
+  }
+  return `${varaAmount} VARA`;
+}
+
 function ModelPickCard({
   model,
   playerNames,
+  varaUsdPrice,
 }: {
   model: ModelPicks;
   playerNames: Record<number, string>;
+  varaUsdPrice: number | null;
 }) {
   const totalStaked = model.picks.reduce((sum, p) => sum + (p.stakeVara ?? 0), 0);
 
@@ -67,7 +94,7 @@ function ModelPickCard({
         <span className="text-[14px] font-semibold text-foreground">{model.name}</span>
         <span className="text-[11px] text-foreground/35">
           {model.picks.length} picks
-          {totalStaked > 0 && ` · ${totalStaked.toFixed(1)} VARA staked`}
+          {totalStaked > 0 && ` · ${money(totalStaked, varaUsdPrice)} staked`}
         </span>
       </div>
 
@@ -99,11 +126,14 @@ function ModelPickCard({
                 <span>
                   {pick.stakeVara !== null ? (
                     <>
-                      Staked <span className="font-medium text-foreground/60">{pick.stakeVara} VARA</span>
+                      Staked <span className="font-medium text-foreground/60">{money(pick.stakeVara, varaUsdPrice)}</span>
                       {pick.potentialReturnVara !== null && (
                         <>
                           {" "}
-                          → wins <span className="font-medium text-accent">{pick.potentialReturnVara} VARA</span>
+                          → wins{" "}
+                          <span className="font-medium text-accent">
+                            {money(pick.potentialReturnVara, varaUsdPrice)}
+                          </span>
                         </>
                       )}
                     </>
