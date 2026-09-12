@@ -1,0 +1,428 @@
+{
+  "generated_at": "2026-09-12T13:19:46.967701+00:00",
+  "gw": 5,
+  "models": [
+    {
+      "error": null,
+      "name": "GPT (latest)",
+      "picks": [
+        {
+          "confidence": 0.9,
+          "market_probability": 0.2021,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 25527.03,
+          "stake_vara": 5158.28,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.82,
+          "market_probability": 0.2192,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 21891.06,
+          "stake_vara": 4799.44,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "market_probability": 0.2122,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 23248.76,
+          "stake_vara": 4934.01,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.78,
+          "market_probability": 0.2095,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 22053.69,
+          "stake_vara": 4620.03,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "market_probability": 0.251,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 20550.26,
+          "stake_vara": 5158.28,
+          "threshold": 5
+        }
+      ],
+      "slug": "~openai/gpt-latest"
+    },
+    {
+      "error": null,
+      "name": "Claude Opus (latest)",
+      "picks": [
+        {
+          "confidence": 0.7,
+          "market_probability": 0.5511,
+          "pick": "no",
+          "player_id": 411,
+          "potential_return_vara": 3796.89,
+          "stake_vara": 2092.55,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "market_probability": 0.2021,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 9265.44,
+          "stake_vara": 1872.28,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5512,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 3596.26,
+          "stake_vara": 1982.41,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "market_probability": 0.2192,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 8539.78,
+          "stake_vara": 1872.28,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5615,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 3530.28,
+          "stake_vara": 1982.41,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "market_probability": 0.2122,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 8303.13,
+          "stake_vara": 1762.15,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5573,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 3556.95,
+          "stake_vara": 1982.41,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.6,
+          "market_probability": 0.2095,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 8937.33,
+          "stake_vara": 1872.28,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5557,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 3567.46,
+          "stake_vara": 1982.41,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "market_probability": 0.2743,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 6424.23,
+          "stake_vara": 1762.15,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.6,
+          "market_probability": 0.5946,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 3148.92,
+          "stake_vara": 1872.28,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "market_probability": 0.251,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 7020.27,
+          "stake_vara": 1762.15,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.6,
+          "market_probability": 0.5806,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 3224.71,
+          "stake_vara": 1872.28,
+          "threshold": 10
+        }
+      ],
+      "slug": "~anthropic/claude-opus-latest"
+    },
+    {
+      "error": null,
+      "name": "Gemini Pro (latest)",
+      "picks": [
+        {
+          "confidence": 0.8,
+          "market_probability": 0.2021,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 20347.63,
+          "stake_vara": 4111.67,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.8,
+          "market_probability": 0.2095,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 19627.07,
+          "stake_vara": 4111.67,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "market_probability": 0.2122,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 17528.83,
+          "stake_vara": 3720.09,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "market_probability": 0.2192,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 16967.93,
+          "stake_vara": 3720.09,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "market_probability": 0.251,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 17940.7,
+          "stake_vara": 4503.26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.9,
+          "market_probability": 0.5806,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 7756.15,
+          "stake_vara": 4503.26,
+          "threshold": 10
+        }
+      ],
+      "slug": "~google/gemini-pro-latest"
+    },
+    {
+      "error": null,
+      "name": "Grok 4.20",
+      "picks": [
+        {
+          "confidence": 0.52,
+          "market_probability": 0.4489,
+          "pick": "yes",
+          "player_id": 411,
+          "potential_return_vara": 10397.72,
+          "stake_vara": 4667.3,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.55,
+          "market_probability": 0.7808,
+          "pick": "yes",
+          "player_id": 154,
+          "potential_return_vara": 6210.82,
+          "stake_vara": 4849.15,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.53,
+          "market_probability": 0.7878,
+          "pick": "yes",
+          "player_id": 12,
+          "potential_return_vara": 6001.62,
+          "stake_vara": 4727.92,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.54,
+          "market_probability": 0.7905,
+          "pick": "yes",
+          "player_id": 379,
+          "potential_return_vara": 6057.52,
+          "stake_vara": 4788.53,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.68,
+          "market_probability": 0.6185,
+          "pick": "no",
+          "player_id": 627,
+          "potential_return_vara": 9113.93,
+          "stake_vara": 5637.13,
+          "threshold": 5
+        }
+      ],
+      "slug": "x-ai/grok-4.20"
+    },
+    {
+      "error": null,
+      "name": "DeepSeek V4 Pro",
+      "picks": [
+        {
+          "confidence": 0.12,
+          "market_probability": 0.7981,
+          "pick": "yes",
+          "player_id": 411,
+          "potential_return_vara": 1803.88,
+          "stake_vara": 1439.73,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.13,
+          "market_probability": 0.4489,
+          "pick": "yes",
+          "player_id": 411,
+          "potential_return_vara": 3294.09,
+          "stake_vara": 1478.65,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.15,
+          "market_probability": 0.2021,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 7702.57,
+          "stake_vara": 1556.47,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.2,
+          "market_probability": 0.5512,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 3176.51,
+          "stake_vara": 1751.03,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.16,
+          "market_probability": 0.2192,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 7276.8,
+          "stake_vara": 1595.38,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.22,
+          "market_probability": 0.5615,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 3256.82,
+          "stake_vara": 1828.85,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.16,
+          "market_probability": 0.2122,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 7517.34,
+          "stake_vara": 1595.38,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.24,
+          "market_probability": 0.5573,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 3421.05,
+          "stake_vara": 1906.67,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.23,
+          "market_probability": 0.2743,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 6809.28,
+          "stake_vara": 1867.76,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.26,
+          "market_probability": 0.5946,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 3337.66,
+          "stake_vara": 1984.5,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.35,
+          "market_probability": 0.251,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 9301.31,
+          "stake_vara": 2334.7,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.34,
+          "market_probability": 0.5806,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 3954.14,
+          "stake_vara": 2295.79,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.13,
+          "market_probability": 0.6185,
+          "pick": "no",
+          "player_id": 627,
+          "potential_return_vara": 2390.63,
+          "stake_vara": 1478.65,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.15,
+          "market_probability": 0.8011,
+          "pick": "no",
+          "player_id": 627,
+          "potential_return_vara": 1942.89,
+          "stake_vara": 1556.47,
+          "threshold": 10
+        }
+      ],
+      "slug": "deepseek/deepseek-v4-pro"
+    }
+  ]
+}
