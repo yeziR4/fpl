@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-09-12T11:59:52.052560+00:00",
+  "gw": 4,
+  "models": [
+    {
+      "error": "~openai/gpt-latest: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "name": "GPT (latest)",
+      "picks": [],
+      "slug": "~openai/gpt-latest"
+    },
+    {
+      "error": "~anthropic/claude-opus-latest: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "name": "Claude Opus (latest)",
+      "picks": [],
+      "slug": "~anthropic/claude-opus-latest"
+    },
+    {
+      "error": "~google/gemini-pro-latest: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "name": "Gemini Pro (latest)",
+      "picks": [],
+      "slug": "~google/gemini-pro-latest"
+    },
+    {
+      "error": "x-ai/grok-4.20: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "name": "Grok 4.20",
+      "picks": [],
+      "slug": "x-ai/grok-4.20"
+    },
+    {
+      "error": "deepseek/deepseek-v4-pro: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "name": "DeepSeek V4 Pro",
+      "picks": [],
+      "slug": "deepseek/deepseek-v4-pro"
+    }
+  ]
+}
