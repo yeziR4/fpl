@@ -1,0 +1,113 @@
+{
+  "gameweeks": {
+    "4": {
+      "gw": 4,
+      "models": [
+        {
+          "accuracy": null,
+          "correct": 0,
+          "name": "GPT (latest)",
+          "pending": 0,
+          "simulated_pnl_vara": 0.0,
+          "slug": "~openai/gpt-latest",
+          "staked_vara": 0.0,
+          "wrong": 0
+        },
+        {
+          "accuracy": null,
+          "correct": 0,
+          "name": "Claude Opus (latest)",
+          "pending": 0,
+          "simulated_pnl_vara": 0.0,
+          "slug": "~anthropic/claude-opus-latest",
+          "staked_vara": 0.0,
+          "wrong": 0
+        },
+        {
+          "accuracy": null,
+          "correct": 0,
+          "name": "Gemini Pro (latest)",
+          "pending": 0,
+          "simulated_pnl_vara": 0.0,
+          "slug": "~google/gemini-pro-latest",
+          "staked_vara": 0.0,
+          "wrong": 0
+        },
+        {
+          "accuracy": null,
+          "correct": 0,
+          "name": "Grok 4.20",
+          "pending": 0,
+          "simulated_pnl_vara": 0.0,
+          "slug": "x-ai/grok-4.20",
+          "staked_vara": 0.0,
+          "wrong": 0
+        },
+        {
+          "accuracy": null,
+          "correct": 0,
+          "name": "DeepSeek V4 Pro",
+          "pending": 0,
+          "simulated_pnl_vara": 0.0,
+          "slug": "deepseek/deepseek-v4-pro",
+          "staked_vara": 0.0,
+          "wrong": 0
+        }
+      ],
+      "scored_at": "2026-09-15T12:07:02.952680+00:00"
+    }
+  },
+  "totals": {
+    "deepseek/deepseek-v4-pro": {
+      "accuracy": null,
+      "correct": 0,
+      "name": "DeepSeek V4 Pro",
+      "pending": 0,
+      "simulated_pnl_vara": 0.0,
+      "slug": "deepseek/deepseek-v4-pro",
+      "staked_vara": 0.0,
+      "wrong": 0
+    },
+    "x-ai/grok-4.20": {
+      "accuracy": null,
+      "correct": 0,
+      "name": "Grok 4.20",
+      "pending": 0,
+      "simulated_pnl_vara": 0.0,
+      "slug": "x-ai/grok-4.20",
+      "staked_vara": 0.0,
+      "wrong": 0
+    },
+    "~anthropic/claude-opus-latest": {
+      "accuracy": null,
+      "correct": 0,
+      "name": "Claude Opus (latest)",
+      "pending": 0,
+      "simulated_pnl_vara": 0.0,
+      "slug": "~anthropic/claude-opus-latest",
+      "staked_vara": 0.0,
+      "wrong": 0
+    },
+    "~google/gemini-pro-latest": {
+      "accuracy": null,
+      "correct": 0,
+      "name": "Gemini Pro (latest)",
+      "pending": 0,
+      "simulated_pnl_vara": 0.0,
+      "slug": "~google/gemini-pro-latest",
+      "staked_vara": 0.0,
+      "wrong": 0
+    },
+    "~openai/gpt-latest": {
+      "accuracy": null,
+      "correct": 0,
+      "name": "GPT (latest)",
+      "pending": 0,
+      "simulated_pnl_vara": 0.0,
+      "slug": "~openai/gpt-latest",
+      "staked_vara": 0.0,
+      "wrong": 0
+    }
+  },
+  "updated_at": "2026-09-15T12:07:02.952722+00:00"
+}
