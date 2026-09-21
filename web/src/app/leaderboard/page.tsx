@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { GameweekHistory, LeaderboardTable } from "@/components/LeaderboardTable";
-import { ModelPicksSection, type PickPlayerInfo } from "@/components/ModelPicksSection";
-import { loadLeaderboard, rankedGameweeks, rankedTotals } from "@/lib/leaderboard";
-import { latestAgentPicksGw, loadAgentPicksForGw, type ModelPicks } from "@/lib/agentPicks";
+import { ModelPicksSection, type ModelHistory, type PickPlayerInfo } from "@/components/ModelPicksSection";
+import { loadLeaderboard, rankedGameweeks, rankedTotals, type Leaderboard } from "@/lib/leaderboard";
+import { allAgentPicksGws, loadAgentPicksForGw } from "@/lib/agentPicks";
 import {
   fetchBootstrapStatic,
   fetchFixtures,
@@ -10,6 +10,8 @@ import {
   playerPhotoUrl,
   teamBadgeUrl,
   teamCodeForId,
+  type BootstrapStatic,
+  type Fixture,
 } from "@/lib/fpl";
 import { fetchVaraUsdPrice } from "@/lib/vara/price";
 
@@ -27,11 +29,12 @@ export default async function LeaderboardPage() {
   // null (fetch failed) falls back to showing VARA, never a fabricated
   // dollar figure -- same discipline every other price-derived display
   // in this app already follows.
-  const [board, picksSection, varaUsdPrice] = await Promise.all([
-    loadLeaderboard(),
-    loadLatestPicksSection(),
-    fetchVaraUsdPrice(),
-  ]);
+  // loadPicksHistory() needs the scored leaderboard itself (to attach
+  // each gameweek's correct/wrong/accuracy summary to that gameweek's
+  // bets), so this one isn't independent of loadLeaderboard() the way
+  // the other two are.
+  const board = await loadLeaderboard();
+  const [models, varaUsdPrice] = await Promise.all([loadPicksHistory(board), fetchVaraUsdPrice()]);
 
   return (
     <main className="flex flex-1 flex-col">
@@ -73,75 +76,120 @@ export default async function LeaderboardPage() {
         </div>
       </section>
 
-      {picksSection && (
-        <ModelPicksSection
-          gw={picksSection.gw}
-          models={picksSection.models}
-          playerInfo={picksSection.playerInfo}
-          varaUsdPrice={varaUsdPrice}
-        />
-      )}
+      {models.length > 0 && <ModelPicksSection models={models} varaUsdPrice={varaUsdPrice} />}
     </main>
   );
 }
 
 /**
- * The newest gameweek's agent picks, paired with each referenced
- * player's name/photo/opponent (bootstrap-static + the fixture list
- * are the only places that data lives) -- what lets ModelPicksSection
- * show a face and a match per pick, not just a bare name. Only resolved
- * for players actually referenced by at least one pick, not the whole
- * player pool. Failing soft to null on any fetch -- picks with nothing
- * to render them with, or bootstrap-static/fixtures being unreachable
- * (see lib/fpl.ts's own caveat about this sandbox's egress) -- just
- * means this section doesn't render, same "fail soft, not broken"
- * contract loadMarketPlayers in app/page.tsx already follows.
+ * Every model's full bet history across every gameweek with a saved
+ * picks file, newest gameweek first -- "no i am saying their previous
+ * bets not only the future [one]", requested directly after a
+ * latest-gameweek-only version shipped. Each pick is paired with its
+ * player's name/photo/opponent for THAT specific gameweek
+ * (bootstrap-static + the fixture list are the only places that data
+ * lives) -- what lets ModelPicksSection show a face and a match per
+ * pick, not just a bare name, and get a player's opponent right even
+ * for a gameweek that's since finished. Resolved once per player
+ * PER GAMEWEEK (an opponent obviously isn't the same every week), only
+ * for players actually referenced by at least one pick that gameweek.
+ *
+ * `board` supplies each gameweek's scored correct/wrong/accuracy
+ * summary per model, so a model's history reads as "here's what it
+ * bet, and here's how that gameweek actually went" without this
+ * function re-deriving win/loss itself -- data_pipeline/leaderboard.py
+ * already computed that once, off the real settlement-safe resolution
+ * logic; duplicating it here in JS would risk a second, possibly
+ * disagreeing definition of "correct."
+ *
+ * Failing soft to an empty list on any fetch -- a gameweek with
+ * nothing to render its picks with, or bootstrap-static/fixtures being
+ * unreachable (see lib/fpl.ts's own caveat about this sandbox's
+ * egress) -- just means that gameweek (or the whole section) doesn't
+ * render, same "fail soft, not broken" contract loadMarketPlayers in
+ * app/page.tsx already follows.
  */
-async function loadLatestPicksSection(): Promise<{
-  gw: number;
-  models: ModelPicks[];
-  playerInfo: Record<number, PickPlayerInfo>;
-} | null> {
+async function loadPicksHistory(board: Leaderboard | null): Promise<ModelHistory[]> {
   try {
-    const gw = await latestAgentPicksGw();
-    if (gw === null) return null;
-    const models = await loadAgentPicksForGw(gw);
-    if (!models) return null;
+    const gws = await allAgentPicksGws();
+    if (gws.length === 0) return [];
 
+    // Bootstrap-static is a single CURRENT-state snapshot -- fine to
+    // share across every gameweek's player names/photos (those don't
+    // change), but fixtures need to be re-queried per gameweek below
+    // via fixturesForTeamInGw, since an opponent very much does.
     const [bootstrap, fixtures] = await Promise.all([fetchBootstrapStatic(), fetchFixtures()]);
 
-    const playerIds = new Set<number>();
-    for (const model of models) {
-      for (const pick of model.picks) playerIds.add(pick.playerId);
-    }
+    const bySlug = new Map<string, ModelHistory>();
 
-    const playerInfo: Record<number, PickPlayerInfo> = {};
-    for (const id of playerIds) {
-      const element = bootstrap.elements.find((e) => e.id === id);
-      if (!element) continue; // moved out of bootstrap-static's pool since picks were generated
+    for (const gw of gws) {
+      const models = await loadAgentPicksForGw(gw);
+      if (!models) continue;
 
-      const fixture = fixturesForTeamInGw(element.team, gw, fixtures)[0] ?? null;
-      const opponentTeam = fixture ? bootstrap.teams.find((t) => t.id === fixture.teamId) : undefined;
+      for (const model of models) {
+        let history = bySlug.get(model.slug);
+        if (!history) {
+          history = { slug: model.slug, name: model.name, gameweeks: [] };
+          bySlug.set(model.slug, history);
+        }
 
-      playerInfo[id] = {
-        webName: element.web_name,
-        photoUrl: element.has_temporary_code ? null : playerPhotoUrl(element.code, "40x40"),
-        opponent:
-          fixture && opponentTeam
+        const gwSummary = board?.gameweeks[String(gw)]?.models.find((m) => m.slug === model.slug);
+
+        history.gameweeks.push({
+          gw,
+          error: model.error,
+          picks: model.picks.map((pick) => ({
+            ...pick,
+            player: resolvePlayerInfo(pick.playerId, gw, bootstrap, fixtures),
+          })),
+          summary: gwSummary
             ? {
-                badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, fixture.teamId)),
-                shortName: opponentTeam.short_name,
-                isHome: fixture.isHome,
+                correct: gwSummary.correct,
+                wrong: gwSummary.wrong,
+                pending: gwSummary.pending,
+                accuracy: gwSummary.accuracy,
+                stakedVara: gwSummary.staked_vara,
+                simulatedPnlVara: gwSummary.simulated_pnl_vara,
               }
             : null,
-      };
+        });
+      }
     }
 
-    return { gw, models, playerInfo };
+    // gws is already newest-first (allAgentPicksGws), and each model's
+    // gameweeks were pushed in that same order, so no further sort
+    // needed here.
+    return Array.from(bySlug.values());
   } catch (error) {
-    console.error("Failed to load model picks section:", error);
-    return null;
+    console.error("Failed to load model picks history:", error);
+    return [];
   }
+}
+
+function resolvePlayerInfo(
+  playerId: number,
+  gw: number,
+  bootstrap: BootstrapStatic,
+  fixtures: Fixture[],
+): PickPlayerInfo | null {
+  const element = bootstrap.elements.find((e) => e.id === playerId);
+  if (!element) return null; // moved out of bootstrap-static's pool since this pick was made
+
+  const fixture = fixturesForTeamInGw(element.team, gw, fixtures)[0] ?? null;
+  const opponentTeam = fixture ? bootstrap.teams.find((t) => t.id === fixture.teamId) : undefined;
+
+  return {
+    webName: element.web_name,
+    photoUrl: element.has_temporary_code ? null : playerPhotoUrl(element.code, "40x40"),
+    opponent:
+      fixture && opponentTeam
+        ? {
+            badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, fixture.teamId)),
+            shortName: opponentTeam.short_name,
+            isHome: fixture.isHome,
+          }
+        : null,
+  };
 }
 
 function LeaderboardUnavailable() {

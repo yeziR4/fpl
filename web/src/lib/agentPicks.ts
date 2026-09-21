@@ -190,22 +190,29 @@ export async function agentMarketProbability(
   return null;
 }
 
+/** Every gameweek with a saved picks file, newest first -- what a
+ * "previous bets" view needs (not just the latest one). Empty if
+ * data/agent_picks/ doesn't exist or is empty. */
+export async function allAgentPicksGws(): Promise<number[]> {
+  try {
+    const dir = path.join(process.cwd(), "..", "data", "agent_picks");
+    const entries = await fs.readdir(dir);
+    return entries
+      .map((name) => /^gw(\d+)\.json$/.exec(name))
+      .filter((match): match is RegExpExecArray => match !== null)
+      .map((match) => Number.parseInt(match[1], 10))
+      .sort((a, b) => b - a);
+  } catch {
+    return [];
+  }
+}
+
 /** The highest gameweek number with a saved picks file -- "the most
- * current thing the agents have said" for a picks/activity view,
+ * current thing the agents have said" for a single-gameweek view,
  * distinct from `gw` on any one player card (which is that player's
  * own next fixture, not necessarily the newest picks file). Null if
  * data/agent_picks/ doesn't exist or is empty. */
 export async function latestAgentPicksGw(): Promise<number | null> {
-  try {
-    const dir = path.join(process.cwd(), "..", "data", "agent_picks");
-    const entries = await fs.readdir(dir);
-    const gws = entries
-      .map((name) => /^gw(\d+)\.json$/.exec(name))
-      .filter((match): match is RegExpExecArray => match !== null)
-      .map((match) => Number.parseInt(match[1], 10));
-    if (gws.length === 0) return null;
-    return Math.max(...gws);
-  } catch {
-    return null;
-  }
+  const gws = await allAgentPicksGws();
+  return gws.length > 0 ? gws[0] : null;
 }

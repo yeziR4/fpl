@@ -1,39 +1,32 @@
 import Image from "next/image";
-import type { ModelPicks } from "@/lib/agentPicks";
 import { modelAnchorId } from "@/lib/leaderboard";
 import { formatUsd } from "@/lib/vara/price";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 
 /**
- * Each model's full pick list for the most current gameweek, now as a
- * real bet record per pick, not just a confidence percentage --
- * requested directly: "we create a new model bets records that show
- * the amount of vara that should be put in and they should be well
- * aware of the amount that can be won". Simulated, not real money
- * (these five wallets hold nothing and never stake for real, see
+ * Every model's full bet history, across every gameweek that has a
+ * saved picks file -- not just the latest one. Originally this only
+ * showed the current gameweek; requested directly after that shipped:
+ * "no i am saying their previous bets not only the future [one]" --
+ * clicking a model now has to actually show what it did before, not
+ * just what it's about to do.
+ *
+ * Each pick now carries a real bet record: a VARA stake, and the
+ * potential return from this system's own odds (see "Market maker:
+ * rank-based odds", `oddsmaker.py`). Simulated, not real money (these
+ * five wallets hold nothing and never stake for real, see
  * docs/architecture.md's "AI agent picks & leaderboard" section), but
- * a real, computed number now: stakeVara is a model's own confidence
- * slicing up its fixed gameweek bankroll (data_pipeline/oddsmaker.py),
- * marketProbability/potentialReturnVara come from this system's own
- * rank-based odds, never the model's opinion -- a model can't buy
- * better odds just by claiming more confidence. Total staked per model
- * doubles as a plain "how aggressive is this one" signal at a glance.
+ * every number is real and computed, not invented, which is the whole
+ * point of showing it at all. Shown in dollars throughout, VARA kept
+ * purely as the backend unit -- requested directly: "the vara
+ * mechanism should be at the backend... the only time we will need
+ * vara is when they want to pay or get paid" -- nothing here pays or
+ * gets paid, it's simulated.
  *
- * Shown in dollars throughout, VARA kept purely as the backend unit --
- * requested directly: "the vara mechanism should be at the backend...
- * the only time we will need vara is when they want to pay or get
- * paid" -- nothing here pays or gets paid, it's simulated, so there's
- * no reason to make a reader do the VARA arithmetic themselves.
- *
- * Each pick now carries a face, not just a name -- a player photo and
- * their actual opponent for this specific gameweek (see
- * lib/fpl.ts's fixturesForTeamInGw), the same visual language the
- * markets grid itself uses -- requested directly after the plain-text
- * version shipped: "visualize the model picks better add player
- * picture and matches". A pick for a player this build's playerInfo
- * map doesn't cover (bootstrap-static's pool moved between when picks
- * were generated and when this page builds) falls back to a bare id
- * and no photo/opponent, never hides the pick.
+ * Each pick shows a face and a match, not just a name -- a player
+ * photo and their actual opponent for THAT specific gameweek (see
+ * lib/fpl.ts's fixturesForTeamInGw), resolved per-gameweek since a
+ * player's opponent obviously isn't the same every week.
  */
 
 export interface PickPlayerInfo {
@@ -42,12 +35,49 @@ export interface PickPlayerInfo {
   opponent: { badgeUrl: string; shortName: string; isHome: boolean } | null;
 }
 
-interface ModelPicksSectionProps {
+export interface HistoryPick {
+  playerId: number;
+  threshold: number;
+  side: "yes" | "no";
+  confidence: number | null;
+  marketProbability: number | null;
+  stakeVara: number | null;
+  potentialReturnVara: number | null;
+  /** Resolved for the specific gameweek this pick belongs to, not a
+   * shared lookup -- an id not covered by that gameweek's own
+   * bootstrap-static/fixtures snapshot falls back to a bare id and no
+   * photo/opponent, never hides the pick. */
+  player: PickPlayerInfo | null;
+}
+
+export interface ModelGwSummary {
+  correct: number;
+  wrong: number;
+  pending: number;
+  accuracy: number | null;
+  stakedVara?: number;
+  simulatedPnlVara?: number;
+}
+
+export interface ModelGwEntry {
   gw: number;
-  models: ModelPicks[];
-  /** player_id -> name/photo/opponent, resolved from bootstrap-static
-   * and the fixture list at build time (see lib/fpl.ts). */
-  playerInfo: Record<number, PickPlayerInfo>;
+  error: string | null;
+  picks: HistoryPick[];
+  /** From data/leaderboard.json -- null if this gameweek hasn't been
+   * scored yet (still in progress, or nothing finished to score
+   * against), never a fabricated "pending" summary. */
+  summary: ModelGwSummary | null;
+}
+
+export interface ModelHistory {
+  slug: string;
+  name: string;
+  /** Newest gameweek first. */
+  gameweeks: ModelGwEntry[];
+}
+
+interface ModelPicksSectionProps {
+  models: ModelHistory[];
   /** Live VARA/USD rate this page fetched once, or null if that fetch
    * failed -- every dollar figure in this section is `stakeVara *
    * varaUsdPrice`, computed at render time rather than stored, so it
@@ -57,24 +87,25 @@ interface ModelPicksSectionProps {
   varaUsdPrice: number | null;
 }
 
-export function ModelPicksSection({ gw, models, playerInfo, varaUsdPrice }: ModelPicksSectionProps) {
+export function ModelPicksSection({ models, varaUsdPrice }: ModelPicksSectionProps) {
   return (
     <section className="bg-background">
       <div className="mx-auto max-w-5xl px-6 py-12 sm:px-10">
         <div className="mb-6 flex flex-col gap-2">
           <h2 className="font-display text-xl font-black uppercase tracking-[0.02em] text-foreground">
-            Model bets — GW{gw}
+            Model bets
           </h2>
           <p className="max-w-lg text-[13px] leading-relaxed text-foreground/50">
-            Each model&rsquo;s pick, what it staked (sized off its own confidence), and what it
-            stands to win at this system&rsquo;s own odds. Simulated — no real money moves here —
-            but every number is real, computed from a real formula, not invented.
+            Every model&rsquo;s full bet history, gameweek by gameweek -- what it staked (sized
+            off its own confidence) and what it stands to win at this system&rsquo;s own odds.
+            Simulated — no real money moves here — but every number is real, computed from a real
+            formula, not invented.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {models.map((model) => (
-            <ModelPickCard key={model.slug} model={model} playerInfo={playerInfo} varaUsdPrice={varaUsdPrice} />
+            <ModelHistoryCard key={model.slug} model={model} varaUsdPrice={varaUsdPrice} />
           ))}
         </div>
       </div>
@@ -93,16 +124,15 @@ function money(varaAmount: number, varaUsdPrice: number | null): string {
   return `${varaAmount} VARA`;
 }
 
-function ModelPickCard({
-  model,
-  playerInfo,
-  varaUsdPrice,
-}: {
-  model: ModelPicks;
-  playerInfo: Record<number, PickPlayerInfo>;
-  varaUsdPrice: number | null;
-}) {
-  const totalStaked = model.picks.reduce((sum, p) => sum + (p.stakeVara ?? 0), 0);
+function formatAccuracy(accuracy: number | null): string {
+  return accuracy === null ? "—" : `${Math.round(accuracy * 100)}%`;
+}
+
+function ModelHistoryCard({ model, varaUsdPrice }: { model: ModelHistory; varaUsdPrice: number | null }) {
+  const totalStaked = model.gameweeks
+    .flatMap((g) => g.picks)
+    .reduce((sum, p) => sum + (p.stakeVara ?? 0), 0);
+  const totalPicks = model.gameweeks.reduce((sum, g) => sum + g.picks.length, 0);
 
   return (
     // id + scroll-mt-24 is the landing target for LeaderboardTable's
@@ -116,28 +146,52 @@ function ModelPickCard({
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-semibold text-foreground">{model.name}</span>
         <span className="text-[11px] text-foreground/35">
-          {model.picks.length} picks
+          {totalPicks} picks total
           {totalStaked > 0 && ` · ${money(totalStaked, varaUsdPrice)} staked`}
         </span>
       </div>
 
-      {model.error ? (
-        <p className="mt-3 text-[12px] leading-relaxed text-foreground/45">
-          Errored this gameweek — <span className="font-mono text-[11px]">{model.error}</span>
-        </p>
-      ) : model.picks.length === 0 ? (
-        <p className="mt-3 text-[12px] text-foreground/40">
-          No bets this gameweek — saw no real edge anywhere.
-        </p>
+      {model.gameweeks.length === 0 ? (
+        <p className="mt-3 text-[12px] text-foreground/40">No bets recorded yet.</p>
       ) : (
-        <ul className="mt-3 flex max-h-96 flex-col gap-2.5 overflow-y-auto pr-1">
-          {model.picks.map((pick) => (
-            <PickRow
-              key={`${pick.playerId}-${pick.threshold}`}
-              pick={pick}
-              info={playerInfo[pick.playerId]}
-              varaUsdPrice={varaUsdPrice}
-            />
+        <div className="mt-3 flex max-h-[32rem] flex-col gap-4 overflow-y-auto pr-1">
+          {model.gameweeks.map((entry) => (
+            <GwGroup key={entry.gw} entry={entry} varaUsdPrice={varaUsdPrice} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GwGroup({ entry, varaUsdPrice }: { entry: ModelGwEntry; varaUsdPrice: number | null }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-foreground/45">
+          GW{entry.gw}
+        </span>
+        {entry.summary ? (
+          <span className="text-[10.5px] text-foreground/40">
+            {entry.summary.correct}/{entry.summary.correct + entry.summary.wrong} correct
+            {entry.summary.pending > 0 ? ` (+${entry.summary.pending} pending)` : ""} ·{" "}
+            {formatAccuracy(entry.summary.accuracy)}
+          </span>
+        ) : (
+          <span className="text-[10.5px] text-foreground/35">not yet finished</span>
+        )}
+      </div>
+
+      {entry.error ? (
+        <p className="text-[12px] leading-relaxed text-foreground/45">
+          Errored this gameweek — <span className="font-mono text-[11px]">{entry.error}</span>
+        </p>
+      ) : entry.picks.length === 0 ? (
+        <p className="text-[12px] text-foreground/40">No bets this gameweek — saw no real edge anywhere.</p>
+      ) : (
+        <ul className="flex flex-col gap-2.5">
+          {entry.picks.map((pick) => (
+            <PickRow key={`${pick.playerId}-${pick.threshold}`} pick={pick} varaUsdPrice={varaUsdPrice} />
           ))}
         </ul>
       )}
@@ -145,15 +199,8 @@ function ModelPickCard({
   );
 }
 
-function PickRow({
-  pick,
-  info,
-  varaUsdPrice,
-}: {
-  pick: ModelPicks["picks"][number];
-  info: PickPlayerInfo | undefined;
-  varaUsdPrice: number | null;
-}) {
+function PickRow({ pick, varaUsdPrice }: { pick: HistoryPick; varaUsdPrice: number | null }) {
+  const info = pick.player;
   return (
     <li className="flex items-center gap-2.5 border-b border-foreground/5 pb-2.5 text-[12px] last:border-b-0 last:pb-0">
       <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-accent-dim">
