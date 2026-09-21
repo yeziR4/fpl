@@ -64,6 +64,33 @@
           "correct": 4,
           "name": "GPT (latest)",
           "pending": 0,
+          "picks": [
+            {
+              "outcome": "correct",
+              "player_id": 426,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 154,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 12,
+              "threshold": 5
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 379,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 5
+            }
+          ],
           "simulated_pnl_vara": 66547.07,
           "slug": "~openai/gpt-latest",
           "staked_vara": 24670.04,
@@ -74,6 +101,73 @@
           "correct": 10,
           "name": "Claude Opus (latest)",
           "pending": 0,
+          "picks": [
+            {
+              "outcome": "correct",
+              "player_id": 411,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 426,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 426,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 154,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 154,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 12,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 12,
+              "threshold": 10
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 379,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 379,
+              "threshold": 10
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 397,
+              "threshold": 5
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 397,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 10
+            }
+          ],
           "simulated_pnl_vara": 29731.13,
           "slug": "~anthropic/claude-opus-latest",
           "staked_vara": 24670.04,
@@ -84,6 +178,38 @@
           "correct": 5,
           "name": "Gemini Pro (latest)",
           "pending": 0,
+          "picks": [
+            {
+              "outcome": "correct",
+              "player_id": 426,
+              "threshold": 5
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 379,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 12,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 154,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 10
+            }
+          ],
           "simulated_pnl_vara": 55871.2,
           "slug": "~google/gemini-pro-latest",
           "staked_vara": 24670.04,
@@ -94,6 +220,33 @@
           "correct": 2,
           "name": "Grok 4.20",
           "pending": 0,
+          "picks": [
+            {
+              "outcome": "wrong",
+              "player_id": 411,
+              "threshold": 10
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 154,
+              "threshold": 5
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 12,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 379,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 627,
+              "threshold": 5
+            }
+          ],
           "simulated_pnl_vara": -9498.58,
           "slug": "x-ai/grok-4.20",
           "staked_vara": 24670.03,
@@ -104,13 +257,85 @@
           "correct": 11,
           "name": "DeepSeek V4 Pro",
           "pending": 0,
+          "picks": [
+            {
+              "outcome": "correct",
+              "player_id": 411,
+              "threshold": 5
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 411,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 426,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 426,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 154,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 154,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 12,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 12,
+              "threshold": 10
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 397,
+              "threshold": 5
+            },
+            {
+              "outcome": "wrong",
+              "player_id": 397,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 4,
+              "threshold": 10
+            },
+            {
+              "outcome": "correct",
+              "player_id": 627,
+              "threshold": 5
+            },
+            {
+              "outcome": "correct",
+              "player_id": 627,
+              "threshold": 10
+            }
+          ],
           "simulated_pnl_vara": 27073.91,
           "slug": "deepseek/deepseek-v4-pro",
           "staked_vara": 24670.03,
           "wrong": 3
         }
       ],
-      "scored_at": "2026-09-21T13:21:01.944776+00:00"
+      "scored_at": "2026-09-21T20:02:50.450030+00:00"
     }
   },
   "totals": {
@@ -165,5 +390,5 @@
       "wrong": 1
     }
   },
-  "updated_at": "2026-09-21T13:21:01.944916+00:00"
+  "updated_at": "2026-09-21T20:02:50.450189+00:00"
 }
