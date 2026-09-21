@@ -52,12 +52,24 @@ def score_gameweek(
     for model_entry in saved["models"]:
         correct = wrong = pending = 0
         staked_vara = simulated_pnl_vara = 0.0
+        # Per-pick verdicts, not just the folded totals below -- what
+        # lets a reader see exactly *which* bets a model got right and
+        # which it got wrong, not just how many of each. Every pick
+        # gets an entry (including PENDING ones), computed from the
+        # same resolve_points_threshold() call the totals below already
+        # use, so there's exactly one definition of "correct" anywhere
+        # in this codebase -- the frontend reads this instead of ever
+        # re-deriving win/loss itself.
+        pick_outcomes = []
         for pick in model_entry["picks"]:
             outcome = outcome_for(pick["player_id"], pick["threshold"])
             picked_yes = pick["pick"] == "yes"
 
             if outcome == MarketOutcome.PENDING:
                 pending += 1
+                pick_outcomes.append(
+                    {"player_id": pick["player_id"], "threshold": pick["threshold"], "outcome": "pending"}
+                )
                 continue
 
             won = (outcome == MarketOutcome.YES) == picked_yes
@@ -65,6 +77,13 @@ def score_gameweek(
                 correct += 1
             else:
                 wrong += 1
+            pick_outcomes.append(
+                {
+                    "player_id": pick["player_id"],
+                    "threshold": pick["threshold"],
+                    "outcome": "correct" if won else "wrong",
+                }
+            )
 
             # Simulated only -- see agents.py/oddsmaker.py and
             # docs/architecture.md: these five wallets hold nothing
@@ -86,6 +105,7 @@ def score_gameweek(
                 "name": model_entry["name"],
                 "correct": correct,
                 "wrong": wrong,
+                "picks": pick_outcomes,
                 "pending": pending,
                 "accuracy": correct / judged if judged else None,
                 "staked_vara": round(staked_vara, 2),

@@ -14,17 +14,22 @@ name: Agent picks & leaderboard
 #   auto-score scores every gameweek that has saved picks but isn't in
 #     the leaderboard yet, gated on resolution.py's own
 #     is_gameweek_finished() -- never scores off a partial gameweek.
-#   auto-settle pays out every finished gameweek's real staked
-#     markets pro-rata to the winning side, via the faucet Worker's
-#     /settle endpoint (see faucet/src/MarketLedger.ts) -- also gated
-#     on is_gameweek_finished(), and safe to call every run since
+#   auto-settle pays out every finished gameweek's real staked markets
+#     house-style, priced off this system's own odds (see
+#     faucet/src/MarketLedger.ts's /settle route) -- also gated on
+#     is_gameweek_finished(), and safe to call every run since
 #     settlement is idempotent per market on the Worker's own side
 #     (see data_pipeline/cli.py's auto-settle docstring).
 #
 # All three are idempotent no-ops most runs (no open deadline yet,
 # nothing newly finished), so running this a few times a day is cheap
 # and doesn't need to be precisely timed to a deadline or a final
-# whistle.
+# whistle. The manual `rescore_gw` input (workflow_dispatch only) is
+# the deliberate exception -- auto-score's own "skip if already
+# scored" rule means a gameweek already in the leaderboard never gets
+# touched again on its own, so re-scoring one on purpose (a
+# score_gameweek() schema change, a late bonus-points correction)
+# needs an explicit trigger.
 #
 # OPENROUTER_API_KEY is a GitHub Actions secret the repo owner adds
 # directly (Settings -> Secrets and variables -> Actions) -- same
@@ -43,6 +48,17 @@ on:
   schedule:
     - cron: "40 */6 * * *"
   workflow_dispatch:
+    inputs:
+      rescore_gw:
+        description: >
+          Re-score one already-scored gameweek before the normal
+          auto-score/auto-settle steps run -- for a schema change to
+          score_gameweek() (e.g. adding the per-pick outcome list) or a
+          late bonus-points correction, where auto-score's own "skip if
+          already in the leaderboard" rule would otherwise never touch
+          it again. Leave blank for a normal run.
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -84,6 +100,10 @@ jobs:
         run: python -m data_pipeline.cli auto-generate-picks
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Re-score one gameweek on demand
+        if: github.event.inputs.rescore_gw != ''
+        run: python -m data_pipeline.cli score-gameweek --gw "${{ github.event.inputs.rescore_gw }}"
 
       - name: Score any newly finished gameweeks
         run: python -m data_pipeline.cli auto-score

@@ -141,6 +141,9 @@ async function loadPicksHistory(board: Leaderboard | null): Promise<ModelHistory
           picks: model.picks.map((pick) => ({
             ...pick,
             player: resolvePlayerInfo(pick.playerId, gw, bootstrap, fixtures),
+            outcome:
+              gwSummary?.picks?.find((p) => p.player_id === pick.playerId && p.threshold === pick.threshold)
+                ?.outcome ?? null,
           })),
           summary: gwSummary
             ? {

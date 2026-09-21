@@ -32,7 +32,27 @@ export interface ModelTotal {
   simulated_pnl_vara?: number;
 }
 
-export type GameweekModelScore = ModelTotal;
+/** "correct"/"wrong" mirror score_gameweek()'s own `won` check;
+ * "pending" is a pick whose market hadn't resolved yet as of when this
+ * gameweek was scored (shouldn't normally happen -- is_gameweek_finished()
+ * already gates scoring -- but a live snapshot this pipeline hasn't
+ * fetched yet is a real, if rare, case). */
+export interface PickOutcome {
+  player_id: number;
+  threshold: number;
+  outcome: "correct" | "wrong" | "pending";
+}
+
+export interface GameweekModelScore extends ModelTotal {
+  /** One entry per pick this model made this specific gameweek --
+   * what lets a reader see *which* bets went which way, not just the
+   * folded correct/wrong counts above. Computed by
+   * data_pipeline/leaderboard.py's score_gameweek() from the exact
+   * same resolve_points_threshold() call the totals already use, so
+   * the frontend never re-derives win/loss itself. Absent on a
+   * gameweek scored before this field existed. */
+  picks?: PickOutcome[];
+}
 
 export interface GameweekSummary {
   gw: number;

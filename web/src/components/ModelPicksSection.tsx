@@ -48,6 +48,13 @@ export interface HistoryPick {
    * bootstrap-static/fixtures snapshot falls back to a bare id and no
    * photo/opponent, never hides the pick. */
   player: PickPlayerInfo | null;
+  /** Whether this specific pick actually won or lost -- from
+   * data/leaderboard.json's per-pick outcome list (see lib/leaderboard.ts's
+   * PickOutcome), the same resolve_points_threshold() verdict everything
+   * else in this pipeline settles against. Null if this gameweek hasn't
+   * been scored yet, or predates this field -- shown as neither a win
+   * nor a loss, never guessed at. */
+  outcome: "correct" | "wrong" | "pending" | null;
 }
 
 export interface ModelGwSummary {
@@ -199,6 +206,38 @@ function GwGroup({ entry, varaUsdPrice }: { entry: ModelGwEntry; varaUsdPrice: n
   );
 }
 
+/** A small "got it right / got it wrong" marker per pick -- the whole
+ * point of showing history at all: "show the one that they got
+ * correct and the one that got it wrong", requested directly.
+ * Renders nothing for a still-pending or never-scored pick (no
+ * fabricated verdict) -- the GW group header already says "not yet
+ * finished" for those, this only needs to flag the rarer case of one
+ * pick still pending inside an otherwise-scored gameweek. */
+function OutcomeBadge({ outcome }: { outcome: HistoryPick["outcome"] }) {
+  if (outcome === "correct") {
+    return (
+      <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.04em] text-accent">
+        ✓ Correct
+      </span>
+    );
+  }
+  if (outcome === "wrong") {
+    return (
+      <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.04em] text-red-400">
+        ✗ Wrong
+      </span>
+    );
+  }
+  if (outcome === "pending") {
+    return (
+      <span className="rounded bg-foreground/8 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.04em] text-foreground/40">
+        Pending
+      </span>
+    );
+  }
+  return null;
+}
+
 function PickRow({ pick, varaUsdPrice }: { pick: HistoryPick; varaUsdPrice: number | null }) {
   const info = pick.player;
   return (
@@ -218,10 +257,11 @@ function PickRow({ pick, varaUsdPrice }: { pick: HistoryPick; varaUsdPrice: numb
             <span className="font-medium text-foreground/85">{info?.webName ?? `Player ${pick.playerId}`}</span>{" "}
             <span className="text-foreground/40">Over {pick.threshold}</span>
           </span>
-          <span
-            className={`shrink-0 font-semibold ${pick.side === "yes" ? "text-accent" : "text-foreground/50"}`}
-          >
-            {pick.side === "yes" ? "Yes" : "No"}
+          <span className="flex shrink-0 items-center gap-1.5">
+            <span className={`font-semibold ${pick.side === "yes" ? "text-accent" : "text-foreground/50"}`}>
+              {pick.side === "yes" ? "Yes" : "No"}
+            </span>
+            <OutcomeBadge outcome={pick.outcome} />
           </span>
         </div>
 

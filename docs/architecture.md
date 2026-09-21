@@ -885,7 +885,13 @@ kept as separate columns rather than collapsed into one score.
   judged (non-pending) pick it also tallies `staked_vara` and
   `simulated_pnl_vara` (win: `potential_return_vara - stake_vara`,
   loss: `-stake_vara`) — a pick saved before bet records existed just
-  contributes nothing to either, not a crash. `update_leaderboard()`
+  contributes nothing to either, not a crash. Each model's gameweek
+  summary also carries a `picks` list — one `{player_id, threshold,
+  outcome}` entry per pick, `outcome` one of `correct`/`wrong`/
+  `pending` — computed from the exact same `resolve_points_threshold()`
+  call the totals above already use, so a reader can see *which* bets
+  went which way, not just the folded count, without this codebase
+  ever having two disagreeing definitions of "correct." `update_leaderboard()`
   folds one gameweek's score into `data/leaderboard.json`, keyed by
   gameweek plus a running `totals` per model (correct/wrong/pending
   *and* staked/simulated P&L, accumulated the same way); re-scoring an

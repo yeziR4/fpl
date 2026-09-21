@@ -55,6 +55,30 @@ def test_score_gameweek_counts_correct_and_wrong(tmp_path, populated_cache):
     assert model["accuracy"] == pytest.approx(0.75)
 
 
+def test_score_gameweek_includes_per_pick_outcomes(tmp_path, populated_cache):
+    picks_dir = tmp_path / "agent_picks"
+    _save_gw1_picks(
+        picks_dir,
+        model_name="Perfect Model",
+        model_slug="perfect/model",
+        picks=[
+            # Haaland: 12 pts -- over 5 YES (correct).
+            AgentPick(player_id=1, threshold=5, pick=True, confidence=None),
+            # Salah: 6 pts -- over 10 is really NO, picked YES (wrong).
+            AgentPick(player_id=2, threshold=10, pick=True, confidence=None),
+            # Saka: no live snapshot cached -- PENDING (see
+            # test_score_gameweek_pending_picks_dont_count_toward_stake_or_pnl).
+            AgentPick(player_id=4, threshold=5, pick=True, confidence=None),
+        ],
+    )
+
+    summary = score_gameweek(1, cache_dir=populated_cache, picks_dir=picks_dir)
+    outcomes = {(p["player_id"], p["threshold"]): p["outcome"] for p in summary["models"][0]["picks"]}
+    assert outcomes[(1, 5)] == "correct"
+    assert outcomes[(2, 10)] == "wrong"
+    assert outcomes[(4, 5)] == "pending"
+
+
 def test_score_gameweek_tracks_staked_and_simulated_pnl(tmp_path, populated_cache):
     picks_dir = tmp_path / "agent_picks"
     _save_gw1_picks(
