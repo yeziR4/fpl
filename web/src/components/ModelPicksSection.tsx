@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ModelPicks } from "@/lib/agentPicks";
+import { modelAnchorId } from "@/lib/leaderboard";
 import { formatUsd } from "@/lib/vara/price";
 import { PlayerPhoto } from "@/components/PlayerPhoto";
 
@@ -104,7 +105,14 @@ function ModelPickCard({
   const totalStaked = model.picks.reduce((sum, p) => sum + (p.stakeVara ?? 0), 0);
 
   return (
-    <div className="flex flex-col rounded-lg border border-foreground/12 bg-white/[0.02] p-4">
+    // id + scroll-mt-24 is the landing target for LeaderboardTable's
+    // "click a model, see their bets" links further up this same page
+    // -- scroll-mt clears the sticky header (Header.tsx) so a jump
+    // here doesn't land the card half-hidden underneath it.
+    <div
+      id={modelAnchorId(model.slug)}
+      className="flex scroll-mt-24 flex-col rounded-lg border border-foreground/12 bg-white/[0.02] p-4"
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[14px] font-semibold text-foreground">{model.name}</span>
         <span className="text-[11px] text-foreground/35">

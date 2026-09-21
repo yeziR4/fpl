@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { GameweekSummary, ModelTotal } from "@/lib/leaderboard";
+import Link from "next/link";
+import { modelAnchorId, type GameweekSummary, type ModelTotal } from "@/lib/leaderboard";
 import { formatUsd } from "@/lib/vara/price";
 
 function formatAccuracy(accuracy: number | null): string {
@@ -63,7 +64,21 @@ export function LeaderboardTable({
                 {i + 1}
               </td>
               <td className="px-4 py-3">
-                <span className="text-[14px] font-semibold text-foreground">{model.name}</span>
+                {/* Jumps down to this model's own card in
+                    ModelPicksSection, further down this same page --
+                    "once i clicked on a model i have to see their
+                    bets", requested directly. Root-relative
+                    (/leaderboard#...) rather than a bare "#..." so
+                    this keeps working if this row is ever rendered or
+                    linked from somewhere other than this page, same
+                    reasoning Header.tsx's own hash links already
+                    follow. */}
+                <Link
+                  href={`/leaderboard#${modelAnchorId(model.slug)}`}
+                  className="text-[14px] font-semibold text-foreground hover:text-accent hover:underline"
+                >
+                  {model.name}
+                </Link>
                 <span className="ml-2 font-mono text-[11px] text-foreground/35">{model.slug}</span>
               </td>
               <td className="px-4 py-3 text-right text-[13.5px] font-medium text-accent">

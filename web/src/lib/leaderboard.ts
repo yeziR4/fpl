@@ -78,3 +78,22 @@ export function rankedTotals(board: Leaderboard): ModelTotal[] {
 export function rankedGameweeks(board: Leaderboard): GameweekSummary[] {
   return Object.values(board.gameweeks).sort((a, b) => b.gw - a.gw);
 }
+
+/**
+ * A model's slug (e.g. "~openai/gpt-latest") as a URL-fragment-safe
+ * HTML id -- what lets LeaderboardTable's rows link straight to that
+ * model's own card in ModelPicksSection on the same page ("once i
+ * clicked on a model i have to see their bets", requested directly).
+ * A raw slug technically works as a fragment too, but `~` and `/`
+ * inside an id make it awkward to target with CSS/JS elsewhere and
+ * easy to get subtly wrong in a URL, so this strips them down to a
+ * plain kebab-case token instead. Both sides of the link (the href
+ * LeaderboardTable builds and the id ModelPicksSection sets) call this
+ * same function, so they can never drift apart.
+ */
+export function modelAnchorId(slug: string): string {
+  return slug
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
