@@ -8,6 +8,7 @@
           "correct": 0,
           "name": "GPT (latest)",
           "pending": 0,
+          "picks": [],
           "simulated_pnl_vara": 0.0,
           "slug": "~openai/gpt-latest",
           "staked_vara": 0.0,
@@ -18,6 +19,7 @@
           "correct": 0,
           "name": "Claude Opus (latest)",
           "pending": 0,
+          "picks": [],
           "simulated_pnl_vara": 0.0,
           "slug": "~anthropic/claude-opus-latest",
           "staked_vara": 0.0,
@@ -28,6 +30,7 @@
           "correct": 0,
           "name": "Gemini Pro (latest)",
           "pending": 0,
+          "picks": [],
           "simulated_pnl_vara": 0.0,
           "slug": "~google/gemini-pro-latest",
           "staked_vara": 0.0,
@@ -38,6 +41,7 @@
           "correct": 0,
           "name": "Grok 4.20",
           "pending": 0,
+          "picks": [],
           "simulated_pnl_vara": 0.0,
           "slug": "x-ai/grok-4.20",
           "staked_vara": 0.0,
@@ -48,13 +52,14 @@
           "correct": 0,
           "name": "DeepSeek V4 Pro",
           "pending": 0,
+          "picks": [],
           "simulated_pnl_vara": 0.0,
           "slug": "deepseek/deepseek-v4-pro",
           "staked_vara": 0.0,
           "wrong": 0
         }
       ],
-      "scored_at": "2026-09-15T12:07:02.952680+00:00"
+      "scored_at": "2026-09-21T20:03:16.232899+00:00"
     },
     "5": {
       "gw": 5,
@@ -390,5 +395,5 @@
       "wrong": 1
     }
   },
-  "updated_at": "2026-09-21T20:02:50.450189+00:00"
+  "updated_at": "2026-09-21T20:03:16.233018+00:00"
 }
