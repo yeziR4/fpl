@@ -55,59 +55,115 @@
         }
       ],
       "scored_at": "2026-09-15T12:07:02.952680+00:00"
+    },
+    "5": {
+      "gw": 5,
+      "models": [
+        {
+          "accuracy": 0.8,
+          "correct": 4,
+          "name": "GPT (latest)",
+          "pending": 0,
+          "simulated_pnl_vara": 66547.07,
+          "slug": "~openai/gpt-latest",
+          "staked_vara": 24670.04,
+          "wrong": 1
+        },
+        {
+          "accuracy": 0.7692307692307693,
+          "correct": 10,
+          "name": "Claude Opus (latest)",
+          "pending": 0,
+          "simulated_pnl_vara": 29731.13,
+          "slug": "~anthropic/claude-opus-latest",
+          "staked_vara": 24670.04,
+          "wrong": 3
+        },
+        {
+          "accuracy": 0.8333333333333334,
+          "correct": 5,
+          "name": "Gemini Pro (latest)",
+          "pending": 0,
+          "simulated_pnl_vara": 55871.2,
+          "slug": "~google/gemini-pro-latest",
+          "staked_vara": 24670.04,
+          "wrong": 1
+        },
+        {
+          "accuracy": 0.4,
+          "correct": 2,
+          "name": "Grok 4.20",
+          "pending": 0,
+          "simulated_pnl_vara": -9498.58,
+          "slug": "x-ai/grok-4.20",
+          "staked_vara": 24670.03,
+          "wrong": 3
+        },
+        {
+          "accuracy": 0.7857142857142857,
+          "correct": 11,
+          "name": "DeepSeek V4 Pro",
+          "pending": 0,
+          "simulated_pnl_vara": 27073.91,
+          "slug": "deepseek/deepseek-v4-pro",
+          "staked_vara": 24670.03,
+          "wrong": 3
+        }
+      ],
+      "scored_at": "2026-09-21T13:21:01.944776+00:00"
     }
   },
   "totals": {
     "deepseek/deepseek-v4-pro": {
-      "accuracy": null,
-      "correct": 0,
+      "accuracy": 0.7857142857142857,
+      "correct": 11,
       "name": "DeepSeek V4 Pro",
       "pending": 0,
-      "simulated_pnl_vara": 0.0,
+      "simulated_pnl_vara": 27073.91,
       "slug": "deepseek/deepseek-v4-pro",
-      "staked_vara": 0.0,
-      "wrong": 0
+      "staked_vara": 24670.03,
+      "wrong": 3
     },
     "x-ai/grok-4.20": {
-      "accuracy": null,
-      "correct": 0,
+      "accuracy": 0.4,
+      "correct": 2,
       "name": "Grok 4.20",
       "pending": 0,
-      "simulated_pnl_vara": 0.0,
+      "simulated_pnl_vara": -9498.58,
       "slug": "x-ai/grok-4.20",
-      "staked_vara": 0.0,
-      "wrong": 0
+      "staked_vara": 24670.03,
+      "wrong": 3
     },
     "~anthropic/claude-opus-latest": {
-      "accuracy": null,
-      "correct": 0,
+      "accuracy": 0.7692307692307693,
+      "correct": 10,
       "name": "Claude Opus (latest)",
       "pending": 0,
-      "simulated_pnl_vara": 0.0,
+      "simulated_pnl_vara": 29731.13,
       "slug": "~anthropic/claude-opus-latest",
-      "staked_vara": 0.0,
-      "wrong": 0
+      "staked_vara": 24670.04,
+      "wrong": 3
     },
     "~google/gemini-pro-latest": {
-      "accuracy": null,
-      "correct": 0,
+      "accuracy": 0.8333333333333334,
+      "correct": 5,
       "name": "Gemini Pro (latest)",
       "pending": 0,
-      "simulated_pnl_vara": 0.0,
+      "simulated_pnl_vara": 55871.2,
       "slug": "~google/gemini-pro-latest",
-      "staked_vara": 0.0,
-      "wrong": 0
+      "staked_vara": 24670.04,
+      "wrong": 1
     },
     "~openai/gpt-latest": {
-      "accuracy": null,
-      "correct": 0,
+      "accuracy": 0.8,
+      "correct": 4,
       "name": "GPT (latest)",
       "pending": 0,
-      "simulated_pnl_vara": 0.0,
+      "simulated_pnl_vara": 66547.07,
       "slug": "~openai/gpt-latest",
-      "staked_vara": 0.0,
-      "wrong": 0
+      "staked_vara": 24670.04,
+      "wrong": 1
     }
   },
-  "updated_at": "2026-09-15T12:07:02.952722+00:00"
+  "updated_at": "2026-09-21T13:21:01.944916+00:00"
 }
