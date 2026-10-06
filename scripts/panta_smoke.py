@@ -9,15 +9,31 @@ Run from the repo root:
 
     python scripts/panta_smoke.py
 
-Reads PANTA_EMAIL / PANTA_PASSWORD from the environment, or prompts.
-Mints a pk_test_ key and saves it to .panta_smoke_key (gitignored) because the
-API shows the secret exactly once.
+TWO LOGINS, AND THEY ARE NOT THE SAME
+-------------------------------------
+Panta has a web app and an API, and they authenticate differently:
+
+  * panta.market (the web app) signs you in by email through Privy. It is
+    passwordless and it creates a Solana wallet for you. This login does NOT
+    mint API keys.
+  * The API takes an email + password at POST /auth/register/ and
+    POST /auth/token/, and that account is what mints pk_test_ / pk_live_ keys.
+
+If you have only ever clicked the email link on panta.market, you have no API
+password -- that is expected, not a mistake. Register an API account below.
+
+THREE WAYS IN
+-------------
+  1. PANTA_API_KEY set in the environment  -> skips auth entirely (fastest)
+  2. An existing .panta_smoke_key          -> skips auth entirely
+  3. Email + password                      -> registers or logs in, mints a key
 
 Exit codes: 0 = plumbing works, 1 = something failed, 2 = /positions suspect.
 """
 
 from __future__ import annotations
 
+import getpass
 import json
 import os
 import sys
@@ -28,8 +44,8 @@ BASE = "https://live-api.panta.market/api/v1"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEY_FILE = os.path.join(ROOT, ".panta_smoke_key")
 
-PASS_MARK = "  [ok]"
-FAIL_MARK = "  [FAIL]"
+OK = "  [ok]"
+FAIL = "  [FAIL]"
 
 
 def call(method, path, body=None, api_key=None, bearer=None, timeout=40):
@@ -64,13 +80,12 @@ def call(method, path, body=None, api_key=None, bearer=None, timeout=40):
 def show(label, payload):
     print("\n--- %s ---" % label)
     if isinstance(payload, str):
-        print(payload[:4000])
+        print(payload[:3000])
     else:
-        print(json.dumps(payload, indent=2)[:4000])
+        print(json.dumps(payload, indent=2)[:3000])
 
 
 def pick(d, *names):
-    """First present key from names, on a dict."""
     if not isinstance(d, dict):
         return None
     for n in names:
@@ -79,15 +94,37 @@ def pick(d, *names):
     return None
 
 
-def main() -> int:
-    email = os.environ.get("PANTA_EMAIL") or input("Panta email: ").strip()
-    password = os.environ.get("PANTA_PASSWORD")
-    if not password:
-        import getpass
+def code_of(payload):
+    return payload.get("code") if isinstance(payload, dict) else None
 
-        password = getpass.getpass("Panta password: ")
 
-    # ---------------------------------------------------------- 1. register
+# ------------------------------------------------------------------ auth
+
+
+def existing_key():
+    key = os.environ.get("PANTA_API_KEY")
+    if key:
+        print("Using PANTA_API_KEY from the environment.")
+        return key
+    if os.path.exists(KEY_FILE):
+        with open(KEY_FILE, encoding="utf-8") as fh:
+            key = fh.read().strip()
+        if key:
+            print("Using the key saved at %s" % KEY_FILE)
+            return key
+    return None
+
+
+def authenticate():
+    """Register or log in, then mint a pk_test_ key. Returns (key, jwt)."""
+    print(
+        "\nNo API key found, so we need API credentials.\n"
+        "This is NOT your panta.market email login -- that one is passwordless\n"
+        "and cannot mint API keys. This is a separate API account.\n"
+    )
+    email = os.environ.get("PANTA_EMAIL") or input("API account email: ").strip()
+    password = os.environ.get("PANTA_PASSWORD") or getpass.getpass("API account password: ")
+
     print("\n[1/6] POST /auth/register/")
     status, reg = call(
         "POST",
@@ -95,21 +132,25 @@ def main() -> int:
         {"email": email, "password": password, "name": "Overline"},
     )
     print("  HTTP %s" % status)
-    access = pick(reg, "access", "token", "jwt")
-
-    if status in (409, 400) or not access:
-        print("  register did not return a JWT; trying /auth/login/")
-        status, reg = call("POST", "/auth/login/", {"email": email, "password": password})
-        print("  HTTP %s" % status)
-        access = pick(reg, "access", "token", "jwt")
+    access = pick(reg, "access")
 
     if not access:
-        show("register/login response (inspect field names)", reg)
-        print(FAIL_MARK + " no JWT. Look at the fields above and tell Claude.")
-        return 1
-    print(PASS_MARK + " JWT acquired")
+        reason = code_of(reg)
+        print("  register returned no JWT (code=%s); trying login instead" % reason)
+        print("\n[1b/6] POST /auth/token/")
+        status, reg = call("POST", "/auth/token/", {"email": email, "password": password})
+        print("  HTTP %s" % status)
+        access = pick(reg, "access")
 
-    # ------------------------------------------------------------- 2. mint key
+    if not access:
+        show("last auth response", reg)
+        print(FAIL + " could not authenticate.")
+        print("       If the account already exists, the password must match the one")
+        print("       it was created with. A fresh email is the quickest way past this.")
+        return None, None
+
+    print(OK + " JWT acquired")
+
     print("\n[2/6] POST /account/keys/ (env=test)")
     status, keyresp = call(
         "POST",
@@ -120,64 +161,73 @@ def main() -> int:
     print("  HTTP %s" % status)
     api_key = pick(keyresp, "secret", "key", "apiKey", "plaintext")
     if not api_key:
-        show("key response (inspect field names)", keyresp)
-        print(FAIL_MARK + " no key returned.")
-        return 1
+        show("key response", keyresp)
+        print(FAIL + " no key returned.")
+        return None, None
+
     with open(KEY_FILE, "w", encoding="utf-8") as fh:
         fh.write(api_key + "\n")
-    print(PASS_MARK + " key minted, saved to %s" % KEY_FILE)
+    print(OK + " key minted and saved to %s (shown only once)" % KEY_FILE)
+    return api_key, access
 
-    # --------------------------------------------------------------- 3. whoami
+
+# ------------------------------------------------------------------ main
+
+
+def main() -> int:
+    api_key = existing_key()
+    if api_key is None:
+        api_key, _ = authenticate()
+        if api_key is None:
+            return 1
+
     print("\n[3/6] GET /account/")
     status, acct = call("GET", "/account/", api_key=api_key)
     print("  HTTP %s" % status)
     show("account", acct)
     if status != 200:
-        print(FAIL_MARK + " the key does not authenticate.")
+        print(FAIL + " the key does not authenticate. Delete %s and re-run." % KEY_FILE)
         return 1
     if isinstance(acct, dict) and acct.get("canCreateMarkets") is False:
-        print(FAIL_MARK + " canCreateMarkets is FALSE -- raise it in #dev-chat today.")
+        print(FAIL + " canCreateMarkets is FALSE -- raise it in #dev-chat today.")
         return 1
-    print(PASS_MARK + " key authenticates, canCreateMarkets is not false")
+    print(OK + " key authenticates; canCreateMarkets is not false")
 
-    # --------------------------------------------------------------- 4. markets
     print("\n[4/6] GET /markets/")
     status, markets = call("GET", "/markets/", api_key=api_key)
     print("  HTTP %s" % status)
     if status == 200:
-        n = len(markets) if isinstance(markets, list) else len(markets.get("markets", []))
-        print(PASS_MARK + " catalog reachable (%s markets)" % n)
+        rows = markets if isinstance(markets, list) else markets.get("markets", [])
+        print(OK + " catalog reachable (%s markets)" % len(rows))
     else:
         show("markets response", markets)
-        print(FAIL_MARK + " could not list markets.")
+        print(FAIL + " could not list markets.")
         return 1
 
-    # ---------------------------------------------------- 5. team/event markets
     print("\n[5/6] GET /account/metrics/")
     status, metrics = call("GET", "/account/metrics/", api_key=api_key)
     print("  HTTP %s" % status)
     if status == 200:
-        show("metrics (volumeUsdcBase is our traction number)", metrics)
-        print(PASS_MARK + " metrics reachable -- log this from day one")
+        show("metrics -- volumeUsdcBase is our traction number", metrics)
+        print(OK + " metrics reachable; log this from day one")
     else:
-        print("  (non-fatal) metrics not reachable: %s" % status)
+        print("  (non-fatal) HTTP %s" % status)
 
-    # ---------------------------------------------------------- 6. POSITIONS
     print("\n[6/6] GET /positions/  <-- THE RISK")
     status, pos = call("GET", "/positions/", api_key=api_key)
     print("  HTTP %s" % status)
     show("positions", pos)
     if status == 200:
-        print(PASS_MARK + " /positions responds. Shape recorded above.")
+        print(OK + " /positions responds; shape recorded above.")
     else:
-        print(FAIL_MARK + " /positions did not return 200.")
-        print("       A builder reported a verified buy that /positions never returned.")
-        print("       Post this response in #dev-chat NOW, before we spend the $20.")
+        print(FAIL + " /positions did not return 200.")
+        print("       A Panta builder reported a verified, attributed buy that")
+        print("       /positions never returned. Post this in #dev-chat NOW,")
+        print("       before we spend the $20.")
         return 2
 
     print("\n=== SMOKE TEST COMPLETE: plumbing is good ===")
-    print("All six steps were free. Nothing was spent.")
-    print("Next: the $20 Breaking market, and /positions must return that buy.")
+    print("All steps were free. Nothing was spent.")
     return 0
 
 
