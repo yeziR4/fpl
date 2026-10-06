@@ -29,6 +29,8 @@ import {
   solamiApiKeyHeader,
   solamiRequestTimeoutMs,
   solamiRpcUrl,
+  rpcFallbackUrl,
+  hasSolamiKey,
 } from "./env.js";
 import { withTimeout } from "./withTimeout.js";
 
@@ -51,7 +53,31 @@ interface JsonRpcResponse<T> {
 
 let rpcId = 0;
 
-/** One JSON-RPC round trip. Surfaces Solami's own error message rather than a
+let warnedAboutFallback = false;
+
+/**
+ * Which RPC to talk to.
+ *
+ * Solami when we hold a key, otherwise the public fallback -- announced loudly,
+ * once. The fallback exists so the Panta flow can be proven before the Solami
+ * key lands. It is not a substitute: the Solami track is judged on Solami
+ * actually carrying the data, so a broadcast that went to the public RPC must
+ * never be described as a Solami broadcast.
+ */
+function endpoint(): string {
+  if (hasSolamiKey()) return solamiRpcUrl();
+  if (!warnedAboutFallback) {
+    warnedAboutFallback = true;
+    console.warn(
+      `[solami] SOLAMI_API_KEY is not set. Falling back to ${rpcFallbackUrl()}.\n` +
+        "         Solami's RPC is https://rpc.solami.dev/solana and needs a key.\n" +
+        "         This proves the Panta flow but does NOT satisfy the Solami track.",
+    );
+  }
+  return rpcFallbackUrl();
+}
+
+/** One JSON-RPC round trip. Surfaces the RPC's own error message rather than a
  * generic failure, because "the RPC rejected it" and "the transaction is bad"
  * need different fixes and we have six days. */
 export async function solamiRpc<T>(method: string, params: unknown[]): Promise<T> {
@@ -61,10 +87,11 @@ export async function solamiRpc<T>(method: string, params: unknown[]): Promise<T
     headers[solamiApiKeyHeader()] = key;
   }
 
+  const url = endpoint();
   let response: Response;
   try {
     response = await withTimeout(
-      fetch(solamiRpcUrl(), {
+      fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),

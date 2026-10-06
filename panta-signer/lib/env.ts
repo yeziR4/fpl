@@ -37,8 +37,40 @@ export function pantaBaseUrl(): string {
   return process.env.PANTA_API_BASE_URL ?? "https://live-api.panta.market/api/v1";
 }
 
+/**
+ * Solami's JSON-RPC is PATH-BASED and multi-chain: the path selects the chain.
+ * It is `https://rpc.solami.dev/solana`, NOT `https://rpc.solami.dev`.
+ *
+ * Verified 2026-10-06:
+ *   POST rpc.solami.dev         -> 405   nothing serves RPC at the root
+ *   POST rpc.solami.dev/rpc     -> 400   "unknown variant `rpc`, expected one of
+ *                                         `Solana`, `sol`, `solana`, `Monad`, `m..."
+ *   POST rpc.solami.dev/solana  -> 401   {"message":"unauthorized"}
+ *
+ * So the path was the puzzle and auth is what is still missing: this needs a
+ * Solami API key.
+ */
 export function solamiRpcUrl(): string {
-  return process.env.SOLAMI_RPC_URL ?? "https://rpc.solami.dev";
+  return process.env.SOLAMI_RPC_URL ?? "https://rpc.solami.dev/solana";
+}
+
+/**
+ * Where transactions go when no Solami key is configured.
+ *
+ * This exists so the Panta integration can be proven end to end before the
+ * Solami key arrives. It is a DEVELOPMENT UNBLOCK, NOT A SUBSTITUTE: the Solami
+ * sidetrack is judged on "Solami is the data path ... doing real work", and
+ * broadcasting through a public RPC does not satisfy that. Anything the
+ * submission claims about Solami must have actually gone through Solami.
+ *
+ * solami.ts warns loudly, once, whenever this is used.
+ */
+export function rpcFallbackUrl(): string {
+  return process.env.SOLANA_RPC_FALLBACK_URL ?? "https://api.mainnet-beta.solana.com";
+}
+
+export function hasSolamiKey(): boolean {
+  return Boolean(process.env.SOLAMI_API_KEY);
 }
 
 export function solamiApiKey(): string | undefined {
