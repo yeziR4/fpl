@@ -97,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let verified: Record<string, unknown> | null = null;
     if (submitted && !submitError) {
       try {
-        verified = await verifyOrder(signature);
+        verified = await verifyOrder(orderId, signature);
       } catch {
         // Non-fatal: Panta already accepted the submission.
       }

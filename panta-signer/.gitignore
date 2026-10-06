@@ -7,3 +7,11 @@
 .env.local
 
 *.tsbuildinfo
+
+# Compiled output for the CLI scripts.
+dist/
+
+# Local scratch: the throwaway keypair used for --dry-run shape checks, and any
+# spec generated on the fly. Never a real key.
+.keygen.mjs
+.throwaway-keypair.json

@@ -83,7 +83,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    const built = await buildOrder(quoteId, typeof userId === "string" ? userId : undefined);
+    const built = await buildOrder({
+      quoteId,
+      wallet,
+      ...(typeof userId === "string" ? { userId } : {}),
+    });
 
     res.status(200).json({
       quoteId,

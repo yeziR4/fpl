@@ -1,0 +1,25 @@
+{
+  "_comment": "Template for panta-signer/scripts/create-market.ts. Copy, edit, then run with --dry-run before ever using --live. Field names are verified against https://docs.panta.market/api-reference/markets/quote -- they are NOT the obvious guesses.",
+
+  "title": "Haaland 10+ points, GW8",
+  "question": "Will Erling Haaland score 10 or more Fantasy Premier League points in Gameweek 8?",
+  "resolutionRule": "Resolves YES if the official Fantasy Premier League site credits the named player with 10 or more points for the stated gameweek, once every match in that gameweek is marked finished and bonus points are final.",
+  "sourcesOfTruth": ["https://fantasy.premierleague.com/api/bootstrap-static/"],
+  "category": "sports",
+  "region": "Global",
+
+  "startTime": "2026-10-11T14:00:00Z",
+  "endTime": "2026-10-11T21:00:00Z",
+  "resolutionTime": "2026-10-12T12:00:00Z",
+
+  "marketType": "breaking",
+  "imageUrl": "https://example.com/markets/haaland-gw8-1024.png",
+
+  "_notes": {
+    "timestamps": "ISO 8601 for readability; converted to the unix seconds the API actually wants. Raw integers are accepted too.",
+    "marketType": "standard needs the event >=72h out and costs 50 USDC; breaking needs it within 72h and costs 20 USDC. Creating closer to kickoff therefore costs 40% less, which matters when four markets are the plan.",
+    "sourcesOfTruth": "MUST point at fantasy.premierleague.com. Real-world match stats are not FPL points, and the AI Resolution Agent reads whatever source you name -- naming the wrong one misresolves every market we create.",
+    "imageUrl": "Public, roughly 1024x1024; Panta soft-validates the URL. The club's 110x140 player photo may be rejected, so host a proper square image before the live run.",
+    "resolutionRule": "Prose. Write it so a stranger could settle the market from the named source alone."
+  }
+}

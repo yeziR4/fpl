@@ -2,32 +2,40 @@
  * Create a market, steps 1 and 2: quote, then build an unsigned transaction.
  *
  * Bearer-gated (lib/auth.ts), unlike the buy endpoints, and the reason is
- * money: market creation costs $50 (Standard) or $20 (Breaking), is
- * non-refundable, and is paid by us. This is the endpoint that must never be
- * open to a stranger who finds the URL.
+ * money: market creation costs real, non-refundable USDC -- 50 for a standard
+ * market, 20 for a breaking one -- and we pay it. This is the endpoint that
+ * must never be open to a stranger who finds the URL.
  *
  * It is also the endpoint that makes the product's claim true. This service is
  * not called by a browser; it is called by the market generator, which turns
  * the live FPL pipeline into gameweek markets on a schedule. Panta has football
- * demand but no consistent football supply -- this is the supply.
+ * demand and, as of this writing, a catalog with zero primary markets in it.
+ * This is the supply.
  *
- * Panta gives us back an assembled VersionedTransaction here, unlike a primary
- * buy which returns bare instructions. Two different assembly paths in one
- * integration; worth remembering when the client code looks asymmetric.
- *
- * Field names on MarketSpec come from the API reference, which describes the
- * concepts more confidently than it spells the keys. Confirm them against
- * https://docs.panta.market/api-reference/markets/quote on the first live
- * attempt -- the smoke test only ever exercised read paths.
+ * The body is a MarketSpec, passed through after validation. Note how far the
+ * real field names sit from the obvious guesses: `resolutionRule` is prose,
+ * `sourcesOfTruth` is an array of URLs, the three timestamps are UNIX SECONDS,
+ * and `title` is separate from `question`. All of that was read off the API
+ * reference after a free dry run proved the inferred names wrong.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { isAuthorized } from "../lib/auth.js";
 import { PantaError, buildMarket, quoteMarket, type MarketSpec } from "../lib/panta.js";
 
-interface MarketCreateBody extends Partial<MarketSpec> {
-  [key: string]: unknown;
-}
+const REQUIRED: (keyof MarketSpec)[] = [
+  "wallet",
+  "question",
+  "resolutionRule",
+  "sourcesOfTruth",
+  "category",
+  "startTime",
+  "endTime",
+  "resolutionTime",
+  "marketType",
+  "title",
+  "imageUrl",
+];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -39,61 +47,68 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const body = (req.body ?? {}) as MarketCreateBody;
-  const { question, startTime, resolveTime, marketType, imageUrl } = body;
+  const body = (req.body ?? {}) as Partial<MarketSpec>;
 
-  if (typeof question !== "string" || !question.trim()) {
-    res.status(400).json({ error: "invalid_question" });
-    return;
-  }
-  if (typeof startTime !== "string" || !startTime) {
-    res.status(400).json({ error: "invalid_start_time", note: "ISO 8601; must clear on-chain minimumStartDelay (~3600s) unless eventInProgress" });
-    return;
-  }
-  if (typeof resolveTime !== "string" || !resolveTime) {
-    res.status(400).json({ error: "invalid_resolve_time", note: "ISO 8601" });
-    return;
-  }
-  if (marketType !== "standard" && marketType !== "breaking") {
+  const missing = REQUIRED.filter((key) => {
+    const value = body[key];
+    return value === undefined || value === null || value === "";
+  });
+  if (missing.length > 0) {
     res.status(400).json({
-      error: "invalid_market_type",
-      note: "standard requires the event >=72h out; breaking requires it within 72h",
+      error: "invalid_market_spec",
+      missing,
+      note: "timestamps are unix seconds; see examples/market-spec.example.json",
     });
     return;
   }
-  if (typeof imageUrl !== "string" || !imageUrl) {
-    res.status(400).json({ error: "invalid_image_url", note: "public catalog image, ~1024x1024" });
+
+  if (!Array.isArray(body.sourcesOfTruth) || body.sourcesOfTruth.length === 0) {
+    res.status(400).json({
+      error: "invalid_sources_of_truth",
+      note: "a non-empty array of URLs the resolution agent reads",
+    });
     return;
   }
+  if (body.marketType !== "standard" && body.marketType !== "breaking") {
+    res.status(400).json({
+      error: "invalid_market_type",
+      note: "standard needs the event >=72h out (50 USDC); breaking needs it within 72h (20 USDC)",
+    });
+    return;
+  }
+  for (const key of ["startTime", "endTime", "resolutionTime"] as const) {
+    if (typeof body[key] !== "number" || !Number.isFinite(body[key])) {
+      res.status(400).json({
+        error: "invalid_timestamp",
+        field: key,
+        note: "unix seconds, not ISO 8601",
+      });
+      return;
+    }
+  }
 
-  const spec: MarketSpec = {
-    question,
-    startTime,
-    resolveTime,
-    marketType,
-    imageUrl,
-    ...(typeof body.region === "string" ? { region: body.region } : {}),
-    ...(typeof body.oracle === "string" ? { oracle: body.oracle } : {}),
-    ...(body.eventInProgress === true ? { eventInProgress: true } : {}),
-  };
+  const spec = body as MarketSpec;
 
   try {
     const quote = await quoteMarket(spec);
-    const createId = quote.createId;
-    if (!createId) {
+    if (!quote.createId) {
       res.status(502).json({ error: "no_create_id", quote });
       return;
     }
 
-    const built = await buildMarket(createId);
+    // The build needs the same wallet that was quoted; Panta checks it.
+    const built = await buildMarket(quote.createId, spec.wallet);
 
-    // createId lives about five minutes, and the blockhash inside the
-    // transaction about sixty seconds. The caller must sign and hand the
-    // signed bytes straight back to api/market-register.ts.
+    // createId lives about five minutes and the embedded blockhash about sixty
+    // seconds. The caller signs and hands the signed bytes straight back to
+    // api/market-register.ts.
     res.status(200).json({
-      createId,
+      createId: quote.createId,
       transaction: built.transaction,
+      paymentUsdc: quote.paymentUsdc,
+      expectedEventPda: quote.expectedEventPda,
       quote,
+      build: built,
     });
   } catch (error) {
     if (error instanceof PantaError) {

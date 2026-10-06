@@ -4,12 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:scripts": "tsc -p tsconfig.build.json",
+    "create-market": "npm run build:scripts && node dist/scripts/create-market.js"
   },
   "engines": {
     "node": "22.x"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "bs58": "^5.0.0"
+  },
   "devDependencies": {
     "@types/node": "^22",
     "@vercel/node": "^8",
