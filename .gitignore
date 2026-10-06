@@ -15,3 +15,9 @@ data/cache/*
 # committed -- see docs/architecture.md, "Verification: Kane CLI".
 .testmuai/evidence/
 .testmuai/context.md
+
+# Local secrets and scratch from the Solana/Panta port. The smoke test writes
+# its pk_test_ key here because Panta shows the secret exactly once.
+.panta_smoke_key
+.env
+.env.local

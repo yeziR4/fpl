@@ -61,7 +61,7 @@ class AgentModel:
 # itself) -- verify with a real GitHub Actions call before relying on
 # these further; a renamed/retired slug fails that one model's pick
 # for a gameweek, not the whole pipeline (see call_model/generate_picks_for_gameweek).
-AGENT_MODELS: tuple[AgentModel, ...] = (
+_DEFAULT_AGENT_MODELS: tuple[AgentModel, ...] = (
     AgentModel("~openai/gpt-latest", "GPT (latest)", "kGh61bXfYSsT223sqzn4sWpq5Mz2VJWBJxsAK6R3E8YnXoAN2"),
     AgentModel(
         "~anthropic/claude-opus-latest", "Claude Opus (latest)", "kGkqpNus1hJGtgsZzh4SUV5upvrfk2hsKp5TvtfNqYemGoBEX"
@@ -70,6 +70,71 @@ AGENT_MODELS: tuple[AgentModel, ...] = (
     AgentModel("x-ai/grok-4.20", "Grok 4.20", "kGg3f6tTWQaGCsg2YDeWUAJCnVTDXuPwu4oJzSmzH4BeEk2a3"),
     AgentModel("deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "kGihgHBfyczWhbM3tpXrmDKKZLRYsgicx7eaeVBFDdiuNurQs"),
 )
+
+
+# --------------------------------------------------------------- overrides
+# The tuple above is the default: one frontier model per lab, which is what the
+# "humans vs frontier AI" pitch rests on. It is deliberately overridable,
+# because OpenRouter's `:free` slugs are rate-capped and get rotated or retired
+# without notice -- hardcoding a free list guarantees a silent break mid-sprint.
+#
+# Resolution order:
+#   1. AGENT_MODELS env var   -- "slug|Label,slug|Label" (label optional)
+#   2. data/agent_models.json -- [{"slug": "...", "name": "...", "address": ""}]
+#   3. _DEFAULT_AGENT_MODELS
+#
+# Addresses default to "" on every override path. The Vara wallets above are
+# retired with the Solana move; AI trading wallets are provisioned separately.
+#
+# To see what free models OpenRouter is currently serving:
+#     python scripts/list_free_models.py
+
+AGENT_MODELS_JSON = Path("data/agent_models.json")
+
+
+def _parse_model_spec(spec: str) -> tuple[AgentModel, ...]:
+    """Parse "slug|Label,slug|Label" into AgentModels.
+
+    '|' separates slug from label because OpenRouter slugs contain colons
+    (e.g. "deepseek/deepseek-chat-v3.1:free"), so ':' is not a safe delimiter.
+    """
+    models: list[AgentModel] = []
+    for chunk in spec.split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        slug, _, label = chunk.partition("|")
+        slug = slug.strip()
+        if slug:
+            models.append(AgentModel(slug, label.strip() or slug, ""))
+    return tuple(models)
+
+
+def _resolve_agent_models() -> tuple[AgentModel, ...]:
+    spec = os.environ.get("AGENT_MODELS", "").strip()
+    if spec:
+        parsed = _parse_model_spec(spec)
+        if parsed:
+            return parsed
+
+    if AGENT_MODELS_JSON.exists():
+        try:
+            raw = json.loads(AGENT_MODELS_JSON.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            raw = None
+        if isinstance(raw, list):
+            parsed = tuple(
+                AgentModel(entry["slug"], entry.get("name") or entry["slug"], entry.get("address", ""))
+                for entry in raw
+                if isinstance(entry, dict) and entry.get("slug")
+            )
+            if parsed:
+                return parsed
+
+    return _DEFAULT_AGENT_MODELS
+
+
+AGENT_MODELS: tuple[AgentModel, ...] = _resolve_agent_models()
 
 
 class OpenRouterError(RuntimeError):
