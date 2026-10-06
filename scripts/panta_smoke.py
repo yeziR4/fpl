@@ -5,10 +5,16 @@ Panta API smoke test -- free. Touches the API, never the chain, never spends.
 Why Python: PowerShell's HTTPS (schannel) and curl.exe are both broken in this
 environment. Python's OpenSSL works. The repo's pipeline is Python anyway.
 
-Run from the repo root:
+Run from the repo root (cmd.exe):
 
-    python scripts/panta_smoke.py                # test key (sandbox fixtures)
-    $env:PANTA_KEY_ENV = "live"                  # live key (real mainnet reads)
+    set PANTA_KEY_ENV=live
+    set PANTA_WALLET=<a Solana address>
+    python scripts\\panta_smoke.py
+
+or in PowerShell:
+
+    $env:PANTA_KEY_ENV = "live"
+    $env:PANTA_WALLET  = "<a Solana address>"
     python scripts/panta_smoke.py
 
 TWO LOGINS, AND THEY ARE NOT THE SAME
@@ -18,22 +24,22 @@ TWO LOGINS, AND THEY ARE NOT THE SAME
   * The API takes an email + password at POST /auth/register/ and
     POST /auth/token/, and that account mints pk_test_ / pk_live_ keys.
 
-THREE WAYS IN
--------------
-  1. PANTA_API_KEY set in the environment  -> skips auth entirely
-  2. An existing .panta_smoke_key.<env>    -> skips auth entirely
-  3. Email + password                      -> registers or logs in, mints a key
-
 TEST MODE IS NOT MAINNET
 ------------------------
-A pk_test_ key is accepted, authenticates, and every response comes back
-stamped "Test mode: this response uses sandbox fixtures and does not access
-Solana mainnet." The catalog is empty, /positions returns a stub wallet, and
-nothing you learn about behaviour is real. It validates plumbing and nothing
-else, so this script now detects the disclaimer and says so rather than
-reporting a green run that proved nothing.
+A pk_test_ key is accepted, authenticates, and stamps every response with a
+"Test mode ... does not access Solana mainnet" disclaimer. The catalog is a
+stub, /positions returns a hardcoded wallet, and nothing about behaviour is
+real. This script detects that and says so instead of reporting a false green.
 
-Exit codes: 0 = validated, 1 = failed, 2 = /positions suspect, 3 = sandbox only.
+WHAT THIS SCRIPT CANNOT TELL YOU
+--------------------------------
+/positions returns a 400 "wallet: This field is required" when called bare, so
+the endpoint is only exercised when PANTA_WALLET names a real address. And even
+then, a wallet with no position returns an empty list -- which neither confirms
+nor refutes the bug a Panta builder reported, where a verified, attributed buy
+never appeared. Closing that needs a wallet that actually holds a buy.
+
+Exit codes: 0 = validated, 1 = failed, 2 = positions errored, 3 = sandbox only.
 """
 
 from __future__ import annotations
@@ -43,16 +49,21 @@ import json
 import os
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 BASE = "https://live-api.panta.market/api/v1"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Which key environment to use. Panta's pk_test_ keys serve sandbox fixtures,
-# so a "live" run is the only one that says anything about mainnet behaviour.
+# Which key environment to use. pk_test_ serves sandbox fixtures, so only a
+# "live" run says anything about mainnet behaviour.
 KEY_ENV = os.environ.get("PANTA_KEY_ENV", "test")
 KEY_FILE = os.path.join(ROOT, ".panta_smoke_key.%s" % KEY_ENV)
 SANDBOX_MARKER = "Test mode"
+
+# /positions requires a wallet. Without one we skip the step rather than
+# reporting a failure that is really a missing argument.
+WALLET = os.environ.get("PANTA_WALLET", "").strip()
 
 # Cloudflare fronts this API and bans the default Python urllib user-agent:
 # HTTP 403, error 1010 "browser_signature_banned". The request never reaches
@@ -63,6 +74,7 @@ USER_AGENT = os.environ.get(
 
 OK = "  [ok]"
 FAIL = "  [FAIL]"
+SKIP = "  [skip]"
 
 sandbox_responses = 0
 
@@ -103,13 +115,13 @@ def note_sandbox(payload):
         sandbox_responses += 1
 
 
-def show(label, payload):
+def show(label, payload, limit=3000):
     note_sandbox(payload)
     print("\n--- %s ---" % label)
     if isinstance(payload, str):
-        print(payload[:3000])
+        print(payload[:limit])
     else:
-        print(json.dumps(payload, indent=2)[:3000])
+        print(json.dumps(payload, indent=2)[:limit])
 
 
 def pick(d, *names):
@@ -123,6 +135,24 @@ def pick(d, *names):
 
 def code_of(payload):
     return payload.get("code") if isinstance(payload, dict) else None
+
+
+def count_rows(payload):
+    """Best-effort row count across the shapes a list endpoint might use.
+
+    Earlier this script assumed the key was "markets" and reported "0 markets"
+    without ever printing the payload -- so a wrong guess looked like an empty
+    catalog. Always show the raw body before trusting any count.
+    """
+    if isinstance(payload, list):
+        return len(payload)
+    if not isinstance(payload, dict):
+        return None
+    for key in ("markets", "results", "data", "items", "rows"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return len(value)
+    return None
 
 
 # ------------------------------------------------------------------ auth
@@ -204,7 +234,6 @@ def main() -> int:
     print("Key environment: %s" % KEY_ENV)
     if KEY_ENV == "test":
         print("  (pk_test_ serves SANDBOX FIXTURES and never touches Solana mainnet.")
-        print("   Use PANTA_KEY_ENV=live to exercise real behaviour.)")
 
     api_key = existing_key()
     if api_key is None:
@@ -222,60 +251,88 @@ def main() -> int:
     if isinstance(acct, dict) and acct.get("canCreateMarkets") is False:
         print(FAIL + " canCreateMarkets is FALSE -- raise it in #dev-chat today.")
         return 1
-    print(OK + " key authenticates; canCreateMarkets is not false")
+    live = not (isinstance(acct, dict) and SANDBOX_MARKER in str(acct.get("disclaimer", "")))
+    print(OK + " key authenticates; canCreateMarkets is not false; live=%s" % live)
 
-    print("\n[4/6] GET /markets/")
-    status, markets = call("GET", "/markets/", api_key=api_key)
-    print("  HTTP %s" % status)
-    if status == 200:
-        rows = markets if isinstance(markets, list) else markets.get("markets", [])
-        note_sandbox(markets)
-        print(OK + " catalog reachable (%s markets)" % len(rows))
-        if not rows:
-            print("       Empty catalog. In test mode that is expected; on a live")
-            print("       key it would mean we cannot see the real market list.")
-    else:
-        show("markets response", markets)
-        print(FAIL + " could not list markets.")
-        return 1
+    # -------------------------------------------------------------- markets
+    # The catalog shape is undocumented, so print it raw for all three filters
+    # rather than trusting a guessed key name.
+    print("\n[4/6] GET /markets/ (raw, all filters)")
+    total_seen = 0
+    for label, path in (
+        ("bare", "/markets/"),
+        ("status=primary", "/markets/?status=primary"),
+        ("status=secondary", "/markets/?status=secondary"),
+    ):
+        status, payload = call("GET", path, api_key=api_key)
+        print("\n  %s -> HTTP %s" % (label, status))
+        if status == 200:
+            note_sandbox(payload)
+            rows = count_rows(payload)
+            total_seen += rows or 0
+            print("  parsed rows: %s" % ("?" if rows is None else rows))
+            show("markets raw [%s]" % label, payload, limit=1200)
+        else:
+            show("markets error [%s]" % label, payload, limit=400)
 
+    if total_seen == 0:
+        print("\n" + FAIL + " every filter returned zero rows.")
+        print("       If live=True above and the raw bodies really are empty, we")
+        print("       cannot discover markets -- that breaks the whole supply pitch.")
+        print("       If the raw bodies are NOT empty, this script's parsing is wrong")
+        print("       and the payload above is the truth.")
+
+    # -------------------------------------------------------------- metrics
     print("\n[5/6] GET /account/metrics/")
     status, metrics = call("GET", "/account/metrics/", api_key=api_key)
     print("  HTTP %s" % status)
     if status == 200:
-        show("metrics -- volumeUsdc / buys are our traction numbers", metrics)
+        show("metrics -- volumeUsdc / buys are our traction numbers", metrics, limit=1500)
         print(OK + " metrics reachable; log this from day one")
     else:
         print("  (non-fatal) HTTP %s" % status)
 
-    print("\n[6/6] GET /positions/  <-- THE RISK")
-    status, pos = call("GET", "/positions/", api_key=api_key)
-    print("  HTTP %s" % status)
-    show("positions", pos)
-    positions_is_stub = isinstance(pos, dict) and str(pos.get("wallet", "")).startswith("TestWallet")
+    # ------------------------------------------------------------ positions
+    print("\n[6/6] GET /positions/")
+    positions_verified = False
+    if not WALLET:
+        print(SKIP + " PANTA_WALLET is not set, so /positions was not exercised.")
+        print("       The endpoint returns 400 'wallet: This field is required' when")
+        print("       called bare. Set it to a real Solana address to test it:")
+        print("           set PANTA_WALLET=<solana address>   (cmd)")
+        print("           $env:PANTA_WALLET = \"<solana address>\"   (powershell)")
+        print("       Note: a wallet holding no position returns an empty list, which")
+        print("       neither confirms nor refutes the reported bug. Closing that")
+        print("       needs a wallet that actually holds a buy.")
+    else:
+        path = "/positions/?wallet=%s" % urllib.parse.quote(WALLET)
+        status, pos = call("GET", path, api_key=api_key)
+        print("  HTTP %s" % status)
+        show("positions for %s" % WALLET, pos, limit=2000)
+        if status == 200:
+            positions_verified = True
+            rows = count_rows(pos)
+            print(OK + " /positions responded (%s rows)" % ("?" if rows is None else rows))
+            if rows == 0:
+                print("       Empty. Expected for a wallet with no buys -- and")
+                print("       inconclusive for the reported bug.")
+        else:
+            print(FAIL + " /positions errored for a supplied wallet.")
+            print("       If the wallet address is valid, this IS worth posting in")
+            print("       #dev-chat with the exact response above.")
+            return 2
 
-    if status != 200:
-        print(FAIL + " /positions did not return 200.")
-        print("       A Panta builder reported a verified, attributed buy that")
-        print("       /positions never returned. Post this in #dev-chat NOW.")
-        return 2
-
-    print(OK + " /positions responds; shape recorded above.")
-
-    # ------------------------------------------------------------ verdict
-    if sandbox_responses or positions_is_stub:
+    # -------------------------------------------------------------- verdict
+    if sandbox_responses:
         print("\n=== SANDBOX ONLY: this did NOT validate mainnet ===")
-        print("Panta stamped %s response(s) with its test-mode disclaimer, and" % sandbox_responses)
-        print("/positions returned a stub wallet. Plumbing is proven; BEHAVIOUR IS NOT.")
-        print("\nThe /positions question is therefore still OPEN, and it is the one")
-        print("that decides whether the $20 smoke market is worth buying.")
-        print("\nRe-run against real mainnet reads (still free -- these are GETs):")
-        print('    $env:PANTA_KEY_ENV = "live"')
-        print("    python scripts/panta_smoke.py")
+        print("Panta stamped %s response(s) with its test-mode disclaimer." % sandbox_responses)
+        print('Re-run with:  set PANTA_KEY_ENV=live')
         return 3
 
-    print("\n=== SMOKE TEST COMPLETE: mainnet plumbing is good ===")
-    print("All steps were free. Nothing was spent.")
+    print("\n=== SMOKE TEST COMPLETE ===")
+    print("Live mode confirmed (no test-mode disclaimer). Nothing was spent.")
+    print("  markets discovered : %s" % ("yes" if total_seen else "NO -- see above"))
+    print("  positions exercised: %s" % ("yes" if positions_verified else "no (no wallet given)"))
     return 0
 
 
