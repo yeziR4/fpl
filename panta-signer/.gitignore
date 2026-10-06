@@ -1,0 +1,9 @@
+/node_modules
+
+# Vercel's local dev/link state, and local-only env vars for `vercel dev`.
+# The real credentials are Vercel project environment variables, never a file.
+/.vercel
+.env
+.env.local
+
+*.tsbuildinfo
