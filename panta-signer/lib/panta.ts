@@ -34,6 +34,19 @@ import { withTimeout } from "./withTimeout.js";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
+/**
+ * Cloudflare fronts live-api.panta.market and bans non-browser user agents
+ * outright: a default client gets HTTP 403, error 1010
+ * ("browser_signature_banned"), retryable false, and the request never reaches
+ * Panta. It presents as an authentication failure and is not one, which is a
+ * good way to lose an afternoon.
+ *
+ * Node's global fetch sends "User-Agent: node" by default -- precisely the kind
+ * of signature that gets banned -- so we always identify explicitly.
+ */
+const USER_AGENT =
+  process.env.PANTA_USER_AGENT ?? "Overline/0.1 (+https://github.com/yeziR4/fpl)";
+
 /** An error Panta itself returned, or a transport failure wrapped as one. */
 export class PantaError extends Error {
   readonly code: string;
@@ -71,7 +84,10 @@ interface PantaFetchOptions {
 async function pantaFetch<T>(path: string, options: PantaFetchOptions = {}): Promise<T> {
   assertTrailingSlash(path);
 
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "User-Agent": USER_AGENT,
+  };
   if (options.bearer) {
     headers.Authorization = `Bearer ${options.bearer}`;
   } else {

@@ -44,6 +44,14 @@ BASE = "https://live-api.panta.market/api/v1"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEY_FILE = os.path.join(ROOT, ".panta_smoke_key")
 
+# Panta's API sits behind Cloudflare, which bans the default Python urllib
+# user-agent outright: HTTP 403, error 1010 "browser_signature_banned",
+# retryable false. The request never reaches Panta, so it presents as an auth
+# failure and is not one. Identify honestly and the block lifts.
+USER_AGENT = os.environ.get(
+    "PANTA_USER_AGENT", "Overline/0.1 (+https://github.com/yeziR4/fpl)"
+)
+
 OK = "  [ok]"
 FAIL = "  [FAIL]"
 
@@ -54,6 +62,7 @@ def call(method, path, body=None, api_key=None, bearer=None, timeout=40):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(url, data=data, method=method)
     req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", USER_AGENT)
     if data is not None:
         req.add_header("Content-Type", "application/json")
     if api_key:
