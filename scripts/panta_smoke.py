@@ -7,28 +7,33 @@ environment. Python's OpenSSL works. The repo's pipeline is Python anyway.
 
 Run from the repo root:
 
+    python scripts/panta_smoke.py                # test key (sandbox fixtures)
+    $env:PANTA_KEY_ENV = "live"                  # live key (real mainnet reads)
     python scripts/panta_smoke.py
 
 TWO LOGINS, AND THEY ARE NOT THE SAME
 -------------------------------------
-Panta has a web app and an API, and they authenticate differently:
-
   * panta.market (the web app) signs you in by email through Privy. It is
-    passwordless and it creates a Solana wallet for you. This login does NOT
-    mint API keys.
+    passwordless and creates a Solana wallet. This login does NOT mint keys.
   * The API takes an email + password at POST /auth/register/ and
-    POST /auth/token/, and that account is what mints pk_test_ / pk_live_ keys.
-
-If you have only ever clicked the email link on panta.market, you have no API
-password -- that is expected, not a mistake. Register an API account below.
+    POST /auth/token/, and that account mints pk_test_ / pk_live_ keys.
 
 THREE WAYS IN
 -------------
-  1. PANTA_API_KEY set in the environment  -> skips auth entirely (fastest)
-  2. An existing .panta_smoke_key          -> skips auth entirely
+  1. PANTA_API_KEY set in the environment  -> skips auth entirely
+  2. An existing .panta_smoke_key.<env>    -> skips auth entirely
   3. Email + password                      -> registers or logs in, mints a key
 
-Exit codes: 0 = plumbing works, 1 = something failed, 2 = /positions suspect.
+TEST MODE IS NOT MAINNET
+------------------------
+A pk_test_ key is accepted, authenticates, and every response comes back
+stamped "Test mode: this response uses sandbox fixtures and does not access
+Solana mainnet." The catalog is empty, /positions returns a stub wallet, and
+nothing you learn about behaviour is real. It validates plumbing and nothing
+else, so this script now detects the disclaimer and says so rather than
+reporting a green run that proved nothing.
+
+Exit codes: 0 = validated, 1 = failed, 2 = /positions suspect, 3 = sandbox only.
 """
 
 from __future__ import annotations
@@ -42,18 +47,24 @@ import urllib.request
 
 BASE = "https://live-api.panta.market/api/v1"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-KEY_FILE = os.path.join(ROOT, ".panta_smoke_key")
 
-# Panta's API sits behind Cloudflare, which bans the default Python urllib
-# user-agent outright: HTTP 403, error 1010 "browser_signature_banned",
-# retryable false. The request never reaches Panta, so it presents as an auth
-# failure and is not one. Identify honestly and the block lifts.
+# Which key environment to use. Panta's pk_test_ keys serve sandbox fixtures,
+# so a "live" run is the only one that says anything about mainnet behaviour.
+KEY_ENV = os.environ.get("PANTA_KEY_ENV", "test")
+KEY_FILE = os.path.join(ROOT, ".panta_smoke_key.%s" % KEY_ENV)
+SANDBOX_MARKER = "Test mode"
+
+# Cloudflare fronts this API and bans the default Python urllib user-agent:
+# HTTP 403, error 1010 "browser_signature_banned". The request never reaches
+# Panta, so it presents as an auth failure and is not one.
 USER_AGENT = os.environ.get(
     "PANTA_USER_AGENT", "Overline/0.1 (+https://github.com/yeziR4/fpl)"
 )
 
 OK = "  [ok]"
 FAIL = "  [FAIL]"
+
+sandbox_responses = 0
 
 
 def call(method, path, body=None, api_key=None, bearer=None, timeout=40):
@@ -86,7 +97,14 @@ def call(method, path, body=None, api_key=None, bearer=None, timeout=40):
         return None, repr(exc)
 
 
+def note_sandbox(payload):
+    global sandbox_responses
+    if isinstance(payload, dict) and SANDBOX_MARKER in str(payload.get("disclaimer", "")):
+        sandbox_responses += 1
+
+
 def show(label, payload):
+    note_sandbox(payload)
     print("\n--- %s ---" % label)
     if isinstance(payload, str):
         print(payload[:3000])
@@ -119,17 +137,17 @@ def existing_key():
         with open(KEY_FILE, encoding="utf-8") as fh:
             key = fh.read().strip()
         if key:
-            print("Using the key saved at %s" % KEY_FILE)
+            print("Using the saved key at %s" % KEY_FILE)
             return key
     return None
 
 
 def authenticate():
-    """Register or log in, then mint a pk_test_ key. Returns (key, jwt)."""
+    """Register or log in, then mint a key for KEY_ENV. Returns (key, jwt)."""
     print(
-        "\nNo API key found, so we need API credentials.\n"
+        "\nNo saved %s key, so we need API credentials.\n"
         "This is NOT your panta.market email login -- that one is passwordless\n"
-        "and cannot mint API keys. This is a separate API account.\n"
+        "and cannot mint API keys. This is a separate API account.\n" % KEY_ENV
     )
     email = os.environ.get("PANTA_EMAIL") or input("API account email: ").strip()
     password = os.environ.get("PANTA_PASSWORD") or getpass.getpass("API account password: ")
@@ -154,17 +172,16 @@ def authenticate():
     if not access:
         show("last auth response", reg)
         print(FAIL + " could not authenticate.")
-        print("       If the account already exists, the password must match the one")
-        print("       it was created with. A fresh email is the quickest way past this.")
+        print("       A different email is the quickest way past an existing account.")
         return None, None
 
     print(OK + " JWT acquired")
 
-    print("\n[2/6] POST /account/keys/ (env=test)")
+    print("\n[2/6] POST /account/keys/ (env=%s)" % KEY_ENV)
     status, keyresp = call(
         "POST",
         "/account/keys/",
-        {"env": "test", "name": "overline-smoke"},
+        {"env": KEY_ENV, "name": "overline-%s" % KEY_ENV},
         bearer=access,
     )
     print("  HTTP %s" % status)
@@ -184,6 +201,11 @@ def authenticate():
 
 
 def main() -> int:
+    print("Key environment: %s" % KEY_ENV)
+    if KEY_ENV == "test":
+        print("  (pk_test_ serves SANDBOX FIXTURES and never touches Solana mainnet.")
+        print("   Use PANTA_KEY_ENV=live to exercise real behaviour.)")
+
     api_key = existing_key()
     if api_key is None:
         api_key, _ = authenticate()
@@ -207,7 +229,11 @@ def main() -> int:
     print("  HTTP %s" % status)
     if status == 200:
         rows = markets if isinstance(markets, list) else markets.get("markets", [])
+        note_sandbox(markets)
         print(OK + " catalog reachable (%s markets)" % len(rows))
+        if not rows:
+            print("       Empty catalog. In test mode that is expected; on a live")
+            print("       key it would mean we cannot see the real market list.")
     else:
         show("markets response", markets)
         print(FAIL + " could not list markets.")
@@ -217,7 +243,7 @@ def main() -> int:
     status, metrics = call("GET", "/account/metrics/", api_key=api_key)
     print("  HTTP %s" % status)
     if status == 200:
-        show("metrics -- volumeUsdcBase is our traction number", metrics)
+        show("metrics -- volumeUsdc / buys are our traction numbers", metrics)
         print(OK + " metrics reachable; log this from day one")
     else:
         print("  (non-fatal) HTTP %s" % status)
@@ -226,16 +252,29 @@ def main() -> int:
     status, pos = call("GET", "/positions/", api_key=api_key)
     print("  HTTP %s" % status)
     show("positions", pos)
-    if status == 200:
-        print(OK + " /positions responds; shape recorded above.")
-    else:
+    positions_is_stub = isinstance(pos, dict) and str(pos.get("wallet", "")).startswith("TestWallet")
+
+    if status != 200:
         print(FAIL + " /positions did not return 200.")
         print("       A Panta builder reported a verified, attributed buy that")
-        print("       /positions never returned. Post this in #dev-chat NOW,")
-        print("       before we spend the $20.")
+        print("       /positions never returned. Post this in #dev-chat NOW.")
         return 2
 
-    print("\n=== SMOKE TEST COMPLETE: plumbing is good ===")
+    print(OK + " /positions responds; shape recorded above.")
+
+    # ------------------------------------------------------------ verdict
+    if sandbox_responses or positions_is_stub:
+        print("\n=== SANDBOX ONLY: this did NOT validate mainnet ===")
+        print("Panta stamped %s response(s) with its test-mode disclaimer, and" % sandbox_responses)
+        print("/positions returned a stub wallet. Plumbing is proven; BEHAVIOUR IS NOT.")
+        print("\nThe /positions question is therefore still OPEN, and it is the one")
+        print("that decides whether the $20 smoke market is worth buying.")
+        print("\nRe-run against real mainnet reads (still free -- these are GETs):")
+        print('    $env:PANTA_KEY_ENV = "live"')
+        print("    python scripts/panta_smoke.py")
+        return 3
+
+    print("\n=== SMOKE TEST COMPLETE: mainnet plumbing is good ===")
     print("All steps were free. Nothing was spent.")
     return 0
 

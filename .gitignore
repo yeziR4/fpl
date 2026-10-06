@@ -17,7 +17,8 @@ data/cache/*
 .testmuai/context.md
 
 # Local secrets and scratch from the Solana/Panta port. The smoke test writes
-# its pk_test_ key here because Panta shows the secret exactly once.
-.panta_smoke_key
+# each key environment to its own file (.panta_smoke_key.test / .live) because
+# Panta shows the secret exactly once and pk_test_ only ever serves fixtures.
+.panta_smoke_key*
 .env
 .env.local
