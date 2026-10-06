@@ -148,7 +148,7 @@ def count_rows(payload):
         return len(payload)
     if not isinstance(payload, dict):
         return None
-    for key in ("markets", "results", "data", "items", "rows"):
+    for key in ("items", "markets", "results", "data", "positions", "rows"):
         value = payload.get(key)
         if isinstance(value, list):
             return len(value)

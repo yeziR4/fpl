@@ -20,7 +20,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { PantaError, getMarket, listMarkets, metrics, positions } from "../lib/panta.js";
+import { PantaError, getMarket, listAllMarkets, metrics, positions } from "../lib/panta.js";
 import { handlePreflight, isAllowedOrigin } from "../lib/origin.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -48,8 +48,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const result: Record<string, unknown> = {};
 
     if (want === "all" || want === "markets") {
-      result.primary = await listMarkets("primary");
-      result.secondary = await listMarkets("secondary");
+      // The catalog returns { items, nextCursor }, and today every live market
+      // sits in the secondary phase: `status=primary` legitimately comes back
+      // empty. Both phases are paged to the end here so a caller can tell the
+      // difference between "no primary markets" and "we failed to read them".
+      const [primary, secondary] = await Promise.all([
+        listAllMarkets("primary"),
+        listAllMarkets("secondary"),
+      ]);
+      result.primaryCount = primary.length;
+      result.secondaryCount = secondary.length;
+      result.primary = primary;
+      result.secondary = secondary;
     }
     if (marketId) {
       result.market = await getMarket(marketId);

@@ -139,21 +139,78 @@ async function pantaFetch<T>(path: string, options: PantaFetchOptions = {}): Pro
 
 // ------------------------------------------------------------------ reads
 
+/**
+ * A market as the catalog actually returns it. These field names are not
+ * guesses -- they were read off a live `GET /markets/` response.
+ */
 export interface PantaMarket {
   marketId: string;
-  question?: string;
+  /** Free-text vertical, e.g. "science", "crypto". Panta groups its homepage
+   * into seven flagship verticals plus an Explore section for the rest. */
+  category?: string;
+  title?: string;
+  description?: string;
+  images?: string[];
+  /** "primary" during the acquisition window, "secondary" after it. */
+  phase?: string;
+  marketType?: "standard" | "breaking";
+  /** Unix seconds. */
+  startTime?: number;
+  endTime?: number;
+  resolutionTime?: number;
+  region?: string;
+  resolved?: boolean;
   status?: string;
-  yesPrice?: number;
-  noPrice?: number;
+  /** A decimal string, e.g. "0.00" -- not a number. */
+  volumeUsdc?: string;
+  campaignId?: string | null;
+  createdByPartner?: boolean;
+  /** All six are null on markets with no live pricing. */
+  yesPrice?: number | null;
+  noPrice?: number | null;
+  primaryYesPrice?: number | null;
+  primaryNoPrice?: number | null;
+  secondaryYesPrice?: number | null;
+  secondaryNoPrice?: number | null;
   [key: string]: unknown;
 }
 
-/** The catalog. `status: "primary"` is the acquisition window -- the only
- * window our app can act in, because Panta exposes no secondary-market (CLOB)
- * trading through the API. */
-export function listMarkets(status?: "primary" | "secondary"): Promise<PantaMarket[]> {
-  const query = status ? `?status=${status}` : "";
-  return pantaFetch<PantaMarket[]>(`/markets/${query}`);
+/**
+ * The catalog is cursor-paginated: `{ items, nextCursor }`, NOT a bare array.
+ * An earlier version of this client assumed an array, which would have shown
+ * zero markets on a catalog that returns twenty.
+ */
+export interface MarketPage {
+  items: PantaMarket[];
+  nextCursor: string | null;
+}
+
+export function listMarkets(
+  options: { status?: "primary" | "secondary"; cursor?: string; limit?: number } = {},
+): Promise<MarketPage> {
+  const params = new URLSearchParams();
+  if (options.status) params.set("status", options.status);
+  if (options.cursor) params.set("cursor", options.cursor);
+  if (options.limit) params.set("limit", String(options.limit));
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return pantaFetch<MarketPage>(`/markets/${query}`);
+}
+
+/** Walk the cursor to the end. Bounded so a server-side pagination bug cannot
+ * spin here forever. */
+export async function listAllMarkets(
+  status?: "primary" | "secondary",
+  maxPages = 20,
+): Promise<PantaMarket[]> {
+  const all: PantaMarket[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < maxPages; page += 1) {
+    const result = await listMarkets({ status, cursor });
+    all.push(...(result.items ?? []));
+    if (!result.nextCursor) break;
+    cursor = result.nextCursor;
+  }
+  return all;
 }
 
 export function getMarket(marketId: string): Promise<PantaMarket> {
@@ -165,14 +222,35 @@ export function marketTrades(marketId: string): Promise<unknown> {
 }
 
 /**
- * Positions come back as share counts, never as USD. To show a value you have
- * to join against the market price yourself:
+ * Positions carry share counts and a summary, never a per-position USD value.
  *
- *   open value ~= shares * (side === "yes" ? yesPrice : noPrice)
- *   after resolution: a winner is ~shares * 1 USDC, a loser ~0
+ * `wallet` is REQUIRED. A bare call returns
+ * `400 { code: "INVALID_MARKET_PARAMS", fields: { wallet: ["This field is required."] } }`
+ * which reads like a Panta defect and is not one.
+ *
+ * The shape below was read off a live response for a wallet holding nothing,
+ * so the per-position objects are still unverified until a real buy lands.
+ * The v2 client's port only supports secondary-market trading, which the API
+ * does not expose, so today every position must come from a primary buy into a
+ * market we created ourselves.
  */
-export function positions(wallet: string): Promise<unknown> {
-  return pantaFetch<unknown>(`/positions/?wallet=${encodeURIComponent(wallet)}`);
+export interface PantaPositions {
+  wallet: string;
+  positions: unknown[];
+  summary?: {
+    currentValueUsdc?: string;
+    currentValueUsdcBase?: string;
+    /** USDC contributed during the primary phase. */
+    primaryContributedUsdc?: string;
+    primaryContributedUsdcBase?: string;
+    valuedPositions?: number;
+    unvaluedPositions?: number;
+  };
+  [key: string]: unknown;
+}
+
+export function positions(wallet: string): Promise<PantaPositions> {
+  return pantaFetch<PantaPositions>(`/positions/?wallet=${encodeURIComponent(wallet)}`);
 }
 
 /** Panta's own attribution number for our account: volumeUsdcBase.
