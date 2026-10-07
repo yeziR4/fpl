@@ -69,22 +69,39 @@ export function rpcFallbackUrl(): string {
   return process.env.SOLANA_RPC_FALLBACK_URL ?? "https://api.mainnet-beta.solana.com";
 }
 
-export function hasSolamiKey(): boolean {
-  return Boolean(process.env.SOLAMI_API_KEY);
+/**
+ * The token. `SOLAMI_RPC_TOKEN` is the name their own SDK documents, so prefer
+ * it; `SOLAMI_API_KEY` is accepted as a legacy alias from earlier revisions of
+ * this file.
+ */
+export function solamiApiKey(): string | undefined {
+  return process.env.SOLAMI_RPC_TOKEN ?? process.env.SOLAMI_API_KEY;
 }
 
-export function solamiApiKey(): string | undefined {
-  return process.env.SOLAMI_API_KEY;
+export function hasSolamiKey(): boolean {
+  return Boolean(solamiApiKey());
 }
 
 /**
- * Header name is configurable because Solami's RPC auth scheme is not
- * documented publicly yet. Confirm the exact header in their Discord before
- * the demo rather than trusting this default -- get it wrong and every
- * broadcast 401s at the worst possible moment.
+ * Solami authenticates with the token as a QUERY PARAMETER, not a header.
+ *
+ * Measured 2026-10-06 against https://rpc.solami.dev/solana:
+ *   ?api_key=<token>           -> 200 {"result":"ok"}
+ *   X-Api-Key: <token>         -> 401
+ *   Authorization: Bearer ...  -> 401
+ *   X-Api-Token: <token>       -> 401
+ *   X-Solami-Token: <token>    -> 401
+ *   api_token (query)          -> 401
+ *
+ * This is the OPPOSITE of Panta, whose docs say "API keys in URLs are
+ * rejected". Two APIs, two rules -- do not "fix" this one to match the other.
+ *
+ * Caveat worth knowing: a token in a URL can end up in logs, proxies and
+ * browser history. Solami leaves no alternative, so it is accepted here, but
+ * never log a full Solami URL.
  */
-export function solamiApiKeyHeader(): string {
-  return process.env.SOLAMI_API_KEY_HEADER ?? "X-Api-Key";
+export function solamiAuthQueryParam(): string {
+  return process.env.SOLAMI_AUTH_QUERY_PARAM ?? "api_key";
 }
 
 export function solamiRequestTimeoutMs(): number {

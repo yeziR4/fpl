@@ -26,7 +26,7 @@
 
 import {
   solamiApiKey,
-  solamiApiKeyHeader,
+  solamiAuthQueryParam,
   solamiRequestTimeoutMs,
   solamiRpcUrl,
   rpcFallbackUrl,
@@ -82,12 +82,16 @@ function endpoint(): string {
  * need different fixes and we have six days. */
 export async function solamiRpc<T>(method: string, params: unknown[]): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  // The token rides as a QUERY PARAMETER, not a header. That cost an hour to
+  // find; it is measured, not guessed -- see solamiAuthQueryParam in env.ts.
+  let url = endpoint();
   const key = solamiApiKey();
   if (key) {
-    headers[solamiApiKeyHeader()] = key;
+    const separator = url.includes("?") ? "&" : "?";
+    url += `${separator}${solamiAuthQueryParam()}=${encodeURIComponent(key)}`;
   }
 
-  const url = endpoint();
   let response: Response;
   try {
     response = await withTimeout(
