@@ -6,7 +6,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build:scripts": "tsc -p tsconfig.build.json",
-    "create-market": "npm run build:scripts && node dist/scripts/create-market.js"
+    "create-market": "npm run build:scripts && node dist/scripts/create-market.js",
+    "buy": "npm run build:scripts && node dist/scripts/buy.js",
+    "dev:api": "npm run build:scripts && node --env-file=../.env.local scripts/dev-server.mjs"
   },
   "engines": {
     "node": "22.x"

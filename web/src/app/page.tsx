@@ -1,5 +1,5 @@
 import { Hero } from "@/components/Hero";
-import { MarketsSection } from "@/components/MarketsSection";
+import { LiveMarkets } from "@/components/panta/LiveMarkets";
 import { HowItWorks } from "@/components/HowItWorks";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import type { HeroPlayer } from "@/components/Hero";
@@ -28,7 +28,7 @@ export default async function Home() {
     <main className="flex flex-1 flex-col">
       <Hero players={players.slice(0, 3)} />
       <OnboardingGuide />
-      <MarketsSection players={players} />
+      <LiveMarkets />
       <HowItWorks />
     </main>
   );
