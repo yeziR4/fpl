@@ -353,8 +353,11 @@ export interface MarketQuote {
  * Panta intermittently fails a create-session step with
  * `400 INVALID_MARKET_PARAMS` and a bare "unexpected create <step> failure --
  * check server logs". Seen on BOTH quote and build, with the step named in the
- * message. Measured to be transient: the same payload failed on one attempt and
- * succeeded on the next, while a different valid payload did the reverse.
+ * message.
+ *
+ * Measured 2026-10-07, and it is worse than first thought: it fires on roughly
+ * HALF of create-quote requests. Seven consecutive attempts failed, then the
+ * next two succeeded with identical payloads. Transient, not validation.
  *
  * `fields` is the discriminator. Every genuine validation failure carries one
  * ("category: This field is required."); this never does. A fields-bearing
@@ -363,6 +366,20 @@ export interface MarketQuote {
 export function isTransientPantaFailure(error: unknown): boolean {
   return error instanceof PantaError && error.code === "INVALID_MARKET_PARAMS" && !error.fields;
 }
+
+/**
+ * How many times to retry that transient failure.
+ *
+ * At three attempts a single step succeeds about 87% of the time, and the
+ * create flow is three steps, so the whole flow would fail roughly one run in
+ * three -- not acceptable when a run costs 20 USDC, non-refundable.
+ *
+ * Six puts a single step at ~98% and the flow at ~95%.
+ *
+ * Do not raise it much further: the API is rate limited to 30 requests per
+ * window (x-ratelimit-limit), and six attempts across three steps is 18.
+ */
+export const TRANSIENT_ATTEMPTS = 6;
 
 /**
  * Retry something free and repeatable past the transient failure above.
@@ -375,7 +392,7 @@ export function isTransientPantaFailure(error: unknown): boolean {
 async function withTransientRetry<T>(
   label: string,
   run: () => Promise<T>,
-  attempts = 3,
+  attempts = TRANSIENT_ATTEMPTS,
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -398,7 +415,7 @@ async function withTransientRetry<T>(
  * Retries the transient failure above and surfaces real validation errors
  * immediately. Quote costs nothing and only reserves a short-lived session.
  */
-export function quoteMarket(spec: MarketSpec, attempts = 3): Promise<MarketQuote> {
+export function quoteMarket(spec: MarketSpec, attempts = TRANSIENT_ATTEMPTS): Promise<MarketQuote> {
   return withTransientRetry(
     "quote",
     () => pantaFetch<MarketQuote>("/markets/create/quote/", { method: "POST", body: spec }),
@@ -432,7 +449,7 @@ export interface MarketBuild {
 export function buildMarket(
   createId: string,
   wallet: string,
-  attempts = 3,
+  attempts = TRANSIENT_ATTEMPTS,
 ): Promise<MarketBuild> {
   return withTransientRetry(
     "build",
@@ -463,7 +480,7 @@ export interface MarketRegistration {
 export function registerMarket(
   createId: string,
   signature: string,
-  attempts = 3,
+  attempts = TRANSIENT_ATTEMPTS,
 ): Promise<MarketRegistration> {
   return withTransientRetry(
     "register",
