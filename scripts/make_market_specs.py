@@ -28,8 +28,13 @@ BOOTSTRAP = "https://fantasy.premierleague.com/api/bootstrap-static/"
 OUT = Path(__file__).resolve().parent.parent / "panta-signer" / "examples"
 
 # (slug, display name, FPL web_name to match, line, position, kickoff UTC, fixture)
+#
+# Two marquee forwards rather than one-per-position. The earlier set was chosen
+# for statistical diversity -- FWD/MID/DEF, three different fixtures -- but two
+# of the game's most-owned forwards make a better public market set for a
+# product nobody has heard of yet. Reach beats spread here. Saka (14.2% owned)
+# was the weakest of the four on audience and is already live anyway.
 TARGETS = [
-    ("decuyper",   "Max De Cuyper",   "De Cuyper",  5, "DEF", "2026-10-10T14:00:00Z", "Brighton v Sunderland"),
     ("joaopedro",  "João Pedro",      "Pedro",      8, "FWD", "2026-10-10T14:00:00Z", "Chelsea v Bournemouth"),
     ("haaland",    "Erling Haaland",  "Haaland",    8, "FWD", "2026-10-11T15:30:00Z", "Liverpool v Manchester City"),
 ]
