@@ -1,11 +1,13 @@
 {
-  "_comment": "Template for panta-signer/scripts/create-market.ts. Copy, edit, then run with --dry-run before ever using --live. Field names verified against https://docs.panta.market/api-reference/markets/quote -- they are NOT the obvious guesses.",
+  "_comment": "Run with panta-signer/scripts/create-market.ts. Field names verified against https://docs.panta.market/api-reference/markets/quote -- they are NOT the obvious guesses.",
 
-  "_timing": "This market is only valid as BREAKING from 2026-10-07T11:30Z, when ARS v LEE falls inside 72h. Before that it quotes as a 50 USDC standard market. Check with scripts/probe_market_cost.py.",
+  "_timing": "Only quotes as a 20 USDC BREAKING market from 2026-10-07T11:30Z, when ARS v LEE falls inside the 72h window. Before that it prices as a 50 USDC standard market. Check with scripts/probe_market_cost.py.",
 
-  "title": "Saka 10+ points, GW6",
-  "question": "Will Bukayo Saka score 10 or more Fantasy Premier League points in Gameweek 6 (Arsenal v Leeds, 10 October 2026)?",
-  "resolutionRule": "Resolves YES if the official Fantasy Premier League site credits Bukayo Saka with 10 or more points for Gameweek 6, once every match in that gameweek is marked finished and bonus points are final. Resolves NO otherwise.",
+  "_line": "Calibrated against every finished gameweek of this season, over the top 20 players by price per position, counting only games they appeared in. FWD 8+ / MID 7+ / DEF 5+ all land in Panta's full-royalty band. A forward line of 10+ clears only 7.2% of the time, implying ~93% NO tilt, which drops creator royalty from 20% to 5%.",
+
+  "title": "Saka 7+ points, GW6",
+  "question": "Will Bukayo Saka score 7 or more Fantasy Premier League points in Gameweek 6 (Arsenal v Leeds, 10 October 2026)?",
+  "resolutionRule": "Resolves YES if the official Fantasy Premier League site credits Bukayo Saka with 7 or more points for Gameweek 6, once every match in that gameweek is marked finished and bonus points are final. Resolves NO otherwise.",
   "sourcesOfTruth": [
     "https://fantasy.premierleague.com/api/bootstrap-static/",
     "https://fantasy.premierleague.com/api/event/6/live/"
@@ -21,11 +23,10 @@
   "imageUrl": "https://placehold.co/1024x1024/png",
 
   "_notes": {
-    "timestamps": "ISO 8601 for readability; converted to the unix seconds the API wants. Raw integers are accepted too.",
-    "marketType": "breaking = 20 USDC, standard = 50 USDC. Breaking requires the event within 72h. Panta does NOT enforce that at quote time -- it accepted a breaking market 4 days out -- but the docs state the rule and Panta may cancel a non-conforming market with no creator refund. Schedule creation for when the 72h window genuinely opens.",
-    "sourcesOfTruth": "Both URLs point at fantasy.premierleague.com. Real-world match stats are not FPL points, and the AI Resolution Agent reads whatever source you name -- naming the wrong one misresolves every market we create.",
-    "startTime": "Set to kickoff for a match-anchored market, per Panta's docs. For rolling markets choose a start that allows enough primary-phase time.",
-    "imageUrl": "placehold.co/1024x1024/png was accepted in testing. Replace with a real hosted square image before the demo.",
-    "duplicate": "Panta keys an active create session on wallet + question and rejects a repeat with DUPLICATE_MARKET. Dry-run with a THROWAWAY keypair so you do not block the live create."
+    "timestamps": "ISO 8601 for readability; converted to the unix seconds the API wants. Raw integers also accepted.",
+    "marketType": "breaking = 20 USDC, standard = 50 USDC. Breaking requires the event within 72h. Panta does NOT enforce that at quote time -- it accepted a breaking market 4 days out -- but the docs state the rule and Panta may cancel a non-conforming market with no creator refund. Create inside the window.",
+    "sourcesOfTruth": "Both URLs point at fantasy.premierleague.com. Real-world match stats are not FPL points, and the AI Resolution Agent reads whatever source you name -- naming the wrong source misresolves every market we create.",
+    "pool": "Player selection comes from the top 10-20 by ownership, price or season points -- not every player in the gameweek.",
+    "duplicate": "Panta keys an active create session on wallet + question and rejects a repeat with DUPLICATE_MARKET. Run --dry-run with a THROWAWAY keypair so the operator wallet keeps no session open."
   }
 }
