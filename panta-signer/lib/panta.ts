@@ -518,9 +518,15 @@ export interface OrderQuote {
   [key: string]: unknown;
 }
 
-/** Step 1. Returns `quoteId`, good for about 90 seconds. */
+/** Step 1. Returns `quoteId`, good for about 90 seconds.
+ *
+ * Retried, because the transient failure hits the BUY endpoints too. Wrapping
+ * only the create flow was a real bug: the first live buy attempt died on
+ * `/primaryorderbuild/` with nothing to catch it. */
 export function quoteOrder(input: OrderQuoteInput): Promise<OrderQuote> {
-  return pantaFetch<OrderQuote>("/primaryorderquote/", { method: "POST", body: input });
+  return withTransientRetry("buy-quote", () =>
+    pantaFetch<OrderQuote>("/primaryorderquote/", { method: "POST", body: input }),
+  );
 }
 
 export interface OrderBuild {
@@ -545,19 +551,25 @@ export interface OrderBuild {
   [key: string]: unknown;
 }
 
-/** Step 2. `wallet` must match the one quoted. */
+/** Step 2. `wallet` must match the one quoted. Retried for the same reason. */
 export function buildOrder(input: {
   quoteId: string;
   wallet: string;
   userId?: string;
   maxSlippageBps?: number;
 }): Promise<OrderBuild> {
-  return pantaFetch<OrderBuild>("/primaryorderbuild/", { method: "POST", body: input });
+  return withTransientRetry("buy-build", () =>
+    pantaFetch<OrderBuild>("/primaryorderbuild/", { method: "POST", body: input }),
+  );
 }
 
-/** Step 3. Idempotent for the same orderId + signature. */
+/** Step 3. Idempotent for the same orderId + signature, so retrying past the
+ * transient failure is safe -- and the trade is already on chain by now, so a
+ * retry here costs nothing and a failure loses the attribution. */
 export function submitOrder(orderId: string, signature: string): Promise<Record<string, unknown>> {
-  return pantaFetch("/primaryordersubmit/", { method: "POST", body: { orderId, signature } });
+  return withTransientRetry("buy-submit", () =>
+    pantaFetch("/primaryordersubmit/", { method: "POST", body: { orderId, signature } }),
+  );
 }
 
 /** Optional re-check. Panta's verification is fail-closed -- TX_NOT_FOUND,
