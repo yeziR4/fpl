@@ -73,6 +73,7 @@ import argparse
 import json
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 from . import cache
 from .players import top_expensive_players
@@ -210,7 +211,9 @@ def cmd_resolve_gameweek(args: argparse.Namespace) -> None:
 def cmd_generate_picks(args: argparse.Namespace) -> None:
     from .agents import generate_picks_for_gameweek, save_picks
 
-    results = generate_picks_for_gameweek(args.gw, n_players=args.n)
+    results = generate_picks_for_gameweek(
+        args.gw, markets=_load_live_markets(args.markets), n_players=args.n
+    )
     path = save_picks(args.gw, results)
     for r in results:
         status = f"{len(r.picks)} picks" if not r.error else f"ERROR: {r.error}"
@@ -257,6 +260,49 @@ def _has_any_real_picks(saved: dict) -> bool:
     return any(model.get("picks") for model in saved.get("models", []))
 
 
+MARKETS_PATH = Path("data/markets.json")
+
+
+def _load_live_markets(path: Path) -> list:
+    """The live Panta markets the models will be asked about.
+
+    Read from a file rather than discovered here, deliberately. A forecast is
+    only meaningful against the price it would actually trade at, and the only
+    place that knows which player and points line each Panta market settles
+    against is the step that created it. An empty or missing file therefore
+    stops the run instead of quietly asking five models about nothing -- which
+    is the failure that would look like a working pipeline producing no picks.
+    """
+    from .agents import LiveMarket
+
+    if not path.exists():
+        raise SystemExit(
+            f"No live markets at {path}.\n"
+            "Agent forecasts are about real markets, so this run needs their prices.\n"
+            "Create the markets first, write them to that path, then re-run."
+        )
+
+    raw = json.loads(path.read_text())
+    markets = [
+        LiveMarket(
+            market_id=entry["market_id"],
+            question=entry["question"],
+            yes_price=float(entry["yes_price"]),
+            no_price=float(entry["no_price"]),
+            player_id=entry.get("player_id"),
+            player_name=entry.get("player_name", ""),
+            position=entry.get("position", ""),
+            threshold=int(entry.get("threshold") or 0),
+            end_time=entry.get("end_time"),
+        )
+        for entry in raw
+        if isinstance(entry, dict) and entry.get("market_id") and entry.get("question")
+    ]
+    if not markets:
+        raise SystemExit(f"{path} exists but contains no usable markets.")
+    return markets
+
+
 def cmd_auto_generate_picks(args: argparse.Namespace) -> None:
     from .agents import PICKS_DIR, generate_picks_for_gameweek, load_picks, save_picks
 
@@ -274,7 +320,9 @@ def cmd_auto_generate_picks(args: argparse.Namespace) -> None:
         print(f"GW{gw} picks exist at {picks_path} but every model errored last time -- retrying.")
 
     print(f"Generating agent picks for GW{gw}...")
-    results = generate_picks_for_gameweek(gw, n_players=args.n)
+    results = generate_picks_for_gameweek(
+        gw, markets=_load_live_markets(args.markets), n_players=args.n
+    )
     path = save_picks(gw, results)
     for r in results:
         status = f"{len(r.picks)} picks" if not r.error else f"ERROR: {r.error}"
@@ -517,6 +565,12 @@ def build_parser() -> argparse.ArgumentParser:
     # docstring in agents.py for why this now matches the frontend's
     # own market-count, not a wider "candidate" pool.
     generate_picks.add_argument("--n", type=int, default=8)
+    generate_picks.add_argument(
+        "--markets",
+        type=Path,
+        default=MARKETS_PATH,
+        help="JSON list of live Panta markets to forecast (market_id, question, yes_price, no_price, player_id, threshold)",
+    )
     generate_picks.set_defaults(func=cmd_generate_picks)
 
     score_gameweek_parser = sub.add_parser(
@@ -530,6 +584,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate picks for whichever gameweek's deadline hasn't passed yet (skips if already generated)",
     )
     auto_generate_picks.add_argument("--n", type=int, default=8)
+    auto_generate_picks.add_argument(
+        "--markets",
+        type=Path,
+        default=MARKETS_PATH,
+        help="JSON list of live Panta markets to forecast",
+    )
     auto_generate_picks.add_argument(
         "--force", action="store_true", help="Regenerate even if picks already exist for that gameweek"
     )

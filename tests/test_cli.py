@@ -107,14 +107,42 @@ def test_auto_generate_picks_retries_after_a_run_where_every_model_errored(tmp_p
         return [
             ModelPicksResult(
                 model=model,
-                picks=[AgentPick(player_id=1, threshold=5, pick=True, confidence=None)],
+                picks=[
+                    AgentPick(
+                        "m1",
+                        0.7,
+                        1.0,
+                        player_id=1,
+                        threshold=5,
+                        yes_price=0.5,
+                        no_price=0.5,
+                    )
+                ],
                 error=None,
             )
         ]
 
     monkeypatch.setattr("data_pipeline.agents.generate_picks_for_gameweek", fake_generate)
 
-    args = argparse.Namespace(n=1, force=False)
+    # Forecasts are about real markets, so the run needs their prices. The
+    # generation itself is stubbed below; this only has to exist and parse.
+    markets_path = tmp_path / "markets.json"
+    markets_path.write_text(
+        json.dumps(
+            [
+                {
+                    "market_id": "m1",
+                    "question": "Will someone score 5 or more points?",
+                    "yes_price": 0.5,
+                    "no_price": 0.5,
+                    "player_id": 1,
+                    "threshold": 5,
+                }
+            ]
+        )
+    )
+
+    args = argparse.Namespace(n=1, force=False, markets=markets_path)
     picks_path = Path("data/agent_picks/gw1.json")
 
     cmd_auto_generate_picks(args)  # 1st run: no key, every model errors

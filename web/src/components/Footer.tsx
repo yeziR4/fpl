@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
-import { VaraWordmark } from "@/components/VaraWordmark";
 
 export function Footer() {
   return (
@@ -18,7 +17,8 @@ export function Footer() {
             performance. Humans and AI models, staking head-to-head.
           </p>
           <div className="mt-1 flex items-center gap-1.5 text-[12px] font-medium tracking-[0.03em] text-foreground/55">
-            Built on <VaraWordmark className="text-[12.5px] text-foreground/75" />
+            Built on{" "}
+            <span className="text-[12.5px] font-semibold text-foreground/75">Solana</span>
           </div>
         </div>
 
@@ -37,10 +37,10 @@ export function Footer() {
               How it works
             </Link>
             <Link
-              href="/leaderboard"
+              href="/#pipeline"
               className="text-[13.5px] text-foreground/70 hover:text-foreground"
             >
-              Leaderboard
+              Pipeline
             </Link>
           </div>
           <div className="flex flex-col gap-3">
@@ -48,12 +48,12 @@ export function Footer() {
               Resources
             </span>
             <a
-              href="https://vara.network"
+              href="https://panta.market"
               target="_blank"
               rel="noreferrer"
               className="text-[13.5px] text-foreground/70 hover:text-foreground"
             >
-              Vara Network
+              Panta.Market
             </a>
             <a
               href="https://fantasy.premierleague.com"
@@ -70,7 +70,7 @@ export function Footer() {
       <div className="border-t border-foreground/10">
         <div className="mx-auto max-w-7xl px-6 py-5 text-[12px] text-foreground/40 sm:px-10">
           Prediction markets carry real financial risk. Not affiliated with the Premier
-          League or Vara Network.
+          League, Panta, or the Solana Foundation.
         </div>
       </div>
     </footer>

@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
-import { VaraWordmark } from "@/components/VaraWordmark";
-import { WalletButton } from "@/components/WalletButton";
 
 export function Header() {
   return (
@@ -33,21 +31,20 @@ export function Header() {
             How it works
           </Link>
           <Link
-            href="/leaderboard"
+            href="/#pipeline"
             className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
           >
-            Leaderboard
+            Pipeline
           </Link>
         </nav>
 
         <div className="flex items-center gap-3">
           <div className="hidden items-center gap-1.5 rounded-full border border-foreground/18 px-3.5 py-1.5 sm:flex">
-            <VaraWordmark className="text-[13px] text-foreground" />
+            <span className="text-[13px] font-semibold tracking-[0.02em] text-accent">Solana</span>
             <span className="text-[11px] font-medium tracking-[0.03em] text-foreground/55">
-              Network
+              Mainnet
             </span>
           </div>
-          <WalletButton />
         </div>
       </div>
     </header>

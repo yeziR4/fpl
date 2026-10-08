@@ -357,6 +357,12 @@ class AgentPick:
     probability: float
     stake_usdc: float
     reasoning: str = ""
+    # Carried from the market so a saved pick stays scoreable once the market
+    # set is no longer to hand. resolution.py settles on (player, threshold),
+    # and a picks file keyed only by market_id could not be scored after the
+    # fact -- a real gap in the first draft of this.
+    player_id: int | None = None
+    threshold: int = 0
     # Filled in once the pool price is known, so edge can be reported even for a
     # pick that was never traded (below the minimum order size, say).
     yes_price: float | None = None
@@ -490,6 +496,8 @@ def apply_bankroll_cap(picks: list[AgentPick], bankroll_usdc: float) -> list[Age
             probability=p.probability,
             stake_usdc=round(p.stake_usdc * factor, 2),
             reasoning=p.reasoning,
+            player_id=p.player_id,
+            threshold=p.threshold,
         )
         for p in picks
     ]
@@ -511,8 +519,8 @@ class ModelPicksResult:
 
 def generate_picks_for_gameweek(
     gw: int,
-    markets: list[LiveMarket],
     *,
+    markets: list[LiveMarket],
     n_players: int | None = None,
     cache_dir: Path | None = None,
     models: tuple[AgentModel, ...] = AGENT_MODELS,
@@ -531,6 +539,7 @@ def generate_picks_for_gameweek(
     players = top_expensive_players(bootstrap, n=n_players or 20)
     valid_market_ids = {m.market_id for m in markets}
     price_of = {m.market_id: (m.yes_price, m.no_price) for m in markets}
+    market_of = {m.market_id: m for m in markets}
 
     prompt = build_prompt(markets, players, bootstrap, fixtures, gw)
 
@@ -558,8 +567,10 @@ def generate_picks_for_gameweek(
                 probability=p.probability,
                 stake_usdc=p.stake_usdc,
                 reasoning=p.reasoning,
-                yes_price=price_of.get(p.market_id, (None, None))[0],
-                no_price=price_of.get(p.market_id, (None, None))[1],
+                player_id=market_of[p.market_id].player_id,
+                threshold=market_of[p.market_id].threshold,
+                yes_price=price_of[p.market_id][0],
+                no_price=price_of[p.market_id][1],
             )
             for p in picks
         ]
@@ -587,6 +598,8 @@ def save_picks(gw: int, results: list[ModelPicksResult], *, picks_dir: Path = PI
                 "picks": [
                     {
                         "market_id": p.market_id,
+                        "player_id": p.player_id,
+                        "threshold": p.threshold,
                         "probability": p.probability,
                         "stake_usdc": p.stake_usdc,
                         "reasoning": p.reasoning,

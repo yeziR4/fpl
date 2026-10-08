@@ -2,10 +2,7 @@ import { Hero } from "@/components/Hero";
 import { LiveMarkets } from "@/components/panta/LiveMarkets";
 import { Pipeline } from "@/components/panta/Pipeline";
 import { HowItWorks } from "@/components/HowItWorks";
-import { OnboardingGuide } from "@/components/OnboardingGuide";
 import type { HeroPlayer } from "@/components/Hero";
-import type { MarketOpponent, MarketPlayer } from "@/components/MarketsSection";
-import { agentMarketProbability, agentPickCounts } from "@/lib/agentPicks";
 import {
   fetchBootstrapStatic,
   fetchFixtures,
@@ -13,22 +10,33 @@ import {
   teamBadgeUrl,
   teamCodeForId,
   topExpensivePlayers,
-  PRIMARY_POINTS_THRESHOLD,
-  SECONDARY_POINTS_THRESHOLD,
   type BootstrapStatic,
   type Fixture,
-  type Player,
 } from "@/lib/fpl";
 
-const MARKET_PLAYER_COUNT = 8;
+const HERO_PLAYER_COUNT = 3;
 
+/**
+ * The home page is deliberately thin now. It renders three sections, and only
+ * the hero needs data at build time:
+ *
+ *   Hero        -- FPL players, fetched here (this file)
+ *   LiveMarkets -- real Panta markets, fetched in the browser (prices move)
+ *   Pipeline    -- the generator's ranked candidates, read from a committed
+ *                  JSON snapshot, because it changes when the generator runs
+ *
+ * What used to be here and is gone: a markets grid of Vara staking widgets,
+ * and per-player agent-pick counts read from the old VARA-era picks files. The
+ * staking UI went with the chain, and the picks data is being replaced by the
+ * agent benchmark -- whose whole point is that the numbers are real positions
+ * on Panta rather than a simulated stake in a retired token.
+ */
 export default async function Home() {
-  const players = await loadMarketPlayers();
+  const players = await loadHeroPlayers();
 
   return (
     <main className="flex flex-1 flex-col">
-      <Hero players={players.slice(0, 3)} />
-      <OnboardingGuide />
+      <Hero players={players} />
       <LiveMarkets />
       <Pipeline />
       <HowItWorks />
@@ -37,71 +45,43 @@ export default async function Home() {
 }
 
 /**
- * Fetches the top-expensive-players pool and the fixture list once,
- * and shapes it for both the hero (first 3) and the markets grid (all
- * of them) -- including each player's next opponent, since that's
- * directly relevant to whether they'll clear a points threshold.
+ * The top players by price, each with their next opponent, for the hero.
  *
- * FPL's API is unauthenticated and public, but still an external
- * dependency -- if it's unreachable (as it is from this dev sandbox;
- * see docs/architecture.md) or FPL is down, fail soft with an empty
- * list rather than crashing the page. Both Hero and MarketsSection
- * render sensibly with zero players.
+ * FPL's API is public and unauthenticated but still an external dependency, so
+ * this fails soft to an empty list rather than crashing the page: Hero renders
+ * sensibly with nobody in it. Same contract the rest of the site follows.
  */
-async function loadMarketPlayers(): Promise<(HeroPlayer & MarketPlayer)[]> {
+async function loadHeroPlayers(): Promise<HeroPlayer[]> {
   try {
     const [bootstrap, fixtures]: [BootstrapStatic, Fixture[]] = await Promise.all([
       fetchBootstrapStatic(),
       fetchFixtures(),
     ]);
-    const players: Player[] = topExpensivePlayers(bootstrap, MARKET_PLAYER_COUNT);
 
-    return Promise.all(
-      players.map(async (player) => {
-        // Resolved once per player, not twice -- gw is threaded through
-        // separately from the opponent badge/name lookup below because a
-        // stake needs to know which gameweek it resolves against even in
-        // the (rare) case that lookup itself fails, e.g. an opponent team
-        // id not found in bootstrap-static.
-        const nextFixture = nextFixtureForTeam(player.team, fixtures);
-        const gw = nextFixture?.gw ?? null;
-
-        // agentPickCounts/agentMarketProbability both read a local file
-        // (see lib/agentPicks.ts) -- cheap enough, and gw-scoped enough
-        // (most players share the same upcoming gameweek), that
-        // fetching all four per player in parallel isn't worth
-        // deferring further.
-        const [primary, secondary, primaryProbability, secondaryProbability] =
-          gw === null
-            ? [null, null, null, null]
-            : await Promise.all([
-                agentPickCounts(gw, player.id, PRIMARY_POINTS_THRESHOLD),
-                agentPickCounts(gw, player.id, SECONDARY_POINTS_THRESHOLD),
-                agentMarketProbability(gw, player.id, PRIMARY_POINTS_THRESHOLD),
-                agentMarketProbability(gw, player.id, SECONDARY_POINTS_THRESHOLD),
-              ]);
-
-        return {
-          player,
-          badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, player.team)),
-          opponent: resolveOpponent(bootstrap, nextFixture),
-          gw,
-          kickoffTime: nextFixture?.kickoffTime ?? null,
-          agentPicks: { primary, secondary },
-          marketProbability: { primary: primaryProbability, secondary: secondaryProbability },
-        };
-      }),
-    );
+    return topExpensivePlayers(bootstrap, HERO_PLAYER_COUNT).map((player) => {
+      const nextFixture = nextFixtureForTeam(player.team, fixtures);
+      return {
+        player,
+        badgeUrl: teamBadgeUrl(teamCodeForId(bootstrap, player.team)),
+        opponent: resolveOpponent(bootstrap, nextFixture),
+      };
+    });
   } catch (error) {
     console.error("Failed to load FPL player/fixture data:", error);
     return [];
   }
 }
 
+interface HeroOpponent {
+  badgeUrl: string;
+  shortName: string;
+  isHome: boolean;
+}
+
 function resolveOpponent(
   bootstrap: BootstrapStatic,
   nextFixture: ReturnType<typeof nextFixtureForTeam>,
-): MarketOpponent | null {
+): HeroOpponent | null {
   if (!nextFixture) return null;
   const opponentTeam = bootstrap.teams.find((t) => t.id === nextFixture.teamId);
   if (!opponentTeam) return null;
