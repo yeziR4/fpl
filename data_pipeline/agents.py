@@ -1,93 +1,95 @@
-"""AI agent picks via OpenRouter.
+"""Ask frontier models to price FPL markets, then trade their opinions for real.
 
-Five top-tier models, one per lab, are each given the same snapshot of
-FPL data (the top-N most expensive players, their opponent this
-gameweek, price, season form) and asked to predict the same points-
-threshold markets `resolution.py` already knows how to settle. This
-module is the "ask the models" half; `leaderboard.py` is the "were
-they right" half, once a gameweek finishes.
+This is the "ask the models" half; `leaderboard.py` is the "were they right"
+half. What changed from the Vara version, and why, is worth stating once --
+most of the old design survived, and the parts that didn't were the parts that
+assumed paper money.
 
-Deliberately narrow in scope: this produces *picks*, not stakes, not
-matchmaking, not selection/assignment between agents and markets --
-every model is asked about every player pool, every time. See
-docs/architecture.md.
+KEPT, deliberately, because it was right:
+
+  - One identical prompt for every model. The board compares judgement given
+    the same information, not who got the better prompt.
+  - The odds never come from a model's own confidence. In the old build that
+    was a rule we enforced; on Panta it is simply true -- the price comes from
+    the pool, and a model claiming conviction cannot move it.
+  - Never fabricate a pick on a parse failure. A swallowed error would invent
+    a leaderboard entry.
+  - Per-model error isolation: one dead slug fails one model, not the week.
+  - Abstention is a valid answer. Forcing a pick on a market a model has no
+    view on measures stamina, not skill.
+
+CHANGED, because the old version was pricing bets nobody could place:
+
+  - No VARA. Stakes are USDC, so the whole vara_price module and its live
+    exchange-rate dependency are gone. One fewer network call, one fewer way
+    to fail mid-sprint.
+  - No simulated payouts. A forecast becomes a real primary order on Panta,
+    and the fill is read back from the chain rather than computed.
+  - The prompt shows the REAL pool price, because that is the price a model
+    would actually trade at. The old version showed our own modeled
+    probability, which is a different and much easier question.
+
+ADDED, because it is the difference between a scoreboard and a benchmark:
+
+  - A stated probability. The old prompt asked for pick + confidence, and
+    confidence is confidence in the BET, not the probability of the EVENT --
+    you cannot compute calibration from it. With a probability you get both
+    the edge a model believed it had (p minus price) and its Brier score.
+  - A one-line rationale, so the board can show reasoning, not just a verdict.
+  - The raw reply is stored even when parsing fails, so a bad reply is
+    diagnosable afterwards instead of being one opaque error string.
+  - The decision-time price is stored with the pick. A benchmark has to be
+    auditable, and the pool will have moved by the time anyone checks.
 """
 
 from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
 
-from . import cache, oddsmaker, vara_price
+from . import cache
 from .players import Player, top_expensive_players
-from .settlement import PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_TIMEOUT = 60
+DEFAULT_TIMEOUT = 90
 
 PICKS_DIR = Path("data/agent_picks")
+
+# The per-agent bankroll the whole exercise is budgeted around. It lives here
+# rather than in a pricing module because it is no longer a pricing input: the
+# model spends it, and the pool sets the price.
+AGENT_BANKROLL_USDC = 5.0
 
 
 @dataclass(frozen=True)
 class AgentModel:
     slug: str
     name: str
-    # Each model's own real Vara mainnet wallet -- generated once
-    # (GearKeyring.create(), the same sr25519 keypair machinery
-    # web/src/lib/vara/keyring.ts uses for a human's wallet), so a
-    # future "the model stakes VARA on its own pick" feature has
-    # somewhere real to stake from. An address is public information,
-    # safe to commit -- unlike the mnemonic behind it, which is not
-    # stored anywhere in this repo. See docs/architecture.md.
-    #
-    # Defaults to "" purely so tests can build a throwaway AgentModel
-    # without needing a real address -- every entry in AGENT_MODELS
-    # below sets a real one.
-    address: str = ""
+    # A real Solana public key, one per model, so each model's trades are
+    # separately attributable on chain. A public key is safe to commit; the
+    # secret behind it never goes in this repo.
+    solana_address: str = ""
 
 
-# One model per lab, chosen for genuine cross-lab diversity rather than
-# several models from the same family. Self-updating "latest" aliases
-# preferred where OpenRouter offers them (openai/anthropic/google) --
-# these silently re-point to each lab's new flagship, so the list
-# doesn't go stale the way a dated slug eventually would. Confirmed
-# real, current slugs via WebSearch/WebFetch against OpenRouter's own
-# catalog (this sandbox can't reach openrouter.ai directly to check
-# itself) -- verify with a real GitHub Actions call before relying on
-# these further; a renamed/retired slug fails that one model's pick
-# for a gameweek, not the whole pipeline (see call_model/generate_picks_for_gameweek).
+# One model per lab, for genuine cross-lab diversity rather than several from
+# one family. Self-updating "latest" aliases where OpenRouter offers them, so
+# the list doesn't go stale the way dated slugs eventually do.
+#
+# Addresses are empty here and filled in by provisioning them for real. A model
+# without an address is refused at trade time rather than defaulted to
+# somebody else's wallet.
 _DEFAULT_AGENT_MODELS: tuple[AgentModel, ...] = (
-    AgentModel("~openai/gpt-latest", "GPT (latest)", "kGh61bXfYSsT223sqzn4sWpq5Mz2VJWBJxsAK6R3E8YnXoAN2"),
-    AgentModel(
-        "~anthropic/claude-opus-latest", "Claude Opus (latest)", "kGkqpNus1hJGtgsZzh4SUV5upvrfk2hsKp5TvtfNqYemGoBEX"
-    ),
-    AgentModel("~google/gemini-pro-latest", "Gemini Pro (latest)", "kGgBKtcr97kHFDybuA3qxhsDcBQYVXxVtLNkpf8WhYM1DWQ5h"),
-    AgentModel("x-ai/grok-4.20", "Grok 4.20", "kGg3f6tTWQaGCsg2YDeWUAJCnVTDXuPwu4oJzSmzH4BeEk2a3"),
-    AgentModel("deepseek/deepseek-v4-pro", "DeepSeek V4 Pro", "kGihgHBfyczWhbM3tpXrmDKKZLRYsgicx7eaeVBFDdiuNurQs"),
+    AgentModel("~openai/gpt-latest", "GPT (latest)"),
+    AgentModel("~anthropic/claude-opus-latest", "Claude Opus (latest)"),
+    AgentModel("~google/gemini-pro-latest", "Gemini Pro (latest)"),
+    AgentModel("x-ai/grok-4.20", "Grok 4.20"),
+    AgentModel("deepseek/deepseek-v4-pro", "DeepSeek V4 Pro"),
 )
-
-
-# --------------------------------------------------------------- overrides
-# The tuple above is the default: one frontier model per lab, which is what the
-# "humans vs frontier AI" pitch rests on. It is deliberately overridable,
-# because OpenRouter's `:free` slugs are rate-capped and get rotated or retired
-# without notice -- hardcoding a free list guarantees a silent break mid-sprint.
-#
-# Resolution order:
-#   1. AGENT_MODELS env var   -- "slug|Label,slug|Label" (label optional)
-#   2. data/agent_models.json -- [{"slug": "...", "name": "...", "address": ""}]
-#   3. _DEFAULT_AGENT_MODELS
-#
-# Addresses default to "" on every override path. The Vara wallets above are
-# retired with the Solana move; AI trading wallets are provisioned separately.
-#
-# To see what free models OpenRouter is currently serving:
-#     python scripts/list_free_models.py
 
 AGENT_MODELS_JSON = Path("data/agent_models.json")
 
@@ -124,7 +126,11 @@ def _resolve_agent_models() -> tuple[AgentModel, ...]:
             raw = None
         if isinstance(raw, list):
             parsed = tuple(
-                AgentModel(entry["slug"], entry.get("name") or entry["slug"], entry.get("address", ""))
+                AgentModel(
+                    entry["slug"],
+                    entry.get("name") or entry["slug"],
+                    entry.get("solana_address", ""),
+                )
                 for entry in raw
                 if isinstance(entry, dict) and entry.get("slug")
             )
@@ -147,7 +153,7 @@ def _api_key() -> str:
         raise OpenRouterError(
             "OPENROUTER_API_KEY is not set -- it's a GitHub Actions secret the "
             "repo owner adds directly (Settings -> Secrets and variables -> "
-            "Actions), never pasted into chat or committed. See docs/architecture.md."
+            "Actions), never pasted into chat or committed."
         )
     return key
 
@@ -157,12 +163,10 @@ def call_model(
 ) -> str:
     """One call to OpenRouter's OpenAI-compatible chat-completions endpoint.
 
-    Returns the raw text content of the model's reply. Raises
-    OpenRouterError on any failure -- never returns a fabricated
-    fallback, since a swallowed failure here would silently produce a
-    fake pick further down the pipeline. Callers should catch this per
-    model, not let one model's outage take down every other model's
-    picks for the gameweek (see generate_picks_for_gameweek).
+    Returns the raw text content of the reply. Raises OpenRouterError on any
+    failure -- never returns a fabricated fallback, since a swallowed failure
+    here would silently produce a fake pick. Callers catch this per model, so
+    one outage doesn't take down every other model's forecasts.
     """
     http = session or requests
     try:
@@ -171,10 +175,10 @@ def call_model(
             headers={
                 "Authorization": f"Bearer {_api_key()}",
                 "Content-Type": "application/json",
-                # OpenRouter asks integrations to identify themselves via
-                # these headers; doesn't gate anything, just good citizenship.
+                # OpenRouter asks integrations to identify themselves via these
+                # headers; doesn't gate anything, just good citizenship.
                 "HTTP-Referer": "https://yezir4.github.io/fpl",
-                "X-Title": "FPL Prediction Market -- Agent Picks",
+                "X-Title": "Overline -- Agent Forecasts",
             },
             json={
                 "model": model.slug,
@@ -195,12 +199,41 @@ def call_model(
         raise OpenRouterError(f"{model.slug}: unexpected response shape: {body}") from exc
 
 
-def _team_name(team: dict) -> str:
-    return team.get("short_name") or team.get("name") or f"Team {team['id']}"
+# ------------------------------------------------------------------ markets
+
+
+@dataclass(frozen=True)
+class LiveMarket:
+    """One real, tradeable Panta market, as the models will see it.
+
+    Prices are the pool's, not ours. YES and NO are quoted separately rather
+    than assumed to sum to 1, because on a real pool with a spread they don't --
+    and pretending otherwise would hand every model a phantom edge.
+    """
+
+    market_id: str
+    question: str
+    yes_price: float
+    no_price: float
+    player_id: int | None = None
+    player_name: str = ""
+    position: str = ""
+    threshold: int = 0
+    # ISO 8601. Trading stops here, so a forecast is only meaningful before it.
+    end_time: str | None = None
+
+    @property
+    def implied_yes(self) -> float:
+        """The pool's own YES probability, normalised past any spread."""
+        total = self.yes_price + self.no_price
+        return self.yes_price / total if total > 0 else 0.5
 
 
 def _team_names(bootstrap: dict) -> dict[int, str]:
-    return {t["id"]: _team_name(t) for t in bootstrap["teams"]}
+    return {
+        t["id"]: (t.get("short_name") or t.get("name") or f"Team {t['id']}")
+        for t in bootstrap["teams"]
+    }
 
 
 def _opponent_summary(
@@ -223,143 +256,166 @@ def _opponent_summary(
 
 
 def build_prompt(
+    markets: list[LiveMarket],
     players: list[Player],
     bootstrap: dict,
     fixtures: list[dict],
     gw: int,
     *,
-    thresholds: tuple[int, ...] = (PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD),
+    bankroll_usdc: float = AGENT_BANKROLL_USDC,
 ) -> str:
-    """The exact prompt every model gets for a gameweek.
+    """The exact prompt every model gets.
 
-    Deliberately identical across all five models -- the leaderboard is
-    meant to compare their judgement given the same information, not
-    who happened to get a better prompt.
+    Deliberately identical across models -- the board compares judgement given
+    the same information, not prompt-craft.
 
-    Two changes from an earlier version, both requested directly after
-    watching real gameweeks run with the old prompt:
+    Two things this asks for that the Vara version did not, and why:
 
-    1. A model is no longer required to cover every (player, threshold)
-       pair -- it's shown this system's own market price for each one
-       and told plainly it's scored on P&L from the bets it actually
-       places, not raw accuracy across a forced full board. Forcing a
-       pick on a market it has no real opinion on was a guardrail that
-       actively worked against the thing the leaderboard is supposed
-       to measure: a model with no edge anywhere is free to submit an
-       empty `picks` list (see PicksParseError -- that's a valid
-       answer, not a parse failure).
-    2. The prompt now explains its own economy -- a fixed gameweek
-       bankroll, and how confidence sizes a bet against it -- so a
-       model can reason about sizing and edge together, not just
-       direction. Still true, and now said out loud: confidence never
-       touches the odds (`oddsmaker.market_probability` prices every
-       market from real player standing, before any model ever sees
-       it), so a model can't buy a better price by claiming more
-       conviction -- only a bigger stake on a pick it's actually right
-       about.
+    1. A PROBABILITY, not just a pick and a confidence. Confidence tells you how
+       sure a model is about its bet; it does not tell you what it thinks the
+       outcome is worth. With a probability you can measure both the edge it
+       believed it had (probability minus price) and whether its confidence was
+       calibrated (Brier score) -- the entire difference between a benchmark and
+       a scoreboard.
+
+    2. A one-line rationale, so the published board can show reasoning rather
+       than a bare verdict.
+
+    Models are told the pool's price and told plainly that the price is not
+    theirs to set. That was a rule we enforced in the old build; here it is a
+    fact about how an AMM works, which is why the instruction survived intact.
     """
     team_names = _team_names(bootstrap)
-    n_pairs = len(players) * len(thresholds)
+    by_id = {p.id: p for p in players}
+
     lines = [
-        f"You are picking outcomes for a Fantasy Premier League (FPL) prediction market, gameweek {gw}.",
-        "Your picks are tracked on a public leaderboard alongside four other AI models and scored",
-        "against the real results once this gameweek finishes -- you are judged on total profit and",
-        "loss (P&L) from the bets you actually place, NOT on how many markets you attempt or your",
-        "raw accuracy across the board. There is no reward for guessing on a market you have no real",
-        "edge in, and no penalty for leaving one alone -- only bet where you believe the true",
-        "probability is meaningfully different from the market price already shown below for it.",
+        f"You are forecasting Fantasy Premier League (FPL) outcomes for gameweek {gw},",
+        "and your forecasts are traded as real positions in prediction markets on Solana.",
         "",
-        f"Your bankroll this gameweek is a fixed ${oddsmaker.TOTAL_BANKROLL_USD:.0f}, split across",
-        "whatever picks you actually make -- each pick's own confidence (0-1) sizes its share of that",
-        "bankroll relative to your other picks this gameweek (higher confidence = a bigger share,",
-        "never a guarantee of being right). Betting on every market dilutes your best ideas instead",
-        "of sizing them up; betting on none is a fully valid answer if you see no real edge anywhere.",
-        "A correct pick pays back 1 / (the market price of the side you took) times its stake; a",
-        "wrong one pays nothing. The market price is this system's own -- never your opinion -- so you",
-        "cannot buy better odds by claiming more confidence, only a bigger stake on a pick you're",
-        "actually right about.",
+        "You are one of five frontier models doing this. Your work is published and scored",
+        "on three things, all public:",
+        "  1. profit and loss from the positions actually taken,",
+        "  2. whether your stated probabilities were calibrated (Brier score),",
+        "  3. whether you had a real edge, or just a loud opinion.",
         "",
-        "For each player below, decide whether they will score AT LEAST the given points threshold",
-        "in this single gameweek (standard FPL scoring: goals, assists, clean sheets, bonus, etc),",
-        "against this system's own market price for that outcome.",
+        "You are NOT scored on how many markets you attempt. There is no penalty for",
+        "passing on every market, and passing is the right answer when you have no view.",
         "",
-        "Players (id, name, team, opponent this gameweek, price, season points, market price per",
-        "threshold -- the probability this system already prices that outcome at):",
+        f"Your bankroll is ${bankroll_usdc:.2f} for the entire gameweek, across every market",
+        "below. It is yours to allocate, and an unspent bankroll is not a failure.",
+        "",
+        "THE PRICE IS NOT YOURS TO SET. Each market below shows the real pool price, set",
+        "by the market's own liquidity and by other traders. Stating more confidence does",
+        "not get you a better price. You make money only by being right about something",
+        "the price has wrong.",
+        "",
+        "Markets (market_id | question | pool price for YES and NO | context):",
     ]
-    for p in players:
-        opp = _opponent_summary(fixtures, gw, p.team, team_names)
-        market = ", ".join(
-            f"{round(oddsmaker.market_probability(p.id, t, bootstrap) * 100)}% Yes on {t}+"
-            for t in thresholds
-        )
+
+    for m in markets:
+        player = by_id.get(m.player_id) if m.player_id is not None else None
+        detail = ""
+        if player is not None:
+            opp = _opponent_summary(fixtures, gw, player.team, team_names)
+            detail = (
+                f" | {player.web_name} ({team_names.get(player.team, '?')}) {opp}, "
+                f"£{player.price_millions:.1f}m, {player.total_points} pts so far this season"
+            )
         lines.append(
-            f"- id={p.id} {p.web_name} ({team_names.get(p.team, '?')}) {opp}, "
-            f"£{p.price_millions:.1f}m, {p.total_points} pts this season -- market: {market}"
+            f"- {m.market_id} | {m.question} | YES {m.yes_price:.3f}, NO {m.no_price:.3f}"
+            f"{detail}"
         )
+
     lines += [
         "",
-        f"Thresholds: {', '.join(str(t) for t in thresholds)}.",
+        "Define your probability as the chance the market resolves YES -- the player",
+        "reaching the stated points total in this single gameweek, under standard FPL",
+        "scoring (goals, assists, clean sheets, bonus, appearance points).",
         "",
-        "Respond with ONLY a JSON object of this exact shape, no other text, no markdown fences:",
-        '{"picks": [{"player_id": <int>, "threshold": <int>, "pick": "yes"|"no", "confidence": <0-1 float>}, ...]}',
-        "Include an entry ONLY for the (player, threshold) pairs you actually want to bet on -- zero,",
-        f'some, or all of the {n_pairs} possible pairs above. An empty list ("picks": []) is a valid',
-        "answer if you see no edge anywhere this gameweek.",
+        "Then choose a stake. Omit the market entirely if you have no view: a forecast you",
+        "do not believe is worse than no forecast.",
+        "",
+        "Respond with ONLY a JSON object, no markdown fences, no other text:",
+        '{"picks": [{"market_id": "<id>", "probability": <0-1>, "stake_usdc": <number>, ',
+        '  "reasoning": "<one sentence, under 200 characters>"}]}',
+        "",
+        f'"probability" is your belief the market resolves YES. "stake_usdc" is how much of',
+        f"your ${bankroll_usdc:.2f} you commit, and must not exceed it in total across all",
+        'picks. An empty list ({"picks": []}) is a completely valid answer.',
     ]
     return "\n".join(lines)
 
 
+# -------------------------------------------------------------------- picks
+
+
 @dataclass(frozen=True)
 class AgentPick:
-    player_id: int
-    threshold: int
-    pick: bool  # True = model expects the player to clear the threshold
-    confidence: float | None
-    # Populated by generate_picks_for_gameweek() (via
-    # oddsmaker.with_bet_records()) after parse_picks() below returns
-    # the model's raw pick+confidence -- parse_picks() itself stays a
-    # pure parser of the model's reply, with no pricing concerns of
-    # its own. None here means "not priced yet" (e.g. an AgentPick
-    # built directly in a test), never "no market exists".
-    market_probability: float | None = None
-    stake_vara: float | None = None
-    potential_return_vara: float | None = None
+    market_id: str
+    # The model's belief that the market resolves YES. This is the number the
+    # Brier score is computed from, and the reason the prompt asks for it at all.
+    probability: float
+    stake_usdc: float
+    reasoning: str = ""
+    # Filled in once the pool price is known, so edge can be reported even for a
+    # pick that was never traded (below the minimum order size, say).
+    yes_price: float | None = None
+    no_price: float | None = None
+
+    @property
+    def side(self) -> str | None:
+        """Which side this forecast actually backs, derived rather than asked for.
+
+        Deriving it stops a model stating a probability and then taking the
+        opposite side -- an incoherent pick that would still score. With a real
+        spread it is possible for neither side to be +EV, and then there is no
+        trade. That is a correct outcome, not a bug.
+        """
+        if self.yes_price is None or self.no_price is None:
+            return None
+        yes_edge = self.probability - self.yes_price
+        no_edge = (1 - self.probability) - self.no_price
+        if yes_edge <= 0 and no_edge <= 0:
+            return None
+        return "yes" if yes_edge >= no_edge else "no"
+
+    @property
+    def side_price(self) -> float | None:
+        s = self.side
+        if s is None:
+            return None
+        return self.yes_price if s == "yes" else self.no_price
+
+    @property
+    def edge(self) -> float | None:
+        """Believed edge over the pool, as a probability. None if no trade."""
+        s = self.side
+        p = self.side_price
+        if s is None or p is None:
+            return None
+        belief = self.probability if s == "yes" else 1 - self.probability
+        return belief - p
 
 
 class PicksParseError(ValueError):
-    """Raised when a model's reply can't be read as the required JSON
-    shape at all (no JSON object found, or no "picks" list in it) --
-    as opposed to parsing into a `picks` list that's simply empty, or
-    whose entries don't individually validate. That's a normal,
-    deliberate "no bets this gameweek" reply (see build_prompt()'s
-    docstring for why that's now a valid answer, not an error), never
-    raised for it -- only for a reply that didn't follow the required
-    shape at all."""
+    """The reply didn't follow the required shape at all -- no JSON object, or
+    no "picks" list.
+
+    Distinct from a `picks` list that is empty, or whose entries all fail
+    validation: that is a deliberate "no view this gameweek" answer and returns
+    an empty list rather than raising.
+    """
 
 
-def parse_picks(
-    raw_text: str,
-    *,
-    valid_player_ids: set[int],
-    valid_thresholds: set[int],
-) -> list[AgentPick]:
+def parse_picks(raw_text: str, *, valid_market_ids: set[str]) -> list[AgentPick]:
     """Defensively parse a model's reply into picks.
 
-    Never fabricates a pick for a malformed or out-of-pool entry -- a
-    model that returns garbage just yields fewer picks, never a wrong
-    or invented one. Tolerates the reply being wrapped in markdown code
-    fences, or having commentary before/after the JSON object, despite
-    being told JSON-only in the prompt -- confirmed for real, not
-    hypothetical: `~google/gemini-pro-latest` did exactly this on its
-    first live run against real GW picks (see docs/architecture.md).
+    Never fabricates a pick for a malformed or unknown-market entry -- a model
+    returning garbage yields fewer picks, never a wrong or invented one.
 
-    Raises PicksParseError when the reply doesn't even follow the
-    required shape (no JSON object, or no "picks" list) -- a real
-    parsing failure. Returns an empty list, not an error, when the
-    shape is right but there's nothing usable in it (an empty "picks"
-    list, or every entry in it failing validation): a model that
-    looked at every market and chose to bet on none is behaving
-    exactly as asked, not malfunctioning.
+    Tolerates markdown fences and surrounding prose, despite the prompt saying
+    JSON-only. Not hypothetical: `~google/gemini-pro-latest` did exactly that on
+    its first live run in the previous build.
     """
     text = raw_text.strip()
     if text.startswith("```"):
@@ -371,10 +427,6 @@ def parse_picks(
     try:
         parsed = json.loads(text)
     except ValueError:
-        # Fall back to the first top-level {...} object found anywhere
-        # in the reply, in case it's wrapped in leading/trailing prose
-        # that the code-fence handling above doesn't strip (that only
-        # catches a fence at the very start of the reply).
         start, end = text.find("{"), text.rfind("}")
         if start == -1 or end == -1 or end <= start:
             raise PicksParseError(f"no JSON object found in a {len(raw_text)}-char reply")
@@ -391,111 +443,129 @@ def parse_picks(
     for entry in entries:
         if not isinstance(entry, dict):
             continue
-        player_id = entry.get("player_id")
-        threshold = entry.get("threshold")
-        pick_raw = entry.get("pick")
-        if not isinstance(player_id, int) or player_id not in valid_player_ids:
-            continue
-        if not isinstance(threshold, int) or threshold not in valid_thresholds:
-            continue
-        if not isinstance(pick_raw, str) or pick_raw.strip().lower() not in ("yes", "no"):
+        market_id = entry.get("market_id")
+        if not isinstance(market_id, str) or market_id not in valid_market_ids:
             continue
 
-        confidence = entry.get("confidence")
-        if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
-            confidence = None
-        elif not (0 <= confidence <= 1):
-            confidence = None
+        probability = entry.get("probability")
+        if isinstance(probability, bool) or not isinstance(probability, (int, float)):
+            continue
+        if not (0.0 <= probability <= 1.0):
+            continue
+
+        stake = entry.get("stake_usdc")
+        if isinstance(stake, bool) or not isinstance(stake, (int, float)) or stake <= 0:
+            # A zero or missing stake is a deliberate pass, not a parse failure.
+            continue
+
+        reasoning = entry.get("reasoning")
+        if not isinstance(reasoning, str):
+            reasoning = ""
 
         picks.append(
             AgentPick(
-                player_id=player_id,
-                threshold=threshold,
-                pick=pick_raw.strip().lower() == "yes",
-                confidence=float(confidence) if confidence is not None else None,
+                market_id=market_id,
+                probability=float(probability),
+                stake_usdc=round(float(stake), 2),
+                reasoning=reasoning.strip()[:280],
             )
         )
     return picks
 
 
+def apply_bankroll_cap(picks: list[AgentPick], bankroll_usdc: float) -> list[AgentPick]:
+    """Scale stakes down proportionally if a model overspent its bankroll.
+
+    A model that ignores the limit is not disqualified, it is trimmed -- and the
+    trimming shows up in the numbers. Letting it silently stake more than
+    everyone else would corrupt the only comparison that matters.
+    """
+    total = sum(p.stake_usdc for p in picks)
+    if total <= bankroll_usdc or total == 0:
+        return picks
+    factor = bankroll_usdc / total
+    return [
+        AgentPick(
+            market_id=p.market_id,
+            probability=p.probability,
+            stake_usdc=round(p.stake_usdc * factor, 2),
+            reasoning=p.reasoning,
+        )
+        for p in picks
+    ]
+
+
 @dataclass
 class ModelPicksResult:
     model: AgentModel
-    picks: list[AgentPick]
-    # Set on a failed call or a reply that didn't follow the required
-    # JSON shape at all (see PicksParseError). An empty `picks` list
-    # with `error is None` is a valid, deliberate "no edge anywhere
-    # this gameweek" result, not a failure -- see build_prompt()'s
-    # docstring.
-    error: str | None
+    picks: list[AgentPick] = field(default_factory=list)
+    # Set on a failed call or a reply that didn't follow the required shape. An
+    # empty `picks` list with `error is None` is a deliberate "no view" result.
+    error: str | None = None
+    # The model's actual reply, kept even when parsing failed. The Vara version
+    # stored only the error string, which made a bad reply impossible to
+    # diagnose after the fact.
+    raw_reply: str = ""
+    decided_at: str = ""
 
 
 def generate_picks_for_gameweek(
     gw: int,
+    markets: list[LiveMarket],
     *,
-    # Matches web/src/app/page.tsx's MARKET_PLAYER_COUNT -- models are
-    # asked about exactly the players real users can also see and
-    # stake on, no wider "candidate" pool. Was 20 (40 markets/model at
-    # 2 thresholds each); trimmed after a real run made it obvious 40
-    # picks per model per gameweek was too many to read as a leaderboard,
-    # not just too many to fit the site's own markets grid.
-    n_players: int = 8,
-    thresholds: tuple[int, ...] = (PRIMARY_POINTS_THRESHOLD, SECONDARY_POINTS_THRESHOLD),
+    n_players: int | None = None,
     cache_dir: Path | None = None,
     models: tuple[AgentModel, ...] = AGENT_MODELS,
     session: requests.Session | None = None,
 ) -> list[ModelPicksResult]:
-    """Ask every configured model for its picks on one gameweek's player pool.
+    """Ask every configured model to forecast the given live markets.
 
-    One model failing (bad slug, outage, malformed reply) never blocks
-    the others -- each is caught and recorded individually, so a
-    partial result is still a useful, honest result. A model that
-    replies with valid JSON but an empty (or entirely-filtered) picks
-    list is NOT a failure -- see build_prompt()'s docstring for why
-    "no edge anywhere this gameweek" is now a deliberately valid
-    answer, distinct from PicksParseError's "didn't even follow the
-    required shape."
+    Prices come from the caller, read from Panta, because the models must see
+    the price they would actually trade at. `n_players` widens the FPL context
+    given to the models; it does not add markets, since a market that does not
+    exist cannot be traded.
     """
     kwargs = {"cache_dir": cache_dir} if cache_dir is not None else {}
     bootstrap = cache.load_latest_bootstrap_static(**kwargs)
     fixtures = cache.load_latest_fixtures(**kwargs)
-    players = top_expensive_players(bootstrap, n=n_players)
-    valid_player_ids = {p.id for p in players}
-    valid_thresholds = set(thresholds)
+    players = top_expensive_players(bootstrap, n=n_players or 20)
+    valid_market_ids = {m.market_id for m in markets}
+    price_of = {m.market_id: (m.yes_price, m.no_price) for m in markets}
 
-    prompt = build_prompt(players, bootstrap, fixtures, gw, thresholds=thresholds)
-
-    # Fetched once per gameweek, not once per model or per pick --
-    # every model's bet record this run should price VARA at the same
-    # rate, and CoinGecko's free tier is rate-limited enough that one
-    # call per gameweek is the right cadence anyway. See
-    # oddsmaker.TOTAL_BANKROLL_USD's docstring for why this is what
-    # turns "$10" into an actual VARA amount.
-    vara_usd_price = vara_price.fetch_vara_usd_price(session=session)
+    prompt = build_prompt(markets, players, bootstrap, fixtures, gw)
 
     results: list[ModelPicksResult] = []
     for model in models:
+        decided_at = datetime.now(timezone.utc).isoformat()
         try:
             raw = call_model(model, prompt, session=session)
         except OpenRouterError as exc:
-            results.append(ModelPicksResult(model=model, picks=[], error=str(exc)))
+            results.append(ModelPicksResult(model=model, error=str(exc), decided_at=decided_at))
             continue
+
         try:
-            picks = parse_picks(raw, valid_player_ids=valid_player_ids, valid_thresholds=valid_thresholds)
+            picks = parse_picks(raw, valid_market_ids=valid_market_ids)
         except PicksParseError as exc:
-            results.append(ModelPicksResult(model=model, picks=[], error=str(exc)))
+            results.append(
+                ModelPicksResult(model=model, error=str(exc), raw_reply=raw, decided_at=decided_at)
+            )
             continue
-        # This system's own bet records, not the model's -- see
-        # oddsmaker.bet_records()'s docstring for why the odds come
-        # entirely from player standing (never from what the model
-        # itself claims to believe), and why the stakes across this
-        # one model's whole pick list are sized together (a fixed
-        # gameweek bankroll split by confidence), not independently
-        # per pick. bet_records() already returns [] for an empty
-        # `picks` list, so an intentional "no bets" reply needs no
-        # special-casing here.
-        picks = oddsmaker.with_bet_records(picks, bootstrap, vara_usd_price)
-        results.append(ModelPicksResult(model=model, picks=picks, error=None))
+
+        picks = apply_bankroll_cap(picks, AGENT_BANKROLL_USDC)
+        picks = [
+            AgentPick(
+                market_id=p.market_id,
+                probability=p.probability,
+                stake_usdc=p.stake_usdc,
+                reasoning=p.reasoning,
+                yes_price=price_of.get(p.market_id, (None, None))[0],
+                no_price=price_of.get(p.market_id, (None, None))[1],
+            )
+            for p in picks
+        ]
+        results.append(
+            ModelPicksResult(model=model, picks=picks, raw_reply=raw, decided_at=decided_at)
+        )
     return results
 
 
@@ -505,20 +575,28 @@ def save_picks(gw: int, results: list[ModelPicksResult], *, picks_dir: Path = PI
     payload = {
         "gw": gw,
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "bankroll_usdc": AGENT_BANKROLL_USDC,
         "models": [
             {
                 "slug": r.model.slug,
                 "name": r.model.name,
+                "solana_address": r.model.solana_address,
                 "error": r.error,
+                "decided_at": r.decided_at,
+                "raw_reply": r.raw_reply,
                 "picks": [
                     {
-                        "player_id": p.player_id,
-                        "threshold": p.threshold,
-                        "pick": "yes" if p.pick else "no",
-                        "confidence": p.confidence,
-                        "market_probability": p.market_probability,
-                        "stake_vara": p.stake_vara,
-                        "potential_return_vara": p.potential_return_vara,
+                        "market_id": p.market_id,
+                        "probability": p.probability,
+                        "stake_usdc": p.stake_usdc,
+                        "reasoning": p.reasoning,
+                        # The price at decision time is stored, not looked up
+                        # later: the pool will have moved by the time anyone
+                        # checks, and an unauditable benchmark is not one.
+                        "yes_price_at_decision": p.yes_price,
+                        "no_price_at_decision": p.no_price,
+                        "side": p.side,
+                        "edge": p.edge,
                     }
                     for p in r.picks
                 ],
