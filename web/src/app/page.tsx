@@ -1,5 +1,6 @@
 import { Hero } from "@/components/Hero";
 import { LiveMarkets } from "@/components/panta/LiveMarkets";
+import { Pipeline } from "@/components/panta/Pipeline";
 import { HowItWorks } from "@/components/HowItWorks";
 import { OnboardingGuide } from "@/components/OnboardingGuide";
 import type { HeroPlayer } from "@/components/Hero";
@@ -29,6 +30,7 @@ export default async function Home() {
       <Hero players={players.slice(0, 3)} />
       <OnboardingGuide />
       <LiveMarkets />
+      <Pipeline />
       <HowItWorks />
     </main>
   );

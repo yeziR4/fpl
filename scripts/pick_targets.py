@@ -101,6 +101,12 @@ def main() -> int:
         by_team[f["team_h"]] = (f["team_a"], ts, True)
         by_team[f["team_a"]] = (f["team_h"], ts, False)
 
+    # Optional machine-readable output for the frontend's pipeline view
+    # (web/src/data/pipeline.json). The table below stays the human view.
+    json_arg = next((a for a in sys.argv if a.startswith("--json=")), None)
+    json_path = Path(json_arg.split("=", 1)[1]) if json_arg else None
+    collected: list[dict] = []
+
     for pos_name in wanted:
         line = LINE[pos_name]
         cands = [e for e in boot["elements"] if e["element_type"] == POS[pos_name]]
@@ -153,6 +159,28 @@ def main() -> int:
         # Best tilt first: closeness of the clear rate to 50%.
         rows.sort(key=lambda r: abs(r[3] - 50.0))
         for r in rows:
+            collected.append(
+                {
+                    "player": r[0],
+                    "team": r[1],
+                    "ownershipPercent": round(r[2], 1),
+                    "position": pos_name,
+                    "line": line,
+                    "clearedPercent": round(r[3], 1),
+                    "noTiltPercent": round(r[7], 1),
+                    "royaltyBand": r[8],
+                    "fixture": r[4],
+                    "kickoff": r[5],
+                    "breaksIn": r[6],
+                    "photoUrl": (
+                        "https://resources.premierleague.com/premierleague/photos/players/250x250/p%s.png"
+                        % r[9]
+                        if r[9]
+                        else None
+                    ),
+                }
+            )
+        for r in rows:
             print(
                 "%-14s %-4s %-6.1f %-9s %-22s %-8s %-9s %-7.1f %s"
                 % (r[0], r[1], r[2], "%.0f%%" % r[3], r[4], r[5], r[6], r[7], r[8])
@@ -173,6 +201,28 @@ def main() -> int:
     print()
     print("Prefer players on DIFFERENT fixtures: two players in one match resolve")
     print("together, which correlates the markets and weakens both.")
+
+    if json_path:
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+        json_path.write_text(
+            json.dumps(
+                {
+                    "generatedBy": "scripts/pick_targets.py",
+                    "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
+                    "note": (
+                        "Candidates the generator ranked for the upcoming gameweek. "
+                        "These are NOT live markets -- a live market is one actually "
+                        "created on Panta, and those are read from the API."
+                    ),
+                    "candidates": collected,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        print()
+        print("wrote %d candidates to %s" % (len(collected), json_path))
     return 0
 
 
