@@ -1,0 +1,27 @@
+[
+  {
+    "slug": "~anthropic/claude-opus-latest",
+    "name": "Claude Opus (latest)",
+    "solana_address": "6ZkTKaixdk6Eg9ZVCTYjYkVuAWazntPEKNSCTUmQd27i"
+  },
+  {
+    "slug": "~google/gemini-pro-latest",
+    "name": "Gemini Pro (latest)",
+    "solana_address": "Ec1Pp817eMNpCwrVcfRy8VmrZKqfS4NdUteEAcwGFc92"
+  },
+  {
+    "slug": "~openai/gpt-latest",
+    "name": "GPT (latest)",
+    "solana_address": "FTtwXec2PAYpKmQd9vrKunCm8xerzwKquTwwZEAh6Qj3"
+  },
+  {
+    "slug": "deepseek/deepseek-v4-pro",
+    "name": "DeepSeek V4 Pro",
+    "solana_address": "6m5o7BZgeR3LmymeU55RA4ixkSxCitBu8QKwtUaNPznT"
+  },
+  {
+    "slug": "x-ai/grok-4.20",
+    "name": "Grok 4.20",
+    "solana_address": "ERccMpEhvntFm9kZ6hmbf7UyX7pkhNf9fnU8YbzuWrrx"
+  }
+]
