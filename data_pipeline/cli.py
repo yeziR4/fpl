@@ -71,6 +71,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -212,7 +213,9 @@ def cmd_generate_picks(args: argparse.Namespace) -> None:
     from .agents import generate_picks_for_gameweek, save_picks
 
     results = generate_picks_for_gameweek(
-        args.gw, markets=_load_live_markets(args.markets), n_players=args.n
+        args.gw,
+        markets=_load_live_markets(args.markets, api_base=getattr(args, "api_base", None)),
+        n_players=args.n,
     )
     path = save_picks(args.gw, results)
     for r in results:
@@ -263,43 +266,98 @@ def _has_any_real_picks(saved: dict) -> bool:
 MARKETS_PATH = Path("data/markets.json")
 
 
-def _load_live_markets(path: Path) -> list:
-    """The live Panta markets the models will be asked about.
+def _fetch_market_prices(market_id: str, api_base: str) -> tuple[float, float]:
+    """The pool's current YES/NO price for one market.
 
-    Read from a file rather than discovered here, deliberately. A forecast is
-    only meaningful against the price it would actually trade at, and the only
-    place that knows which player and points line each Panta market settles
-    against is the step that created it. An empty or missing file therefore
-    stops the run instead of quietly asking five models about nothing -- which
-    is the failure that would look like a working pipeline producing no picks.
+    Asked of our own signer service rather than Panta directly: every Panta read
+    needs an API key, and the service is what holds it. See panta-signer's
+    api/positions.ts.
+    """
+    import requests
+
+    response = requests.get(
+        f"{api_base.rstrip('/')}/positions", params={"marketId": market_id}, timeout=30
+    )
+    response.raise_for_status()
+    market = (response.json() or {}).get("market") or {}
+    yes = market.get("primaryYesPrice") or market.get("yesPrice")
+    no = market.get("primaryNoPrice") or market.get("noPrice")
+    if yes is None or no is None:
+        raise ValueError("no quoted price")
+    return float(yes), float(no)
+
+
+def _load_live_markets(path: Path, *, api_base: str | None = None) -> list:
+    """Live Panta markets with their settlement mapping AND their prices.
+
+    The registry at `path` is written by the market-creation step, because that
+    is the only thing that knows which player and points line each Panta market
+    settles against -- Panta has no field for it, and without it a saved
+    forecast cannot be scored at all.
+
+    Prices are deliberately NOT in the registry. They come from the pool and
+    they move, so they are fetched here at the moment a forecast is made: a
+    forecast is only meaningful against the price it would actually trade at.
+    An entry carrying its own prices is accepted, which is what lets a test or a
+    replay run without a live service.
+
+    A market with no price yet is skipped rather than guessed at. A registry
+    that is missing, empty, or entirely unpriced stops the run -- asking five
+    models about nothing is the failure that would look like a working pipeline
+    quietly producing no picks.
     """
     from .agents import LiveMarket
 
     if not path.exists():
         raise SystemExit(
-            f"No live markets at {path}.\n"
-            "Agent forecasts are about real markets, so this run needs their prices.\n"
-            "Create the markets first, write them to that path, then re-run."
+            f"No market registry at {path}.\n"
+            "It is written automatically by the market-creation step (panta-signer's\n"
+            "create-market.js writes data/markets.json when a market registers).\n"
+            "Create a market first, then re-run."
         )
 
     raw = json.loads(path.read_text())
-    markets = [
-        LiveMarket(
-            market_id=entry["market_id"],
-            question=entry["question"],
-            yes_price=float(entry["yes_price"]),
-            no_price=float(entry["no_price"]),
-            player_id=entry.get("player_id"),
-            player_name=entry.get("player_name", ""),
-            position=entry.get("position", ""),
-            threshold=int(entry.get("threshold") or 0),
-            end_time=entry.get("end_time"),
+    if not isinstance(raw, list) or not raw:
+        raise SystemExit(f"{path} exists but contains no markets.")
+
+    base = api_base or os.environ.get("PANTA_API_BASE", "http://localhost:8791")
+    markets = []
+    for entry in raw:
+        if not isinstance(entry, dict) or not entry.get("market_id"):
+            continue
+        player_id = entry.get("player_id")
+        if player_id is None:
+            print(f"  skip {entry['market_id']}: registry has no player_id, so it cannot be scored")
+            continue
+
+        if entry.get("yes_price") is not None and entry.get("no_price") is not None:
+            yes_price, no_price = float(entry["yes_price"]), float(entry["no_price"])
+        else:
+            try:
+                yes_price, no_price = _fetch_market_prices(entry["market_id"], base)
+            except Exception as exc:  # noqa: BLE001 -- one unpriceable market must not stop the run
+                print(f"  skip {entry['market_id']}: no price ({exc})")
+                continue
+
+        markets.append(
+            LiveMarket(
+                market_id=entry["market_id"],
+                question=entry.get("question") or entry.get("title") or "",
+                yes_price=yes_price,
+                no_price=no_price,
+                player_id=int(player_id),
+                player_name=entry.get("player_name", ""),
+                position=entry.get("position", ""),
+                threshold=int(entry.get("threshold") or 0),
+                end_time=entry.get("end_time"),
+            )
         )
-        for entry in raw
-        if isinstance(entry, dict) and entry.get("market_id") and entry.get("question")
-    ]
+
     if not markets:
-        raise SystemExit(f"{path} exists but contains no usable markets.")
+        raise SystemExit(
+            f"{path} lists {len(raw)} market(s) but none are tradeable and scoreable.\n"
+            "A forecast needs both a price and a settlement mapping to mean anything."
+        )
     return markets
 
 
@@ -321,7 +379,9 @@ def cmd_auto_generate_picks(args: argparse.Namespace) -> None:
 
     print(f"Generating agent picks for GW{gw}...")
     results = generate_picks_for_gameweek(
-        gw, markets=_load_live_markets(args.markets), n_players=args.n
+        gw,
+        markets=_load_live_markets(args.markets, api_base=getattr(args, "api_base", None)),
+        n_players=args.n,
     )
     path = save_picks(gw, results)
     for r in results:
@@ -569,7 +629,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--markets",
         type=Path,
         default=MARKETS_PATH,
-        help="JSON list of live Panta markets to forecast (market_id, question, yes_price, no_price, player_id, threshold)",
+        help="Market registry written by the creation step (market_id, player_id, threshold)",
+    )
+    generate_picks.add_argument(
+        "--api-base",
+        default=None,
+        help="Base URL of the signer service holding the Panta key (default: $PANTA_API_BASE or http://localhost:8791)",
     )
     generate_picks.set_defaults(func=cmd_generate_picks)
 
@@ -588,7 +653,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--markets",
         type=Path,
         default=MARKETS_PATH,
-        help="JSON list of live Panta markets to forecast",
+        help="Market registry written by the creation step",
+    )
+    auto_generate_picks.add_argument(
+        "--api-base",
+        default=None,
+        help="Base URL of the signer service holding the Panta key",
     )
     auto_generate_picks.add_argument(
         "--force", action="store_true", help="Regenerate even if picks already exist for that gameweek"

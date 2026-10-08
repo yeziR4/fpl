@@ -89,12 +89,37 @@ for slug, display, match, line, pos, kickoff, fixture in TARGETS:
         ],
         "category": "sports",
         "region": "Global",
-        "startTime": kickoff,
+        # Panta enforces startTime < endTime <= resolutionTime. Setting them
+        # equal is rejected outright -- "require startTime < endTime <=
+        # resolutionTime" -- which is how we found this, after shipping a set
+        # that did exactly that.
+        #
+        # We want trading to STOP at kickoff: the site says of endTime that all
+        # trading stops there, so a later value lets a trader watch the player
+        # score and then buy. So the window opens an hour before kickoff and
+        # closes at it. The 72h breaking window is measured on startTime, so
+        # this keeps these comfortably inside it too.
+        "startTime": (
+            dt.datetime.fromisoformat(kickoff.replace("Z", "+00:00")) - dt.timedelta(hours=1)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "endTime": kickoff,
         "resolutionTime": RESOLUTION_TIME,
         "marketType": "breaking",
         "imageUrl": PHOTO % code,
-        "_position": pos,
+        # The settlement mapping. Panta has no field for "this market is about
+        # FPL element <id> clearing <n> points", so it lives here and
+        # create-market.ts copies it into data/markets.json on a successful
+        # create. That registry is what lets a saved forecast be scored later:
+        # resolution.py settles on (player, threshold), and a market id alone
+        # cannot be resolved back to either.
+        "_settlement": {
+            # FPL element id -- what resolution.py looks players up by. NOT the
+            # photo `code` above, which is a different number.
+            "playerId": p["id"],
+            "threshold": line,
+            "playerName": real_name,
+            "position": pos,
+        },
         "_note_duplicate": "Panta keys an active create session on wallet + question. Dry-run with a THROWAWAY keypair so the operator wallet keeps no session open.",
     }
     path = OUT / ("market-spec.%s.json" % slug)
@@ -103,4 +128,4 @@ for slug, display, match, line, pos, kickoff, fixture in TARGETS:
     print("wrote %-34s %-16s %s %d+  %s  (owned %.1f%%)" % (path.name, real_name, pos, line, kickoff, ownership))
 
 print()
-print("startTime == endTime for every market: trading stops at kickoff.")
+print("startTime is one hour before endTime; endTime is kickoff, so trading stops there.")

@@ -25,6 +25,7 @@
  */
 
 import fs from "node:fs";
+import path from "node:path";
 import {
   PantaError,
   buildMarket,
@@ -54,6 +55,9 @@ Create one Panta market.
                  Run this first; it validates the request shape for free.
     --live       sign, broadcast via Solami, and register. Spends USDC.
 
+    --registry=<path>   where the settlement mapping is recorded on success.
+                        Default: ../data/markets.json, beside this repo.
+
 Environment:
     PANTA_API_KEY        pk_live_ key with canCreateMarkets
     SOLAMI_RPC_URL       defaults to https://rpc.solami.dev
@@ -63,6 +67,12 @@ Environment:
                          public key is the creator wallet Panta quotes against.
 
 Spec file: see examples/market-spec.example.json
+
+The spec's "_settlement" block ({playerId, threshold, playerName, position}) is
+METADATA and is never sent to Panta -- marketSpec below is built field by field.
+It is what gets written to the registry, and without it a market can be created
+but never scored: resolution settles on (player, threshold) and Panta has no
+field for either.
 `);
   process.exit(2);
 }
@@ -113,6 +123,69 @@ function baseUnitsToUsdc(base?: string): string {
   if (!base) return "?";
   const value = Number(base) / 1_000_000;
   return Number.isFinite(value) ? `${value.toFixed(2)} USDC` : `${base} base units`;
+}
+
+// ------------------------------------------------------- the market registry
+
+/**
+ * Which player and points line each Panta market settles against.
+ *
+ * Panta knows the question and the market id. It does not know that this market
+ * is about FPL element 223340 clearing 7 points, and it has no field for it.
+ * That mapping is ours, and without it a saved forecast cannot be scored at
+ * all: resolution.py settles on (playerId, threshold).
+ *
+ * So the step that creates a market is the step that records it. Writing the
+ * mapping anywhere else lets the two drift, and a drifted mapping fails
+ * SILENTLY -- the board would score forecasts against the wrong player and
+ * still look like it was working.
+ *
+ * The spec carries the mapping under `_settlement`. Like the other
+ * underscore-prefixed fields it is metadata and is deliberately never sent to
+ * Panta: marketSpec below is built field by field.
+ */
+const REGISTRY_DEFAULT = path.join("..", "data", "markets.json");
+
+interface RegistryEntry {
+  market_id: string;
+  question: string;
+  /** FPL element id, not the photo `code` -- what resolution.py looks players up by. */
+  player_id: number | null;
+  threshold: number | null;
+  player_name: string;
+  position: string;
+  market_type: string;
+  title: string;
+  created_at: string;
+  signature: string;
+}
+
+function recordMarket(registryPath: string, entry: RegistryEntry): void {
+  let entries: RegistryEntry[] = [];
+  if (fs.existsSync(registryPath)) {
+    const raw = fs.readFileSync(registryPath, "utf8").replace(/^\uFEFF/, "");
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      throw new Error(`${registryPath} exists but is not a JSON array`);
+    }
+    entries = parsed as RegistryEntry[];
+  }
+
+  // Idempotent by market_id: re-running a create that already registered
+  // replaces its row rather than duplicating it, which is what makes this safe
+  // to call after a retry.
+  const kept = entries.filter((e) => e?.market_id !== entry.market_id);
+  kept.push(entry);
+  kept.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+
+  fs.mkdirSync(path.dirname(registryPath), { recursive: true });
+  fs.writeFileSync(registryPath, `${JSON.stringify(kept, null, 2)}\n`);
+}
+
+/** The registry path, from --registry=<path> or the default beside the repo. */
+function registryPathFrom(argv: string[]): string {
+  const flag = argv.find((a) => a.startsWith("--registry="));
+  return flag ? flag.slice("--registry=".length) : REGISTRY_DEFAULT;
 }
 
 async function main(): Promise<number> {
@@ -249,12 +322,44 @@ async function main(): Promise<number> {
   }
 
   console.log("\n=== MARKET CREATED ===");
+  const marketId = String(registered.marketId ?? quote.expectedEventPda ?? "");
   console.log(`  title     : ${marketSpec.title}`);
-  console.log(`  marketId  : ${registered.marketId ?? quote.expectedEventPda ?? "?"}`);
+  console.log(`  marketId  : ${marketId || "?"}`);
   console.log(`  createId  : ${quote.createId}`);
   console.log(`  signature : ${signature}`);
   console.log(`  fee       : ${baseUnitsToUsdc(quote.paymentUsdc)} (${marketType})`);
   console.log(`  wallet    : ${wallet}`);
+
+  // Record the settlement mapping. A market that exists but isn't in the
+  // registry cannot be scored, so this failing is loud rather than silent --
+  // but it is not fatal, because the market is already on chain and paid for.
+  const settlement = (spec._settlement ?? {}) as Record<string, unknown>;
+  const registryPath = registryPathFrom(argv);
+  try {
+    recordMarket(registryPath, {
+      market_id: marketId,
+      question: marketSpec.question,
+      player_id: typeof settlement.playerId === "number" ? settlement.playerId : null,
+      threshold: typeof settlement.threshold === "number" ? settlement.threshold : null,
+      player_name: typeof settlement.playerName === "string" ? settlement.playerName : "",
+      position: typeof settlement.position === "string" ? settlement.position : "",
+      market_type: marketType,
+      title: marketSpec.title,
+      created_at: new Date().toISOString(),
+      signature,
+    });
+    console.log(`  registry  : ${registryPath}`);
+    if (typeof settlement.playerId !== "number" || typeof settlement.threshold !== "number") {
+      console.log("  WARN      : spec._settlement carried no playerId/threshold, so this");
+      console.log("              market is recorded but cannot be scored. Add them and re-run");
+      console.log("              the register step, or fix the registry by hand.");
+    }
+  } catch (error) {
+    console.error(`  WARN could not write ${registryPath}: ${String(error)}`);
+    console.error("       The market is on chain either way. Record the mapping by hand, or");
+    console.error("       forecasts on it cannot be scored against a resolution.");
+  }
+
   console.log("\nRecord this in the spend log -- it is the expense evidence AND the");
   console.log("prior-work disclosure for the submission.");
   return 0;

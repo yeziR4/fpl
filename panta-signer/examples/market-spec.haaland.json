@@ -13,11 +13,16 @@
   ],
   "category": "sports",
   "region": "Global",
-  "startTime": "2026-10-11T15:30:00Z",
+  "startTime": "2026-10-11T14:30:00Z",
   "endTime": "2026-10-11T15:30:00Z",
   "resolutionTime": "2026-10-12T12:00:00Z",
   "marketType": "breaking",
   "imageUrl": "https://resources.premierleague.com/premierleague/photos/players/250x250/p223094.png",
-  "_position": "FWD",
+  "_settlement": {
+    "playerId": 411,
+    "threshold": 8,
+    "playerName": "Haaland",
+    "position": "FWD"
+  },
   "_note_duplicate": "Panta keys an active create session on wallet + question. Dry-run with a THROWAWAY keypair so the operator wallet keeps no session open."
 }
