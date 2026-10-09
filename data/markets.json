@@ -11,5 +11,29 @@
     "created_at": "2026-10-07T11:55:00+00:00",
     "signature": "B3KXk2DC5PW9nbyNCP5y4fmutD6uPMD5Z3rfxZV86xgZCTT2PpSr4d3cRQcVms7SZ6ARNxRW83qUKUCbxunZPuT",
     "_note": "Seeded by hand: this market was created before create-market.js wrote the registry. Every market after it is recorded automatically."
+  },
+  {
+    "market_id": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+    "question": "Will João Pedro score 8 or more Fantasy Premier League points in Gameweek 6 (Chelsea v Bournemouth)?",
+    "player_id": 165,
+    "threshold": 8,
+    "player_name": "João Pedro",
+    "position": "FWD",
+    "market_type": "breaking",
+    "title": "João Pedro 8+ points, GW6",
+    "created_at": "2026-10-09T13:58:03.068Z",
+    "signature": "5ej5GyLihbtXG5o2PuQHZue1QG6WXmbqm9sFjza9HoU5KMPYhbUH277wNDvzfTXsw4bp9ndggkYAc6xjJeW4Q3K3"
+  },
+  {
+    "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+    "question": "Will Erling Haaland score 8 or more Fantasy Premier League points in Gameweek 6 (Liverpool v Manchester City)?",
+    "player_id": 411,
+    "threshold": 8,
+    "player_name": "Haaland",
+    "position": "FWD",
+    "market_type": "breaking",
+    "title": "Haaland 8+ points, GW6",
+    "created_at": "2026-10-09T13:58:13.713Z",
+    "signature": "3UoBD1jB3XYHdUjbxSGitAGKx35wM8LmPk6M46H7dkchRwPkoQDjGKXCPcSfkFJSi1QzNLBG3P9RkqdT7XM57Tvk"
   }
 ]
