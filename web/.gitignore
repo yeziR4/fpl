@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Study data, copied in from ../data by scripts/sync-data.mjs on every build.
+# Never commit these: they change on every trade, so a checked-in copy is a copy
+# that will eventually disagree with the original.
+src/data/study/

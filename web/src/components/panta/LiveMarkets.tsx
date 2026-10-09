@@ -127,7 +127,7 @@ function MarketCard({ market }: { market: PantaMarket }) {
   return (
     <a
       href={`/market?id=${encodeURIComponent(market.marketId)}`}
-      className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-white/[0.02] transition-colors hover:border-accent/50"
+      className="flex flex-col overflow-hidden rounded-lg border border-foreground/12 bg-surface transition-colors hover:border-accent/50"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-accent-dim">
         {photo ? (
@@ -182,7 +182,7 @@ function MarketCard({ market }: { market: PantaMarket }) {
 
 function Side({ label, price, tone }: { label: string; price: number | null; tone: "accent" | "muted" }) {
   return (
-    <div className="flex flex-col rounded-md border border-foreground/10 bg-white/[0.03] px-2.5 py-2">
+    <div className="flex flex-col rounded-md border border-foreground/10 bg-surface-strong px-2.5 py-2">
       <span
         className={`text-[10px] font-bold uppercase tracking-[0.09em] ${
           tone === "accent" ? "text-accent" : "text-foreground/45"

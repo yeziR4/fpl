@@ -154,7 +154,7 @@ export function MarketDetail() {
                 {mine.map((p) => (
                   <div
                     key={`${p.marketId}-${p.side}`}
-                    className="flex flex-col rounded-md border border-foreground/10 bg-white/[0.03] px-3 py-2"
+                    className="flex flex-col rounded-md border border-foreground/10 bg-surface-strong px-3 py-2"
                   >
                     <span
                       className={`text-[10px] font-bold uppercase tracking-[0.09em] ${
@@ -262,7 +262,7 @@ function Frame({ children }: { children: React.ReactNode }) {
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-foreground/12 bg-white/[0.02] p-5">
+    <section className="rounded-lg border border-foreground/12 bg-surface p-5">
       <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-foreground/40">
         {title}
       </h2>
@@ -273,7 +273,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: "accent" }) {
   return (
-    <div className="flex flex-col rounded-md border border-foreground/10 bg-white/[0.03] px-3 py-2">
+    <div className="flex flex-col rounded-md border border-foreground/10 bg-surface-strong px-3 py-2">
       <span
         className={`text-[10px] font-bold uppercase tracking-[0.09em] ${
           tone === "accent" ? "text-accent" : "text-foreground/45"

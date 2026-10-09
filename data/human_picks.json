@@ -1,0 +1,46 @@
+{
+  "_readme": [
+    "Human participants in the study, transcribed from public posts.",
+    "",
+    "This is a RESEARCH record, not a betting ledger. Everything here was said in",
+    "public, by someone who chose to say it, and is reproduced as they wrote it.",
+    "",
+    "Two states a participant can be in, and the page must never blur them:",
+    "  - 'stated': they gave a prediction and a reason publicly. Nothing on chain.",
+    "  - 'onchain': we helped them place it, and 'wallet' + 'fill' are filled in.",
+    "",
+    "Only mark someone 'onchain' with their agreement and their own wallet. The",
+    "handle is theirs; the money must be too.",
+    "",
+    "prediction.side is what they said, not what we think they meant. If someone",
+    "wrote 'no way Haaland gets 8' that is side 'no' with their words as the reason.",
+    "Where a prediction is ambiguous, leave it 'unclear' rather than resolving it",
+    "for them -- an inferred opinion is not evidence about their judgement."
+  ],
+  "_fields": {
+    "handle": "X handle including the @, exactly as posted",
+    "displayName": "as shown on X; may be empty",
+    "avatarUrl": "their X profile picture URL; may be empty, page falls back to initials",
+    "url": "link to the post or comment, so a reader can check it",
+    "status": "stated | onchain",
+    "wallet": "only when status is onchain and it is their own wallet",
+    "predictions": [
+      {
+        "market_id": "must match a market in data/markets.json",
+        "side": "yes | no | unclear",
+        "reasoning": "their words. Lightly trimmed for length, never rewritten",
+        "probability": "0-1, ONLY if they actually gave a number. Else null",
+        "confidence": "high | medium | low | null -- their own framing, not ours",
+        "statedAt": "ISO 8601, when they said it"
+      }
+    ],
+    "fill": {
+      "signature": "the on-chain transaction, once it exists",
+      "shares": "",
+      "avgPrice": "",
+      "placedAt": "ISO 8601",
+      "helpedBy": "who onboarded them, so the assistance is on the record"
+    }
+  },
+  "participants": []
+}

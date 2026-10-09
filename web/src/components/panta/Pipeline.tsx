@@ -93,7 +93,7 @@ export function Pipeline() {
         </div>
 
         <div className="overflow-hidden rounded-lg border border-foreground/12">
-          <div className="hidden grid-cols-[2.4fr_0.7fr_0.9fr_0.8fr_0.9fr_0.9fr_1.1fr] gap-2 border-b border-foreground/10 bg-white/[0.03] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.09em] text-foreground/40 sm:grid">
+          <div className="hidden grid-cols-[2.4fr_0.7fr_0.9fr_0.8fr_0.9fr_0.9fr_1.1fr] gap-2 border-b border-foreground/10 bg-surface-strong px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.09em] text-foreground/40 sm:grid">
             <span>Player</span>
             <span>Line</span>
             <span className="text-right">Owned</span>
@@ -197,7 +197,7 @@ function Cell({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col rounded-lg border border-foreground/12 bg-white/[0.02] px-4 py-3">
+    <div className="flex flex-col rounded-lg border border-foreground/12 bg-surface px-4 py-3">
       <span className="font-display text-2xl font-black leading-none text-accent tabular-nums">
         {value}
       </span>
@@ -210,7 +210,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function Note({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-foreground/12 bg-white/[0.02] p-4">
+    <div className="rounded-lg border border-foreground/12 bg-surface p-4">
       <h3 className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-foreground/50">
         {title}
       </h3>

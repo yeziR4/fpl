@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
+import { ThemeToggle } from "@/components/research/ThemeToggle";
 
 export function Header() {
   return (
@@ -13,22 +14,26 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
-          {/* Root-relative hashes via next/link, not a bare "#markets" --
-              now that /leaderboard exists, a same-page anchor would silently
-              do nothing from there. next/link also applies basePath, which a
-              plain <a href="/#markets"> wouldn't on the GitHub Pages build
-              (see next.config.ts). */}
+          {/* Root-relative hashes via next/link, not a bare "#method" -- next/link
+              applies basePath, which a plain <a href="/#method"> would not on the
+              GitHub Pages build (see next.config.ts). */}
           <Link
-            href="/#markets"
+            href="/#method"
             className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
           >
-            Markets
+            Method
           </Link>
           <Link
-            href="/#how-it-works"
+            href="/#data"
             className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
           >
-            How it works
+            The data
+          </Link>
+          <Link
+            href="/#take-part"
+            className="text-[14px] font-medium text-foreground/75 hover:text-foreground"
+          >
+            Take part
           </Link>
           <Link
             href="/#pipeline"
@@ -45,6 +50,7 @@ export function Header() {
               Mainnet
             </span>
           </div>
+          <ThemeToggle />
         </div>
       </div>
     </header>

@@ -1,12 +1,71 @@
 @import "tailwindcss";
 
+/*
+ * Two themes, driven entirely by CSS variables so a component never needs to
+ * know which one is live.
+ *
+ * The catch this fixes: components were using `bg-white/[0.02]` for card
+ * surfaces, which is invisible in light mode -- white at 2% over a near-white
+ * background is nothing. Surfaces are now a `--surface` token that is white-at-2%
+ * on dark and black-at-3% on light, so the same markup reads correctly in both.
+ *
+ * Resolution order:
+ *   1. an explicit `.dark` or `.light` class on <html> (the toggle writes this)
+ *   2. the OS preference
+ *   3. dark, which is the original identity
+ */
 :root {
-  /* Vara-brand palette (see the "Overline" hero design direction) --
-     near-black background, mint-teal accent, no purple. */
+  color-scheme: light;
+
+  --background: #f6f8f7;
+  --foreground: #08110f;
+  --accent: #067a5c;
+  --accent-dim: #d3f2e7;
+  /* Card and row surfaces. */
+  --surface: rgba(0, 0, 0, 0.03);
+  --surface-strong: rgba(0, 0, 0, 0.055);
+  /* Table rules and hairlines. */
+  --hairline: rgba(0, 0, 0, 0.11);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --background: #05080a;
+    --foreground: #f4f7f6;
+    --accent: #2bffc0;
+    --accent-dim: #123b34;
+    --surface: rgba(255, 255, 255, 0.02);
+    --surface-strong: rgba(255, 255, 255, 0.045);
+    --hairline: rgba(255, 255, 255, 0.12);
+  }
+}
+
+/*
+ * Explicit overrides, and they come AFTER the media query on purpose so a
+ * deliberate choice always beats the OS. `html.light` has to win over
+ * `prefers-color-scheme: dark`, which it now does by source order.
+ */
+html.light {
+  color-scheme: light;
+  --background: #f6f8f7;
+  --foreground: #08110f;
+  --accent: #067a5c;
+  --accent-dim: #d3f2e7;
+  --surface: rgba(0, 0, 0, 0.03);
+  --surface-strong: rgba(0, 0, 0, 0.055);
+  --hairline: rgba(0, 0, 0, 0.11);
+}
+
+html.dark {
+  color-scheme: dark;
   --background: #05080a;
   --foreground: #f4f7f6;
   --accent: #2bffc0;
   --accent-dim: #123b34;
+  --surface: rgba(255, 255, 255, 0.02);
+  --surface-strong: rgba(255, 255, 255, 0.045);
+  --hairline: rgba(255, 255, 255, 0.12);
 }
 
 @theme inline {
@@ -14,6 +73,9 @@
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-accent-dim: var(--accent-dim);
+  --color-surface: var(--surface);
+  --color-surface-strong: var(--surface-strong);
+  --color-hairline: var(--hairline);
   --font-sans: var(--font-space-grotesk);
   --font-display: var(--font-big-shoulders);
 }
@@ -22,4 +84,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* A comparison table is read by column, so every number gets tabular figures.
+   Proportional digits make a dense table genuinely harder to scan. */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }
