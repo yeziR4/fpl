@@ -138,9 +138,49 @@ async function main(): Promise<number> {
   }
 
   const mode = check ? "CHECK" : dryRun ? "DRY RUN" : "LIVE";
+
+  // Idempotency, and it matters more than it looks.
+  //
+  // A live run can partially fail: during a dry run one order exhausted all six
+  // retries against Panta's transient failure while the other nine went through,
+  // and the natural response to that is to run the trader again. Without this,
+  // running it again would place every ALREADY-SUCCESSFUL order a second time,
+  // which is real money and a corrupted benchmark.
+  //
+  // So anything with a real signature from a previous LIVE run is skipped. Dry
+  // runs and checks are ignored on purpose -- they filled nothing, and their
+  // "(dry run)" signature is not a fill.
+  const fillsFile = path.join(FILLS_PATH, `gw${gw}.json`);
+  const alreadyFilled = new Set<string>();
+  if (fs.existsSync(fillsFile)) {
+    try {
+      const prior = JSON.parse(fs.readFileSync(fillsFile, "utf8")) as {
+        mode?: string;
+        models?: { slug: string; fills?: OrderFill[] }[];
+      };
+      if (prior.mode === "live") {
+        for (const m of prior.models ?? []) {
+          for (const f of m.fills ?? []) {
+            if (f.signature && f.signature !== "(dry run)") {
+              alreadyFilled.add(`${m.slug}|${f.marketId}|${f.side}`);
+            }
+          }
+        }
+      }
+    } catch {
+      // An unreadable fills file must not block trading; it just means we cannot
+      // promise idempotency, which the summary below says out loud.
+      console.warn(`  WARN could not read ${fillsFile}; cannot skip already-placed orders.`);
+    }
+  }
+
   console.log(`\nGameweek : ${gw}`);
   console.log(`Picks    : ${picksFile}`);
-  console.log(`Mode     : ${mode}${live ? " -- this spends real USDC from five wallets" : ""}\n`);
+  console.log(`Mode     : ${mode}${live ? " -- this spends real USDC from five wallets" : ""}`);
+  if (alreadyFilled.size > 0) {
+    console.log(`Already  : ${alreadyFilled.size} order(s) already placed this gameweek -- those are skipped`);
+  }
+  console.log("");
 
   const fills: { gw: number; executed_at: string; mode: string; models: unknown[] } = {
     gw,
@@ -222,6 +262,15 @@ async function main(): Promise<number> {
 
     for (const pick of tradeable) {
       const side = pick.side as "yes" | "no";
+
+      // Skip anything a previous LIVE run already placed. See the note where
+      // alreadyFilled is built: re-running after a partial failure must retry
+      // only what failed.
+      if (alreadyFilled.has(`${model.slug}|${pick.market_id}|${side}`)) {
+        console.log(`      ${side.toUpperCase().padEnd(4)} ${pick.stake_usdc.toFixed(2)} USDC  already placed -- skipped`);
+        continue;
+      }
+
       try {
         const fill = await placePrimaryOrder({
           marketId: pick.market_id,
@@ -256,9 +305,9 @@ async function main(): Promise<number> {
   }
 
   // Written even for --check and --dry-run, so a dry run leaves evidence of
-  // what it would have done rather than vanishing.
+  // what it would have done rather than vanishing. `fillsFile` was resolved
+  // earlier, when the prior-live-fills check read it.
   fs.mkdirSync(FILLS_PATH, { recursive: true });
-  const fillsFile = path.join(FILLS_PATH, `gw${gw}.json`);
   fs.writeFileSync(fillsFile, `${JSON.stringify(fills, null, 2)}\n`);
 
   console.log(`\n${totalOrders} order(s) ${live ? "placed" : "previewed"}, ${totalFailures} failure(s).`);

@@ -20,8 +20,24 @@
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { PantaError, getMarket, listAllMarkets, metrics, positions } from "../lib/panta.js";
+import {
+  PantaError,
+  getMarket,
+  listAllMarkets,
+  metrics,
+  positions,
+  quoteOrder,
+} from "../lib/panta.js";
 import { handlePreflight, isAllowedOrigin } from "../lib/origin.js";
+
+/**
+ * Whose wallet the price probes quote against. Any valid address works -- a
+ * quote reserves nothing and cannot move funds -- so this is the creator's,
+ * which at least makes the probes attributable in Panta's own logs.
+ */
+const QUOTE_WALLET = "65YstDRZo7KXqtwFifypnFNiSKh2VGGh8bXNCSqNcyyM";
+/** Panta's own minimum order size. Enough to read the price, small enough not to move it. */
+const PROBE_USDC = "0.10";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handlePreflight(req, res)) return;
@@ -46,6 +62,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const result: Record<string, unknown> = {};
+
+    if (want === "prices") {
+      // Panta publishes NO price on the market object. Verified by dumping every
+      // field on our own live market: yesPrice, noPrice, primaryYesPrice,
+      // primaryNoPrice, secondaryYesPrice, secondaryNoPrice and volumeUsdc are
+      // all null even though the market has liquidity and an order quote prices
+      // it at 0.50.
+      //
+      // So the only way to learn the current price is to ask for one. Quoting is
+      // free, reserves nothing, and the quote lives about 90 seconds.
+      //
+      // Both sides are probed separately rather than assuming the pair sums to
+      // 1. With a real spread it does not, and telling the models otherwise
+      // would hand every one of them a phantom edge.
+      const ids = marketId
+        ? [marketId]
+        : (await listAllMarkets("primary")).map((m) => String(m.marketId)).filter(Boolean);
+
+      const prices: Record<string, unknown> = {};
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const [yes, no] = await Promise.all([
+              quoteOrder({ marketId: id, side: "yes", amountUsdc: PROBE_USDC, wallet: QUOTE_WALLET }),
+              quoteOrder({ marketId: id, side: "no", amountUsdc: PROBE_USDC, wallet: QUOTE_WALLET }),
+            ]);
+            const y = Number(yes.avgPrice);
+            const n = Number(no.avgPrice);
+            prices[id] =
+              Number.isFinite(y) && Number.isFinite(n)
+                ? { yesPrice: y, noPrice: n, source: "quote" }
+                : { error: "quote returned no usable avgPrice" };
+          } catch (error) {
+            // One unpriceable market must not sink the others.
+            prices[id] = { error: error instanceof PantaError ? error.code : String(error) };
+          }
+        }),
+      );
+      result.prices = prices;
+      res.status(200).json(result);
+      return;
+    }
 
     if (want === "all" || want === "markets") {
       // The catalog returns { items, nextCursor }, and today every live market

@@ -272,16 +272,31 @@ def _fetch_market_prices(market_id: str, api_base: str) -> tuple[float, float]:
     Asked of our own signer service rather than Panta directly: every Panta read
     needs an API key, and the service is what holds it. See panta-signer's
     api/positions.ts.
+
+    The `what=prices` mode exists because Panta does not publish a price on the
+    market object at all. Dumping every field on our own live market showed
+    yesPrice, noPrice, primaryYesPrice, primaryNoPrice and both secondary
+    equivalents are null even though the market has liquidity and quotes at
+    0.50. The only way to learn the price is to ask for one, so the service
+    probes each side with a 0.10 quote -- free, and it reserves nothing.
+
+    This is also why the registry and the prices are kept separate. The registry
+    holds the settlement mapping, which does not change. The price is discovered
+    at the moment a forecast is made, because a forecast is only meaningful
+    against the price it would actually trade at.
     """
     import requests
 
     response = requests.get(
-        f"{api_base.rstrip('/')}/positions", params={"marketId": market_id}, timeout=30
+        f"{api_base.rstrip('/')}/positions",
+        params={"what": "prices", "marketId": market_id},
+        timeout=60,
     )
     response.raise_for_status()
-    market = (response.json() or {}).get("market") or {}
-    yes = market.get("primaryYesPrice") or market.get("yesPrice")
-    no = market.get("primaryNoPrice") or market.get("noPrice")
+    entry = ((response.json() or {}).get("prices") or {}).get(market_id) or {}
+    if entry.get("error"):
+        raise ValueError(str(entry["error"]))
+    yes, no = entry.get("yesPrice"), entry.get("noPrice")
     if yes is None or no is None:
         raise ValueError("no quoted price")
     return float(yes), float(no)

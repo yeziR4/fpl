@@ -1,0 +1,176 @@
+{
+  "bankroll_usdc": 5.0,
+  "generated_at": "2026-10-09T15:05:26.568136+00:00",
+  "gw": 6,
+  "models": [
+    {
+      "decided_at": "2026-10-09T15:03:34.141085+00:00",
+      "error": null,
+      "name": "Claude Opus (latest)",
+      "picks": [
+        {
+          "edge": 0.21991499999999997,
+          "market_id": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+          "no_price_at_decision": 0.500085,
+          "player_id": 165,
+          "probability": 0.28,
+          "reasoning": "A forward goal alone gives 6 points, so 8+ needs a brace, goal plus assist, or goal plus big bonus; that is roughly 25-30% even at home to Bournemouth.",
+          "side": "no",
+          "stake_usdc": 1.5,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        },
+        {
+          "edge": 0.16991499999999993,
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "no_price_at_decision": 0.500085,
+          "player_id": 411,
+          "probability": 0.33,
+          "reasoning": "Haaland needs a goal plus extras or a brace to hit 8+; at Anfield against Liverpool that is likely nearer 30-35% than the market's 50%.",
+          "side": "no",
+          "stake_usdc": 1.5,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        },
+        {
+          "edge": 0.05676000000000003,
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "no_price_at_decision": 0.50324,
+          "player_id": 12,
+          "probability": 0.44,
+          "reasoning": "7+ basically requires a Saka goal or assist plus bonus; strong home fixture versus Leeds, but goal odds near 40% suggest a slight lean below 50%.",
+          "side": "no",
+          "stake_usdc": 0.5,
+          "threshold": 7,
+          "yes_price_at_decision": 0.496928
+        }
+      ],
+      "raw_reply": "{\"picks\": [{\"market_id\": \"HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq\", \"probability\": 0.28, \"stake_usdc\": 1.5, \"reasoning\": \"A forward goal alone gives 6 points, so 8+ needs a brace, goal plus assist, or goal plus big bonus; that is roughly 25-30% even at home to Bournemouth.\"}, {\"market_id\": \"GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn\", \"probability\": 0.33, \"stake_usdc\": 1.5, \"reasoning\": \"Haaland needs a goal plus extras or a brace to hit 8+; at Anfield against Liverpool that is likely nearer 30-35% than the market's 50%.\"}, {\"market_id\": \"C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F\", \"probability\": 0.44, \"stake_usdc\": 0.5, \"reasoning\": \"7+ basically requires a Saka goal or assist plus bonus; strong home fixture versus Leeds, but goal odds near 40% suggest a slight lean below 50%.\"}]}",
+      "slug": "~anthropic/claude-opus-latest",
+      "solana_address": "6ZkTKaixdk6Eg9ZVCTYjYkVuAWazntPEKNSCTUmQd27i"
+    },
+    {
+      "decided_at": "2026-10-09T15:03:48.488094+00:00",
+      "error": null,
+      "name": "Gemini Pro (latest)",
+      "picks": [
+        {
+          "edge": 0.11675999999999997,
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "no_price_at_decision": 0.50324,
+          "player_id": 12,
+          "probability": 0.38,
+          "reasoning": "7+ points requires a goal or multiple returns; 50% implied probability is too high even in a favorable matchup.",
+          "side": "no",
+          "stake_usdc": 1.5,
+          "threshold": 7,
+          "yes_price_at_decision": 0.496928
+        },
+        {
+          "edge": 0.249915,
+          "market_id": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+          "no_price_at_decision": 0.500085,
+          "player_id": 165,
+          "probability": 0.25,
+          "reasoning": "8+ points is a high bar requiring multiple returns or max bonus, making 50% implied odds significantly overpriced.",
+          "side": "no",
+          "stake_usdc": 2.0,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        },
+        {
+          "edge": 0.14991500000000002,
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "no_price_at_decision": 0.500085,
+          "player_id": 411,
+          "probability": 0.35,
+          "reasoning": "Away at Anfield is historically a tough fixture for City, making an 8+ point haul less than a 50% probability.",
+          "side": "no",
+          "stake_usdc": 1.5,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        }
+      ],
+      "raw_reply": "{\n  \"picks\": [\n    {\n      \"market_id\": \"C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F\",\n      \"probability\": 0.38,\n      \"stake_usdc\": 1.5,\n      \"reasoning\": \"7+ points requires a goal or multiple returns; 50% implied probability is too high even in a favorable matchup.\"\n    },\n    {\n      \"market_id\": \"HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq\",\n      \"probability\": 0.25,\n      \"stake_usdc\": 2.0,\n      \"reasoning\": \"8+ points is a high bar requiring multiple returns or max bonus, making 50% implied odds significantly overpriced.\"\n    },\n    {\n      \"market_id\": \"GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn\",\n      \"probability\": 0.35,\n      \"stake_usdc\": 1.5,\n      \"reasoning\": \"Away at Anfield is historically a tough fixture for City, making an 8+ point haul less than a 50% probability.\"\n    }\n  ]\n}",
+      "slug": "~google/gemini-pro-latest",
+      "solana_address": "Ec1Pp817eMNpCwrVcfRy8VmrZKqfS4NdUteEAcwGFc92"
+    },
+    {
+      "decided_at": "2026-10-09T15:04:03.937598+00:00",
+      "error": null,
+      "name": "GPT (latest)",
+      "picks": [
+        {
+          "edge": 0.139915,
+          "market_id": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+          "no_price_at_decision": 0.500085,
+          "player_id": 165,
+          "probability": 0.36,
+          "reasoning": "NO value at 0.500: a forward usually needs multiple returns or a goal plus bonus to reach eight; Bournemouth helps, but minutes uncertainty limits confidence.",
+          "side": "no",
+          "stake_usdc": 0.6,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        },
+        {
+          "edge": 0.15991499999999992,
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "no_price_at_decision": 0.500085,
+          "player_id": 411,
+          "probability": 0.34,
+          "reasoning": "NO value at 0.500: away at Liverpool is difficult, and one goal with appearance points yields only six before bonus; eight requires additional contributions.",
+          "side": "no",
+          "stake_usdc": 0.8,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        }
+      ],
+      "raw_reply": "{\"picks\":[{\"market_id\":\"HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq\",\"probability\":0.36,\"stake_usdc\":0.6,\"reasoning\":\"NO value at 0.500: a forward usually needs multiple returns or a goal plus bonus to reach eight; Bournemouth helps, but minutes uncertainty limits confidence.\"},{\"market_id\":\"GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn\",\"probability\":0.34,\"stake_usdc\":0.8,\"reasoning\":\"NO value at 0.500: away at Liverpool is difficult, and one goal with appearance points yields only six before bonus; eight requires additional contributions.\"}]}",
+      "slug": "~openai/gpt-latest",
+      "solana_address": "FTtwXec2PAYpKmQd9vrKunCm8xerzwKquTwwZEAh6Qj3"
+    },
+    {
+      "decided_at": "2026-10-09T15:04:18.257453+00:00",
+      "error": null,
+      "name": "DeepSeek V4 Pro",
+      "picks": [],
+      "raw_reply": "{\"picks\": []}",
+      "slug": "deepseek/deepseek-v4-pro",
+      "solana_address": "6m5o7BZgeR3LmymeU55RA4ixkSxCitBu8QKwtUaNPznT"
+    },
+    {
+      "decided_at": "2026-10-09T15:05:22.530230+00:00",
+      "error": null,
+      "name": "Grok 4.20",
+      "picks": [
+        {
+          "edge": 0.07676000000000005,
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "no_price_at_decision": 0.50324,
+          "player_id": 12,
+          "probability": 0.42,
+          "reasoning": "Saka's underlying numbers strong but 7+ pts vs LEE still ~42% given variance and price already near fair.",
+          "side": "no",
+          "stake_usdc": 1.0,
+          "threshold": 7,
+          "yes_price_at_decision": 0.496928
+        },
+        {
+          "edge": 0.05991500000000005,
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "no_price_at_decision": 0.500085,
+          "player_id": 411,
+          "probability": 0.56,
+          "reasoning": "Haaland's goal threat remains elite even away at LIV; 56% for 8+ pts edges the even money line.",
+          "side": "yes",
+          "stake_usdc": 1.2,
+          "threshold": 8,
+          "yes_price_at_decision": 0.500085
+        }
+      ],
+      "raw_reply": "{\"picks\": [{\"market_id\": \"C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F\", \"probability\": 0.42, \"stake_usdc\": 1.0, \"reasoning\": \"Saka's underlying numbers strong but 7+ pts vs LEE still ~42% given variance and price already near fair.\"}, {\"market_id\": \"GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn\", \"probability\": 0.56, \"stake_usdc\": 1.2, \"reasoning\": \"Haaland's goal threat remains elite even away at LIV; 56% for 8+ pts edges the even money line.\"}]}",
+      "slug": "x-ai/grok-4.20",
+      "solana_address": "ERccMpEhvntFm9kZ6hmbf7UyX7pkhNf9fnU8YbzuWrrx"
+    }
+  ]
+}
