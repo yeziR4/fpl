@@ -115,6 +115,16 @@ def test_build_prompt_states_the_bankroll_and_allows_forecasting_nothing():
     assert "There is no penalty for" in prompt
 
 
+def test_build_prompt_requires_a_reason_for_every_market_it_declines():
+    """A silent pass is indistinguishable from not having looked, which is the
+    distinction the whole exercise is trying to measure."""
+    players = top_expensive_players(load_bootstrap(), n=1)
+    prompt = build_prompt([market()], players, load_bootstrap(), load_fixtures(), gw=1)
+    assert '"passes"' in prompt
+    assert "EVERY MARKET YOU DO NOT BET ON" in prompt
+    assert '"reason"' in prompt
+
+
 def test_build_prompt_includes_player_context_for_a_market_that_has_one():
     players = top_expensive_players(load_bootstrap(), n=3)
     prompt = build_prompt([market("m1", 1)], players, load_bootstrap(), load_fixtures(), gw=1)

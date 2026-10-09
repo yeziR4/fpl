@@ -100,7 +100,11 @@ interface AgentState {
   usdcShort: number;
 }
 
-async function readAgent(entry: AgentModelEntry, solTarget: number): Promise<AgentState> {
+async function readAgent(
+  entry: AgentModelEntry,
+  solTarget: number,
+  usdcTarget: number,
+): Promise<AgentState> {
   const owner = new PublicKey(entry.solana_address);
   const ata = getAssociatedTokenAddressSync(USDC_MINT, owner);
 
@@ -134,7 +138,7 @@ async function readAgent(entry: AgentModelEntry, solTarget: number): Promise<Age
     ata,
     ataExists,
     solShort: Math.max(0, solTarget - sol),
-    usdcShort: Math.max(0, AGENT_USDC - usdc),
+    usdcShort: Math.max(0, usdcTarget - usdc),
   };
 }
 
@@ -156,6 +160,18 @@ async function main(): Promise<number> {
   const solTarget = solFlag ? Number(solFlag.slice("--sol=".length)) : AGENT_SOL;
   if (!Number.isFinite(solTarget) || solTarget <= 0) {
     console.error(`--sol=${solFlag ?? ""} is not a positive number`);
+    return 2;
+  }
+  // The USDC target is overridable for the same reason, and it earned its place
+  // immediately: an agent that allocated its whole bankroll could not place its
+  // LAST pick, because the ~2% trading fee pushed the total past what it held.
+  // The fee is a cost WE impose, not a decision the model made, so topping that
+  // agent back up to exactly its next stake is the right correction rather than
+  // leaving a hole in the data.
+  const usdcFlag = argv.find((a) => a.startsWith("--usdc="));
+  const usdcTarget = usdcFlag ? Number(usdcFlag.slice("--usdc=".length)) : AGENT_USDC;
+  if (!Number.isFinite(usdcTarget) || usdcTarget <= 0) {
+    console.error(`--usdc=${usdcFlag ?? ""} is not a positive number`);
     return 2;
   }
   // Comma-separated, because topping up only the agents that still have orders
@@ -195,7 +211,7 @@ async function main(): Promise<number> {
   // be the wrong order to find things out in.
   const states: AgentState[] = [];
   for (const entry of entries) {
-    states.push(await readAgent(entry, solTarget));
+    states.push(await readAgent(entry, solTarget, usdcTarget));
   }
 
   console.log(

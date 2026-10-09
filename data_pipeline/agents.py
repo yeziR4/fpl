@@ -332,16 +332,26 @@ def build_prompt(
         "reaching the stated points total in this single gameweek, under standard FPL",
         "scoring (goals, assists, clean sheets, bonus, appearance points).",
         "",
-        "Then choose a stake. Omit the market entirely if you have no view: a forecast you",
-        "do not believe is worse than no forecast.",
+        "Then choose a stake. You are not obliged to bet on any market, and a market",
+        "you have no view on should not be forced -- but a PASS still needs a reason.",
         "",
         "Respond with ONLY a JSON object, no markdown fences, no other text:",
         '{"picks": [{"market_id": "<id>", "probability": <0-1>, "stake_usdc": <number>, ',
-        '  "reasoning": "<one sentence, under 200 characters>"}]}',
+        '  "reasoning": "<one sentence, under 200 characters>"}],',
+        ' "passes": [{"market_id": "<id>", "reason": "<why you are not betting, under 160 chars>"}]}',
         "",
         f'"probability" is your belief the market resolves YES. "stake_usdc" is how much of',
         f"your ${bankroll_usdc:.2f} you commit, and must not exceed it in total across all",
-        'picks. An empty list ({"picks": []}) is a completely valid answer.',
+        "picks.",
+        "",
+        "EVERY MARKET YOU DO NOT BET ON GOES IN \"passes\", WITH A REASON. This is not",
+        "bookkeeping. A pass with a reason is a claim about your own edge -- 'the price",
+        "looks fair to me' and 'I cannot judge this one' are both real answers and they say",
+        "different things. A pass with no reason is indistinguishable from never having",
+        "looked, and that distinction is most of what this exercise measures.",
+        "",
+        'An empty list ({"picks": []}) is a perfectly good answer, as long as your',
+        '"passes" explain why you sat this gameweek out.',
     ]
     return "\n".join(lines)
 
@@ -479,6 +489,70 @@ def parse_picks(raw_text: str, *, valid_market_ids: set[str]) -> list[AgentPick]
     return picks
 
 
+@dataclass(frozen=True)
+class AgentPass:
+    """A market the model looked at and deliberately did not bet on.
+
+    Added because a silent pass is the least informative thing a model can do. It
+    is indistinguishable from not having read the market at all, and the whole
+    exercise is about separating a considered "the price looks fair" from a
+    shrug. Recorded and published, so a pass carries as much accountability as a
+    bet does.
+    """
+
+    market_id: str
+    reason: str
+
+
+def parse_passes(raw_text: str, *, valid_market_ids: set[str]) -> list[AgentPass]:
+    """Pull the `passes` list out of a reply.
+
+    Deliberately forgiving, and deliberately NOT raising. The passes block is
+    newer than the picks block, so a model that ignores it should lose the extra
+    detail rather than the whole forecast. Missing or malformed passes yield an
+    empty list, never an exception -- parse_picks still owns the "did this reply
+    follow the shape at all" decision.
+    """
+    text = raw_text.strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        stripped = text.lstrip()
+        if stripped[:4].lower() == "json":
+            text = stripped[4:]
+
+    try:
+        parsed = json.loads(text)
+    except ValueError:
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end == -1 or end <= start:
+            return []
+        try:
+            parsed = json.loads(text[start : end + 1])
+        except ValueError:
+            return []
+
+    entries = parsed.get("passes") if isinstance(parsed, dict) else None
+    if not isinstance(entries, list):
+        return []
+
+    passes: list[AgentPass] = []
+    seen: set[str] = set()
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        market_id = entry.get("market_id")
+        if not isinstance(market_id, str) or market_id not in valid_market_ids:
+            continue
+        if market_id in seen:
+            continue
+        reason = entry.get("reason")
+        if not isinstance(reason, str):
+            reason = ""
+        seen.add(market_id)
+        passes.append(AgentPass(market_id=market_id, reason=reason.strip()[:240]))
+    return passes
+
+
 def apply_bankroll_cap(picks: list[AgentPick], bankroll_usdc: float) -> list[AgentPick]:
     """Scale stakes down proportionally if a model overspent its bankroll.
 
@@ -510,6 +584,10 @@ class ModelPicksResult:
     # Set on a failed call or a reply that didn't follow the required shape. An
     # empty `picks` list with `error is None` is a deliberate "no view" result.
     error: str | None = None
+    # Markets it looked at and declined to bet on, with its reason. Empty when a
+    # model simply ignored the request -- which is recorded as no reason given
+    # rather than as "it had no view on anything".
+    passes: list[AgentPass] = field(default_factory=list)
     # The model's actual reply, kept even when parsing failed. The Vara version
     # stored only the error string, which made a bad reply impossible to
     # diagnose after the fact.
@@ -575,7 +653,13 @@ def generate_picks_for_gameweek(
             for p in picks
         ]
         results.append(
-            ModelPicksResult(model=model, picks=picks, raw_reply=raw, decided_at=decided_at)
+            ModelPicksResult(
+                model=model,
+                picks=picks,
+                passes=parse_passes(raw, valid_market_ids=valid_market_ids),
+                raw_reply=raw,
+                decided_at=decided_at,
+            )
         )
     return results
 
@@ -612,6 +696,9 @@ def save_picks(gw: int, results: list[ModelPicksResult], *, picks_dir: Path = PI
                         "edge": p.edge,
                     }
                     for p in r.picks
+                ],
+                "passes": [
+                    {"market_id": p.market_id, "reason": p.reason} for p in r.passes
                 ],
             }
             for r in results

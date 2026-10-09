@@ -1,6 +1,6 @@
 {
   "gw": 6,
-  "executed_at": "2026-10-09T19:13:02.758Z",
+  "executed_at": "2026-10-09T20:27:11.773Z",
   "mode": "live",
   "models": [
     {
@@ -48,7 +48,7 @@
       "slug": "~google/gemini-pro-latest",
       "name": "Gemini Pro (latest)",
       "address": "Ec1Pp817eMNpCwrVcfRy8VmrZKqfS4NdUteEAcwGFc92",
-      "error": "needs 1.50 USDC, holds 1.43 -- refusing to part-fund",
+      "error": "needs 1.50 USDC, holds 1.43 -- refusing to part-fund | no 1.50 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Error processing Instruction 0: custom program error: 0x1",
       "fills": [
         {
           "marketId": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
@@ -70,6 +70,17 @@
           "feeUsdc": null,
           "orderId": "(not recorded -- the trader's fills file was overwritten)",
           "signature": "(recovered -- see chain)",
+          "status": "submitted"
+        },
+        {
+          "marketId": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "no",
+          "requestedUsdc": 1.5,
+          "shares": "2.981631",
+          "avgPrice": "0.50308",
+          "feeUsdc": "0.03",
+          "orderId": "ord_959ad6eb0e0d46f1b8aa2af03d9c7070",
+          "signature": "tibeBSwE6Z2QuSwDXVh52Gr8hYvaRtRkiaWnQ2rVHdxw3b3Kwu2R6jw1ZJ1ScTDbQRLEzHEM7QbXBAHvG3JuYXv",
           "status": "submitted"
         }
       ]
