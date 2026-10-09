@@ -1,28 +1,108 @@
 {
   "gw": 6,
-  "executed_at": "2026-10-09T15:10:38.625Z",
+  "executed_at": "2026-10-09T19:13:02.758Z",
   "mode": "live",
   "models": [
     {
       "slug": "~anthropic/claude-opus-latest",
       "name": "Claude Opus (latest)",
       "address": "6ZkTKaixdk6Eg9ZVCTYjYkVuAWazntPEKNSCTUmQd27i",
-      "error": "no 1.50 on HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 1.50 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 0.50 on C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent",
-      "fills": []
+      "error": null,
+      "fills": [
+        {
+          "marketId": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "no",
+          "requestedUsdc": 1.5,
+          "shares": "3.004471",
+          "avgPrice": "0.499255",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
+          "signature": "(recovered -- see chain)",
+          "status": "submitted"
+        },
+        {
+          "marketId": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "no",
+          "requestedUsdc": 0.5,
+          "shares": "0.989662",
+          "avgPrice": "0.505222",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
+          "signature": "(recovered -- see chain)",
+          "status": "confirmed"
+        },
+        {
+          "marketId": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+          "side": "no",
+          "requestedUsdc": 1.5,
+          "shares": "2.967059",
+          "avgPrice": "0.505551",
+          "feeUsdc": "0.03",
+          "orderId": "ord_c46781fb3f554b5daf8666568470bc9b",
+          "signature": "5GE5ZTroCmScgZyGEC3Tr3viDuGMMj7qzReAF47gp262gKMnqsQBvr1eGcLMc7CE7JiEMv4aw5dHrSP1nyNeH5Tf",
+          "status": "submitted"
+        }
+      ]
     },
     {
       "slug": "~google/gemini-pro-latest",
       "name": "Gemini Pro (latest)",
       "address": "Ec1Pp817eMNpCwrVcfRy8VmrZKqfS4NdUteEAcwGFc92",
-      "error": "no 1.50 on C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 2.00 on HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 1.50 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent",
-      "fills": []
+      "error": "needs 1.50 USDC, holds 1.43 -- refusing to part-fund",
+      "fills": [
+        {
+          "marketId": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "no",
+          "requestedUsdc": 1.5,
+          "shares": "2.95935",
+          "avgPrice": "0.506868",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
+          "signature": "(recovered -- see chain)",
+          "status": "confirmed"
+        },
+        {
+          "marketId": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+          "side": "no",
+          "requestedUsdc": 2,
+          "shares": "3.986754",
+          "avgPrice": "0.501661",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
+          "signature": "(recovered -- see chain)",
+          "status": "submitted"
+        }
+      ]
     },
     {
       "slug": "~openai/gpt-latest",
       "name": "GPT (latest)",
       "address": "FTtwXec2PAYpKmQd9vrKunCm8xerzwKquTwwZEAh6Qj3",
-      "error": "no 0.60 on HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 0.80 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent",
-      "fills": []
+      "error": null,
+      "fills": [
+        {
+          "marketId": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+          "side": "no",
+          "requestedUsdc": 0.6,
+          "shares": "1.190905",
+          "avgPrice": "0.503818",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
+          "signature": "(recovered -- see chain)",
+          "status": "submitted"
+        },
+        {
+          "marketId": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "no",
+          "requestedUsdc": 0.8,
+          "shares": "1.596255",
+          "avgPrice": "0.501173",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
+          "signature": "5aFfAJLGX1TJPof9tpcPWbimd4FirBtjJ9Cuu61kz8Q7N2keUwDfSNSHAy5AhbX7DBtiYCpKhytjoMUGDCVJU",
+          "status": "confirmed"
+        }
+      ]
     },
     {
       "slug": "deepseek/deepseek-v4-pro",
@@ -43,8 +123,8 @@
           "requestedUsdc": 1,
           "shares": "1.984191",
           "avgPrice": "0.503983",
-          "feeUsdc": "0.02",
-          "orderId": "ord_5c10e50f40464fa28994fceb69b62cea",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
           "signature": "4w7pPAyqiF9hkjiY78qfMm3MTsdRRcWtpYerz2cZfTZaQo1Wo8sARsT73YTJYGzgbAzvmHUFG4CS2ZppBKyXHXT6",
           "status": "confirmed"
         },
@@ -54,8 +134,8 @@
           "requestedUsdc": 1.2,
           "shares": "2.395219",
           "avgPrice": "0.500998",
-          "feeUsdc": "0.024",
-          "orderId": "ord_31416920ff4b4c8e9f2b20de46943ad6",
+          "feeUsdc": null,
+          "orderId": "(not recorded -- the trader's fills file was overwritten)",
           "signature": "5YJDdzQBkQDJSuCcyChUcKWEqpTTHRGjufnC5JL9UB6zqhb1fXgDFTcnyRYDGJ3UfDwaAb2Mf3cg8K7pqLbmPowY",
           "status": "submitted"
         }

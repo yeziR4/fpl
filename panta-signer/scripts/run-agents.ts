@@ -152,14 +152,18 @@ async function main(): Promise<number> {
   // "(dry run)" signature is not a fill.
   const fillsFile = path.join(FILLS_PATH, `gw${gw}.json`);
   const alreadyFilled = new Set<string>();
+  // Kept, not just counted: the write at the end MERGES with these. See the note
+  // there for why overwriting broke idempotency on the second run.
+  let priorModels: { slug: string; name?: string; address?: string; error?: string | null; fills?: OrderFill[] }[] = [];
   if (fs.existsSync(fillsFile)) {
     try {
       const prior = JSON.parse(fs.readFileSync(fillsFile, "utf8")) as {
         mode?: string;
-        models?: { slug: string; fills?: OrderFill[] }[];
+        models?: typeof priorModels;
       };
       if (prior.mode === "live") {
-        for (const m of prior.models ?? []) {
+        priorModels = prior.models ?? [];
+        for (const m of priorModels) {
           for (const f of m.fills ?? []) {
             if (f.signature && f.signature !== "(dry run)") {
               alreadyFilled.add(`${m.slug}|${f.marketId}|${f.side}`);
@@ -226,16 +230,29 @@ async function main(): Promise<number> {
     const tradeable = model.picks.filter(
       (p): p is SavedPick & { side: "yes" | "no" } => p.side === "yes" || p.side === "no",
     );
-    const wanted = tradeable.reduce((sum, p) => sum + p.stake_usdc, 0);
+    // Only what is still OUTSTANDING. Counting already-placed orders here was a
+    // real bug: a model that had filled two of three picks showed as wanting the
+    // full amount while holding only what was left, so it was refused with
+    // "needs 3.50, holds 2.96" and its remaining pick never ran. Claude and
+    // Gemini both stalled on exactly that.
+    const outstanding = tradeable.filter(
+      (p) => !alreadyFilled.has(`${model.slug}|${p.market_id}|${p.side}`),
+    );
+    const wanted = outstanding.reduce((sum, p) => sum + p.stake_usdc, 0);
+    const placedCount = tradeable.length - outstanding.length;
 
     console.log(
       `  ${model.name.padEnd(22)} ${balance.usdc.toFixed(2)} USDC  ${balance.sol.toFixed(6)} SOL  ` +
-        `${tradeable.length}/${model.picks.length} tradeable  wants ${wanted.toFixed(2)} USDC`,
+        `${tradeable.length}/${model.picks.length} tradeable` +
+        `${placedCount ? `, ${placedCount} already placed` : ""}  wants ${wanted.toFixed(2)} USDC`,
     );
 
     if (check) {
       for (const p of tradeable) {
-        console.log(`      ${p.side.toUpperCase().padEnd(4)} ${p.stake_usdc.toFixed(2)} USDC on ${p.market_id}`);
+        const done = alreadyFilled.has(`${model.slug}|${p.market_id}|${p.side}`);
+        console.log(
+          `      ${p.side.toUpperCase().padEnd(4)} ${p.stake_usdc.toFixed(2)} USDC on ${p.market_id}${done ? "  [placed]" : ""}`,
+        );
       }
       if (balance.usdc < wanted) console.log(`      SHORT ${(wanted - balance.usdc).toFixed(2)} USDC`);
       if (balance.sol < MIN_SOL) console.log(`      SHORT on SOL: has ${balance.sol.toFixed(6)}, needs ~${MIN_SOL}`);
@@ -260,16 +277,10 @@ async function main(): Promise<number> {
       continue;
     }
 
-    for (const pick of tradeable) {
+    // Outstanding only. Already-placed orders were filtered out above, and
+    // counting them here is what stalled Claude and Gemini.
+    for (const pick of outstanding) {
       const side = pick.side as "yes" | "no";
-
-      // Skip anything a previous LIVE run already placed. See the note where
-      // alreadyFilled is built: re-running after a partial failure must retry
-      // only what failed.
-      if (alreadyFilled.has(`${model.slug}|${pick.market_id}|${side}`)) {
-        console.log(`      ${side.toUpperCase().padEnd(4)} ${pick.stake_usdc.toFixed(2)} USDC  already placed -- skipped`);
-        continue;
-      }
 
       try {
         const fill = await placePrimaryOrder({
@@ -307,8 +318,53 @@ async function main(): Promise<number> {
   // Written even for --check and --dry-run, so a dry run leaves evidence of
   // what it would have done rather than vanishing. `fillsFile` was resolved
   // earlier, when the prior-live-fills check read it.
+  // MERGE with what was already there, never overwrite.
+  //
+  // Overwriting was a real bug, and a dangerous one. Each run wrote only what
+  // IT placed, so a second run lost the first run's fills -- and with them the
+  // idempotency that stops an order being placed twice. It happened live: the
+  // second run saw only the six from the immediately preceding run, decided
+  // Grok's two earlier orders had never happened, and re-attempted both. They
+  // failed on Panta's transient error, which is the only reason this did not
+  // double-place real money.
+  //
+  // Prior fills win on a collision: they carry a real signature, and the new
+  // entry for the same (slug, market, side) can only be a retry of something
+  // already done.
   fs.mkdirSync(FILLS_PATH, { recursive: true });
-  fs.writeFileSync(fillsFile, `${JSON.stringify(fills, null, 2)}\n`);
+  const mergedModels = new Map<string, (typeof priorModels)[number]>();
+  for (const m of priorModels) mergedModels.set(m.slug, { ...m, fills: [...(m.fills ?? [])] });
+  for (const m of fills.models as (typeof priorModels)[number][]) {
+    const existing = mergedModels.get(m.slug);
+    if (!existing) {
+      mergedModels.set(m.slug, m);
+      continue;
+    }
+    for (const fill of m.fills ?? []) {
+      const key = `${fill.marketId}|${fill.side}`;
+      const already = (existing.fills ?? []).some((f) => `${f.marketId}|${f.side}` === key);
+      if (!already) existing.fills = [...(existing.fills ?? []), fill];
+    }
+    if (m.error) existing.error = [existing.error, m.error].filter(Boolean).join(" | ");
+  }
+  // The mode is never DOWNGRADED back to check or dry_run.
+  //
+  // Found the hard way: a --check run wrote mode:"check" over a file that held
+  // live fills, and because prior fills are only trusted when mode is "live",
+  // the next run ignored all eight of them and tried to place them again. The
+  // fills themselves had survived the merge perfectly -- it was the mode
+  // poisoning the whole file. One --check must not be able to disarm idempotency
+  // for every run after it.
+  const mergedList = Array.from(mergedModels.values());
+  const hasRealFill = mergedList.some((m) =>
+    (m.fills ?? []).some((f) => f.signature && f.signature !== "(dry run)"),
+  );
+  const merged = {
+    ...fills,
+    mode: hasRealFill ? "live" : mode.toLowerCase(),
+    models: mergedList,
+  };
+  fs.writeFileSync(fillsFile, `${JSON.stringify(merged, null, 2)}\n`);
 
   console.log(`\n${totalOrders} order(s) ${live ? "placed" : "previewed"}, ${totalFailures} failure(s).`);
   console.log(`Fills -> ${fillsFile}`);

@@ -158,14 +158,26 @@ async function main(): Promise<number> {
     console.error(`--sol=${solFlag ?? ""} is not a positive number`);
     return 2;
   }
+  // Comma-separated, because topping up only the agents that still have orders
+  // to place is the difference between fitting inside the operator's balance
+  // and not. An agent with nothing left to trade should not be funded.
   const onlyFlag = argv.find((a) => a.startsWith("--only="));
-  const only = onlyFlag ? onlyFlag.slice("--only=".length) : null;
+  const only = onlyFlag
+    ? onlyFlag
+        .slice("--only=".length)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+  const onlyLabel = only.length ? `--only=${only.join(",")}` : null;
 
   const entries = readModelsRegistry(registryPath).filter(
-    (e) => !only || e.name.toLowerCase().includes(only.toLowerCase()) || e.slug.includes(only),
+    (e) =>
+      only.length === 0 ||
+      only.some((o) => e.name.toLowerCase().includes(o.toLowerCase()) || e.slug.includes(o)),
   );
   if (entries.length === 0) {
-    console.error(`No agents matched in ${registryPath}${only ? ` (--only=${only})` : ""}.`);
+    console.error(`No agents matched in ${registryPath}${onlyLabel ? ` (${onlyLabel})` : ""}.`);
     return 1;
   }
 
@@ -174,7 +186,7 @@ async function main(): Promise<number> {
   const operatorAta = getAssociatedTokenAddressSync(USDC_MINT, operator);
 
   console.log(`\nFrom   : ${operator.toBase58()}  (operator)`);
-  console.log(`Agents : ${entries.length} from ${registryPath}${only ? ` (--only=${only})` : ""}`);
+  console.log(`Agents : ${entries.length} from ${registryPath}${onlyLabel ? ` (${onlyLabel})` : ""}`);
   console.log(`Target : ${AGENT_USDC.toFixed(2)} USDC and ${solTarget.toFixed(6)} SOL each`);
   console.log(`Mode   : ${check ? "CHECK -- nothing will be sent" : "SEND -- this moves USDC and SOL"}\n`);
 
