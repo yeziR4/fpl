@@ -14,6 +14,7 @@
     "node": "22.x"
   },
   "dependencies": {
+    "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.0",
     "bs58": "^5.0.0"
   },

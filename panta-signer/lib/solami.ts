@@ -77,6 +77,17 @@ function endpoint(): string {
   return rpcFallbackUrl();
 }
 
+/**
+ * How many times to retry a 429 before giving up.
+ *
+ * Added after the funding script tripped Solami's rate limit on its FIRST real
+ * run -- thirteen balance reads across five wallets was enough. A limit that
+ * trips during ordinary use is a problem for the trading path too, since every
+ * sign-then-broadcast goes through here, so the backoff lives in this one place
+ * rather than being bolted onto whichever caller happened to hit it first.
+ */
+const RATE_LIMIT_RETRIES = 5;
+
 /** One JSON-RPC round trip. Surfaces the RPC's own error message rather than a
  * generic failure, because "the RPC rejected it" and "the transaction is bad"
  * need different fixes and we have six days. */
@@ -92,39 +103,58 @@ export async function solamiRpc<T>(method: string, params: unknown[]): Promise<T
     url += `${separator}${solamiAuthQueryParam()}=${encodeURIComponent(key)}`;
   }
 
-  let response: Response;
-  try {
-    response = await withTimeout(
-      fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
-      }),
-      solamiRequestTimeoutMs(),
-    );
-  } catch (error) {
-    throw new SolamiError(`Could not reach Solami RPC: ${String(error)}`, 504);
-  }
+  for (let attempt = 0; ; attempt += 1) {
+    let response: Response;
+    try {
+      response = await withTimeout(
+        fetch(url, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ jsonrpc: "2.0", id: ++rpcId, method, params }),
+        }),
+        solamiRequestTimeoutMs(),
+      );
+    } catch (error) {
+      throw new SolamiError(`Could not reach Solami RPC: ${String(error)}`, 504);
+    }
 
-  const text = await response.text();
-  if (!response.ok) {
-    throw new SolamiError(`Solami RPC HTTP ${response.status}: ${text.slice(0, 300)}`, response.status);
-  }
+    if (response.status === 429 && attempt < RATE_LIMIT_RETRIES) {
+      // 429 is the one status worth retrying quietly: the request was fine, we
+      // were simply early.
+      const waitMs = 500 * 2 ** attempt;
+      console.warn(`[solami] rate limited on ${method}; retrying in ${waitMs}ms`);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      continue;
+    }
 
-  let payload: JsonRpcResponse<T>;
-  try {
-    payload = JSON.parse(text) as JsonRpcResponse<T>;
-  } catch {
-    throw new SolamiError(`Solami RPC returned non-JSON: ${text.slice(0, 300)}`);
-  }
+    const text = await response.text();
+    if (!response.ok) {
+      throw new SolamiError(`Solami RPC HTTP ${response.status}: ${text.slice(0, 300)}`, response.status);
+    }
 
-  if (payload.error) {
-    throw new SolamiError(
-      `Solami RPC ${method} failed (${payload.error.code}): ${payload.error.message}`,
-    );
-  }
+    let payload: JsonRpcResponse<T>;
+    try {
+      payload = JSON.parse(text) as JsonRpcResponse<T>;
+    } catch {
+      throw new SolamiError(`Solami RPC returned non-JSON: ${text.slice(0, 300)}`);
+    }
 
-  return payload.result as T;
+    if (payload.error) {
+      // Some RPCs report rate limiting as a JSON-RPC error body with HTTP 200,
+      // which is exactly what Solami does -- code -32005.
+      if (payload.error.code === -32005 && attempt < RATE_LIMIT_RETRIES) {
+        const waitMs = 500 * 2 ** attempt;
+        console.warn(`[solami] rate limited on ${method}; retrying in ${waitMs}ms`);
+        await new Promise((resolve) => setTimeout(resolve, waitMs));
+        continue;
+      }
+      throw new SolamiError(
+        `Solami RPC ${method} failed (${payload.error.code}): ${payload.error.message}`,
+      );
+    }
+
+    return payload.result as T;
+  }
 }
 
 export function getLatestBlockhash(): Promise<{
