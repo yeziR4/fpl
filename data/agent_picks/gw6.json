@@ -1,35 +1,300 @@
 {
-  "generated_at": "2026-10-09T06:41:47.358965+00:00",
+  "generated_at": "2026-10-09T18:33:59.390596+00:00",
   "gw": 6,
   "models": [
     {
-      "error": "~openai/gpt-latest: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "error": null,
       "name": "GPT (latest)",
-      "picks": [],
+      "picks": [
+        {
+          "confidence": 0.72,
+          "market_probability": 0.2082,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 21588.3,
+          "stake_vara": 4494.54,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.68,
+          "market_probability": 0.2344,
+          "pick": "no",
+          "player_id": 480,
+          "potential_return_vara": 18384.12,
+          "stake_vara": 4309.2,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.2161,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 19298.49,
+          "stake_vara": 4170.19,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.63,
+          "market_probability": 0.2186,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 18652.18,
+          "stake_vara": 4077.52,
+          "threshold": 5
+        }
+      ],
       "slug": "~openai/gpt-latest"
     },
     {
-      "error": "~anthropic/claude-opus-latest: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "error": null,
       "name": "Claude Opus (latest)",
-      "picks": [],
+      "picks": [
+        {
+          "confidence": 0.8,
+          "market_probability": 0.5706,
+          "pick": "no",
+          "player_id": 480,
+          "potential_return_vara": 2865.34,
+          "stake_vara": 1635.07,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "market_probability": 0.5549,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 2806.21,
+          "stake_vara": 1557.21,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "market_probability": 0.5597,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 2782.46,
+          "stake_vara": 1557.21,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "market_probability": 0.5612,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 2774.96,
+          "stake_vara": 1557.21,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "market_probability": 0.568,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 2604.29,
+          "stake_vara": 1479.35,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.7,
+          "market_probability": 0.5769,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 2564.4,
+          "stake_vara": 1479.35,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5506,
+          "pick": "no",
+          "player_id": 411,
+          "potential_return_vara": 2545.25,
+          "stake_vara": 1401.49,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5561,
+          "pick": "no",
+          "player_id": 12,
+          "potential_return_vara": 2520.06,
+          "stake_vara": 1401.49,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.5,
+          "market_probability": 0.2344,
+          "pick": "no",
+          "player_id": 480,
+          "potential_return_vara": 4982.59,
+          "stake_vara": 1167.91,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.4,
+          "market_probability": 0.2082,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 4861.76,
+          "stake_vara": 1012.19,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.4,
+          "market_probability": 0.2161,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 4684.12,
+          "stake_vara": 1012.19,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.35,
+          "market_probability": 0.2186,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 4273.97,
+          "stake_vara": 934.33,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.3,
+          "market_probability": 0.2301,
+          "pick": "no",
+          "player_id": 154,
+          "potential_return_vara": 3722.56,
+          "stake_vara": 856.47,
+          "threshold": 5
+        }
+      ],
       "slug": "~anthropic/claude-opus-latest"
     },
     {
-      "error": "~google/gemini-pro-latest: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "error": null,
       "name": "Gemini Pro (latest)",
-      "picks": [],
+      "picks": [
+        {
+          "confidence": 0.9,
+          "market_probability": 0.5769,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 6294.77,
+          "stake_vara": 3631.33,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.85,
+          "market_probability": 0.5549,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 6259.41,
+          "stake_vara": 3473.45,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.85,
+          "market_probability": 0.5706,
+          "pick": "no",
+          "player_id": 480,
+          "potential_return_vara": 6086.94,
+          "stake_vara": 3473.45,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.8,
+          "market_probability": 0.5597,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 5924.31,
+          "stake_vara": 3315.56,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.75,
+          "market_probability": 0.5612,
+          "pick": "no",
+          "player_id": 426,
+          "potential_return_vara": 5627.0,
+          "stake_vara": 3157.68,
+          "threshold": 10
+        }
+      ],
       "slug": "~google/gemini-pro-latest"
     },
     {
-      "error": "x-ai/grok-4.20: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "error": null,
       "name": "Grok 4.20",
       "picks": [],
       "slug": "x-ai/grok-4.20"
     },
     {
-      "error": "deepseek/deepseek-v4-pro: request failed: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions",
+      "error": null,
       "name": "DeepSeek V4 Pro",
-      "picks": [],
+      "picks": [
+        {
+          "confidence": 0.95,
+          "market_probability": 0.2161,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 12525.3,
+          "stake_vara": 2706.58,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.85,
+          "market_probability": 0.5597,
+          "pick": "no",
+          "player_id": 379,
+          "potential_return_vara": 4433.16,
+          "stake_vara": 2481.03,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.98,
+          "market_probability": 0.2082,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 13325.33,
+          "stake_vara": 2774.25,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.88,
+          "market_probability": 0.5549,
+          "pick": "no",
+          "player_id": 397,
+          "potential_return_vara": 4592.94,
+          "stake_vara": 2548.7,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.8,
+          "market_probability": 0.2344,
+          "pick": "no",
+          "player_id": 480,
+          "potential_return_vara": 10103.58,
+          "stake_vara": 2368.26,
+          "threshold": 5
+        },
+        {
+          "confidence": 0.7,
+          "market_probability": 0.5706,
+          "pick": "no",
+          "player_id": 480,
+          "potential_return_vara": 3754.93,
+          "stake_vara": 2142.71,
+          "threshold": 10
+        },
+        {
+          "confidence": 0.65,
+          "market_probability": 0.5769,
+          "pick": "no",
+          "player_id": 4,
+          "potential_return_vara": 3518.81,
+          "stake_vara": 2029.94,
+          "threshold": 10
+        }
+      ],
       "slug": "deepseek/deepseek-v4-pro"
     }
   ]
