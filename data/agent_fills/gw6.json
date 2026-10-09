@@ -1,0 +1,65 @@
+{
+  "gw": 6,
+  "executed_at": "2026-10-09T15:10:38.625Z",
+  "mode": "live",
+  "models": [
+    {
+      "slug": "~anthropic/claude-opus-latest",
+      "name": "Claude Opus (latest)",
+      "address": "6ZkTKaixdk6Eg9ZVCTYjYkVuAWazntPEKNSCTUmQd27i",
+      "error": "no 1.50 on HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 1.50 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 0.50 on C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent",
+      "fills": []
+    },
+    {
+      "slug": "~google/gemini-pro-latest",
+      "name": "Gemini Pro (latest)",
+      "address": "Ec1Pp817eMNpCwrVcfRy8VmrZKqfS4NdUteEAcwGFc92",
+      "error": "no 1.50 on C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 2.00 on HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 1.50 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent",
+      "fills": []
+    },
+    {
+      "slug": "~openai/gpt-latest",
+      "name": "GPT (latest)",
+      "address": "FTtwXec2PAYpKmQd9vrKunCm8xerzwKquTwwZEAh6Qj3",
+      "error": "no 0.60 on HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent | no 0.80 on GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn: Solami RPC sendTransaction failed (-32002): Transaction simulation failed: Transaction results in an account (0) with insufficient funds for rent",
+      "fills": []
+    },
+    {
+      "slug": "deepseek/deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "address": "6m5o7BZgeR3LmymeU55RA4ixkSxCitBu8QKwtUaNPznT",
+      "error": null,
+      "fills": []
+    },
+    {
+      "slug": "x-ai/grok-4.20",
+      "name": "Grok 4.20",
+      "address": "ERccMpEhvntFm9kZ6hmbf7UyX7pkhNf9fnU8YbzuWrrx",
+      "error": null,
+      "fills": [
+        {
+          "marketId": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "no",
+          "requestedUsdc": 1,
+          "shares": "1.984191",
+          "avgPrice": "0.503983",
+          "feeUsdc": "0.02",
+          "orderId": "ord_5c10e50f40464fa28994fceb69b62cea",
+          "signature": "4w7pPAyqiF9hkjiY78qfMm3MTsdRRcWtpYerz2cZfTZaQo1Wo8sARsT73YTJYGzgbAzvmHUFG4CS2ZppBKyXHXT6",
+          "status": "confirmed"
+        },
+        {
+          "marketId": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "requestedUsdc": 1.2,
+          "shares": "2.395219",
+          "avgPrice": "0.500998",
+          "feeUsdc": "0.024",
+          "orderId": "ord_31416920ff4b4c8e9f2b20de46943ad6",
+          "signature": "5YJDdzQBkQDJSuCcyChUcKWEqpTTHRGjufnC5JL9UB6zqhb1fXgDFTcnyRYDGJ3UfDwaAb2Mf3cg8K7pqLbmPowY",
+          "status": "submitted"
+        }
+      ]
+    }
+  ]
+}

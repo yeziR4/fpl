@@ -46,8 +46,25 @@ import { SolamiError, confirmSignature, getLatestBlockhash, sendTransaction, sol
 
 /** Each model's trading bankroll, in USDC. */
 const AGENT_USDC = 5.0;
-/** Rent for a USDC token account (~0.00204) plus a few transactions' fees. */
-const AGENT_SOL = 0.0021;
+
+/**
+ * How much SOL each agent is topped up to.
+ *
+ * WAS 0.0021, and that was WRONG -- it covered a USDC token account and nothing
+ * else. The first live trade run failed every one of ten orders with
+ * "Transaction results in an account (0) with insufficient funds for rent",
+ * where account 0 is the fee payer, i.e. the agent: a primary buy creates its own
+ * accounts on top of the token account the agent already had, and 0.0021 does
+ * not cover them.
+ *
+ * Sized generously now. Solana rent is refundable when an account is closed, so
+ * an over-funded agent costs nothing but a temporarily larger float, whereas an
+ * under-funded one fails at broadcast with real money already committed
+ * elsewhere.
+ *
+ * Overridable with --sol=<amount> while establishing the real floor.
+ */
+const AGENT_SOL = 0.012;
 
 const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 const USDC_DECIMALS = 6;
@@ -83,7 +100,7 @@ interface AgentState {
   usdcShort: number;
 }
 
-async function readAgent(entry: AgentModelEntry): Promise<AgentState> {
+async function readAgent(entry: AgentModelEntry, solTarget: number): Promise<AgentState> {
   const owner = new PublicKey(entry.solana_address);
   const ata = getAssociatedTokenAddressSync(USDC_MINT, owner);
 
@@ -116,7 +133,7 @@ async function readAgent(entry: AgentModelEntry): Promise<AgentState> {
     usdc,
     ata,
     ataExists,
-    solShort: Math.max(0, AGENT_SOL - sol),
+    solShort: Math.max(0, solTarget - sol),
     usdcShort: Math.max(0, AGENT_USDC - usdc),
   };
 }
@@ -132,9 +149,23 @@ async function main(): Promise<number> {
     ? registryFlag.slice("--registry=".length)
     : DEFAULT_MODELS_REGISTRY;
 
-  const entries = readModelsRegistry(registryPath);
+  // Overrides, added while establishing the real SOL floor for a trade. The
+  // operator can be short, and funding ONE agent is how you find the floor
+  // without committing five times over to a number that turns out wrong.
+  const solFlag = argv.find((a) => a.startsWith("--sol="));
+  const solTarget = solFlag ? Number(solFlag.slice("--sol=".length)) : AGENT_SOL;
+  if (!Number.isFinite(solTarget) || solTarget <= 0) {
+    console.error(`--sol=${solFlag ?? ""} is not a positive number`);
+    return 2;
+  }
+  const onlyFlag = argv.find((a) => a.startsWith("--only="));
+  const only = onlyFlag ? onlyFlag.slice("--only=".length) : null;
+
+  const entries = readModelsRegistry(registryPath).filter(
+    (e) => !only || e.name.toLowerCase().includes(only.toLowerCase()) || e.slug.includes(only),
+  );
   if (entries.length === 0) {
-    console.error(`No agents in ${registryPath}. Run provision-agent-wallets first.`);
+    console.error(`No agents matched in ${registryPath}${only ? ` (--only=${only})` : ""}.`);
     return 1;
   }
 
@@ -143,7 +174,8 @@ async function main(): Promise<number> {
   const operatorAta = getAssociatedTokenAddressSync(USDC_MINT, operator);
 
   console.log(`\nFrom   : ${operator.toBase58()}  (operator)`);
-  console.log(`Agents : ${entries.length} from ${registryPath}`);
+  console.log(`Agents : ${entries.length} from ${registryPath}${only ? ` (--only=${only})` : ""}`);
+  console.log(`Target : ${AGENT_USDC.toFixed(2)} USDC and ${solTarget.toFixed(6)} SOL each`);
   console.log(`Mode   : ${check ? "CHECK -- nothing will be sent" : "SEND -- this moves USDC and SOL"}\n`);
 
   // Read every agent first, so the whole picture is on screen before anything
@@ -151,7 +183,7 @@ async function main(): Promise<number> {
   // be the wrong order to find things out in.
   const states: AgentState[] = [];
   for (const entry of entries) {
-    states.push(await readAgent(entry));
+    states.push(await readAgent(entry, solTarget));
   }
 
   console.log(
