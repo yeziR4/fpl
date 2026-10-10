@@ -1,0 +1,80 @@
+{
+  "_readme": [
+    "What each market SHOULD resolve to, computed independently from the",
+    "official FPL data and published before Panta's oracle acts.",
+    "",
+    "'decided' means no plausible bonus swing could flip the outcome.",
+    "'final' means FPL has set data_checked for the gameweek, so bonus is",
+    "confirmed. A market can be decided while the gameweek is not final,",
+    "and the two are recorded separately rather than collapsed.",
+    "",
+    "This is our record, not Panta's. Panta resolves the market; we",
+    "publish what the data said and when we read it."
+  ],
+  "gw": 6,
+  "asOf": "2026-10-10T18:55:46.044131Z",
+  "sources": [
+    "https://fantasy.premierleague.com/api/event/6/live/",
+    "https://fantasy.premierleague.com/api/bootstrap-static/"
+  ],
+  "gameweekFinal": false,
+  "markets": [
+    {
+      "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+      "player": "Bukayo Saka",
+      "position": "MID",
+      "line": 7,
+      "points": 2,
+      "outcome": "no",
+      "decided": true,
+      "final": false,
+      "status": "decided",
+      "breakdown": [
+        {
+          "event": "minutes",
+          "value": 90,
+          "points": 2
+        }
+      ]
+    },
+    {
+      "market_id": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
+      "player": "João Pedro",
+      "position": "FWD",
+      "line": 8,
+      "points": 12,
+      "outcome": "yes",
+      "decided": true,
+      "final": false,
+      "status": "decided",
+      "breakdown": [
+        {
+          "event": "minutes",
+          "value": 71,
+          "points": 2
+        },
+        {
+          "event": "goals_scored",
+          "value": 2,
+          "points": 8
+        },
+        {
+          "event": "bonus",
+          "value": 2,
+          "points": 2
+        }
+      ]
+    },
+    {
+      "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+      "player": "Haaland",
+      "line": 8,
+      "points": null,
+      "outcome": null,
+      "decided": false,
+      "final": false,
+      "status": "pending",
+      "reason": "has not played yet, or could not be identified"
+    }
+  ]
+}

@@ -26,6 +26,10 @@ const SINGLE_FILES = [
   ["markets.json", true],
   ["agent_models.json", true],
   ["human_picks.json", false],
+  // Optional: it only exists once at least one market has a player who has
+  // played. The page renders without it, showing no outcomes rather than
+  // failing to build.
+  ["market_results.json", false],
 ];
 
 function copyFile(from, to) {
@@ -55,6 +59,34 @@ for (const [name, required] of SINGLE_FILES) {
     continue;
   }
   copyFile(from, path.join(DEST, name));
+}
+
+/**
+ * Guarantee market_results.json exists, even when there are no results yet.
+ *
+ * The page imports it statically, and a static import of a missing file is a
+ * BUILD error, not a runtime one -- so marking it "optional" above would
+ * otherwise mean "the build fails on any machine that has not fetched results".
+ * Writing an empty file with the right shape makes the import safe everywhere
+ * and lets the page show no outcomes rather than failing to render.
+ */
+const resultsPath = path.join(DEST, "market_results.json");
+if (!fs.existsSync(resultsPath)) {
+  fs.mkdirSync(DEST, { recursive: true });
+  fs.writeFileSync(
+    resultsPath,
+    `${JSON.stringify(
+      {
+        _readme: ["No results yet. Run: python scripts/fetch_market_results.py --write"],
+        gw: null,
+        asOf: null,
+        gameweekFinal: false,
+        markets: [],
+      },
+      null,
+      2,
+    )}\n`,
+  );
 }
 
 const picks = copyDir(

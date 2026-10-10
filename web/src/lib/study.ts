@@ -27,6 +27,7 @@
 import agentModels from "@/data/study/agent_models.json";
 import humanPicks from "@/data/study/human_picks.json";
 import markets from "@/data/study/markets.json";
+import marketResults from "@/data/study/market_results.json";
 import gw6Fills from "@/data/study/agent_fills/gw6.json";
 import gw6Picks from "@/data/study/agent_picks/gw6.json";
 
@@ -47,6 +48,24 @@ export interface MarketRef {
   title: string;
   /** Where to actually trade it. This page does not take bets. */
   pantaUrl: string;
+  /**
+   * What the player actually scored, and whether that cleared the line.
+   *
+   * Computed independently from the official FPL data (scripts/fetch_market_results.py)
+   * and published BEFORE Panta's oracle acts, because our first three markets
+   * named two FPL endpoints and one of them returns season totals. If the oracle
+   * reads the wrong one, this is the timestamped record of what the data said.
+   *
+   * `decided` means no plausible bonus swing could flip it -- which is NOT the
+   * same as the gameweek being final, and the page says so rather than
+   * presenting a provisional number as a settled one.
+   */
+  outcome: "yes" | "no" | null;
+  points: number | null;
+  decided: boolean;
+  /** FPL has confirmed bonus for the gameweek. */
+  final: boolean;
+  outcomeAsOf: string | null;
 }
 
 export interface Participant {
@@ -127,6 +146,19 @@ interface RawMarket {
   title: string;
 }
 
+/** One row of data/market_results.json, produced by fetch_market_results.py. */
+interface RawOutcome {
+  market_id: string;
+  player: string;
+  line: number;
+  points: number | null;
+  outcome: "yes" | "no" | null;
+  decided: boolean;
+  final: boolean;
+  status: string;
+  breakdown?: { event: string | null; value: number | null; points: number | null }[];
+}
+
 interface RawPick {
   market_id: string;
   probability: number;
@@ -181,7 +213,33 @@ interface RawHuman {
   fill?: { signature?: string; shares?: string; avgPrice?: string } | null;
 }
 
+/** Outcome rows, keyed by market. Empty when nothing has been decided yet. */
+const OUTCOMES = new Map(
+  ((marketResults as unknown as { markets?: RawOutcome[] }).markets ?? []).map((o) => [
+    o.market_id,
+    o,
+  ]),
+);
+
+export const RESULTS_AS_OF = (marketResults as unknown as { asOf?: string | null }).asOf ?? null;
+export const GAMEWEEK_FINAL = Boolean(
+  (marketResults as unknown as { gameweekFinal?: boolean }).gameweekFinal,
+);
+
+/**
+ * When Panta resolves these markets.
+ *
+ * Read off the live market objects rather than from anything we store, because
+ * it is Panta's clock that matters and a value we cached could drift from it.
+ * The value is the same for all three GW6 markets: 2026-10-12T12:00:00Z. Kept
+ * as a constant with its provenance rather than fetched, because the page is a
+ * static export and a build-time fetch of a resolver schedule would be a new
+ * way for the page to fail.
+ */
+export const RESOLUTION_TIME = "12 Oct 12:00 UTC";
+
 function toMarketRef(m: RawMarket): MarketRef {
+  const outcome = OUTCOMES.get(m.market_id);
   return {
     marketId: m.market_id,
     player: m.player_name,
@@ -189,6 +247,11 @@ function toMarketRef(m: RawMarket): MarketRef {
     position: m.position,
     title: m.title,
     pantaUrl: PANTA_BASE + m.market_id,
+    outcome: outcome?.outcome ?? null,
+    points: outcome?.points ?? null,
+    decided: Boolean(outcome?.decided),
+    final: Boolean(outcome?.final),
+    outcomeAsOf: outcome ? RESULTS_AS_OF : null,
   };
 }
 

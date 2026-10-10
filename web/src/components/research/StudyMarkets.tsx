@@ -1,5 +1,5 @@
 import { StudyMarketCard } from "@/components/research/MarketCard";
-import { ALL_MARKETS, STUDY } from "@/lib/study";
+import { ALL_MARKETS, RESULTS_AS_OF, RESOLUTION_TIME, STUDY } from "@/lib/study";
 
 /**
  * The markets this study is running on.
@@ -35,6 +35,8 @@ export function StudyMarkets() {
     positionsByMarket.set(f.market.marketId, (positionsByMarket.get(f.market.marketId) ?? 0) + 1);
   }
 
+  const decidedCount = ALL_MARKETS.filter((m) => m.decided).length;
+
   return (
     <section id="markets" className="border-b border-hairline">
       <div className="mx-auto max-w-7xl px-6 py-16 sm:px-10">
@@ -65,6 +67,45 @@ export function StudyMarkets() {
           {ALL_MARKETS.length} market{ALL_MARKETS.length === 1 ? "" : "s"} this gameweek. Prices are
           on Panta and move with the crowd — nothing on this page is a quote.
         </p>
+
+        {/*
+          The resolution status, stated plainly, because "has it settled yet" is
+          the first thing anyone asks and the honest answer is two-part: the
+          real-world event is over and the outcome is fixed, but the on-chain
+          market has not been resolved by Panta yet.
+
+          We publish our own computed outcome BEFORE the oracle acts, with its
+          timestamp. Our first three markets named two FPL endpoints and one of
+          them returns SEASON totals -- an oracle reading that one would resolve
+          every market YES. If that happens, this page is the record of what the
+          official data said and when we read it.
+        */}
+        <div className="mt-6 rounded-lg border border-hairline bg-surface p-5">
+          <h3 className="mb-2 text-[13px] font-semibold text-foreground">Have these resolved?</h3>
+          <p className="max-w-3xl text-[13px] leading-relaxed text-foreground/60">
+            {decidedCount > 0 ? (
+              <>
+                <strong className="font-semibold text-foreground/85">
+                  The real-world outcome is known for {decidedCount} of {ALL_MARKETS.length} markets
+                </strong>{" "}
+                — that player has played, and the line cannot move any further. The on-chain markets
+                have <strong className="font-semibold text-foreground/85">not settled yet</strong>:
+                Panta resolves them at {RESOLUTION_TIME} and pays out then.
+              </>
+            ) : (
+              <>
+                Not yet — none of this gameweek&apos;s players have played. Panta resolves the
+                markets at {RESOLUTION_TIME}.
+              </>
+            )}
+          </p>
+          <p className="mt-3 max-w-3xl text-[12.5px] leading-relaxed text-foreground/45">
+            The outcomes above are ours, computed from the official FPL data{" "}
+            {RESULTS_AS_OF ? `on ${RESULTS_AS_OF.slice(0, 16).replace("T", " ")}Z` : "at build time"}{" "}
+            and published before Panta&apos;s oracle acts. A market resolves YES if the player
+            reached the line, NO otherwise. Nothing here settles anything — the chain does that.
+          </p>
+        </div>
       </div>
     </section>
   );
