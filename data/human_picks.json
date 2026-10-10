@@ -70,7 +70,12 @@
           "reasoning": "haaland 8+ easy, guy's inevitable",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "fill": {
+            "signature": "3tumqHQuYHGwTwK6ZsNXHUjc19fRbzj5LE1DUG6PHc4wzFcVuwrWKNfijVNjXVmoE5iuS5uHevY1a4jxMvNRK3vN",
+            "shares": "5.981804",
+            "avgPrice": "0.50152"
+          }
         }
       ]
     },
@@ -127,7 +132,12 @@
           "reasoning": "Love the transparency. Haaland 8+ vs Liverpool. City's attack is flying and he's in ridiculous form.",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "fill": {
+            "signature": "2gYjEtqpFCCdi22M6rTKbxWfZDEyLCktinTQLg4vx9At7b62BtBTGcqwFbSzcdASeFVjYYXcffKMWY9gvjuUYSGV",
+            "shares": "5.923219",
+            "avgPrice": "0.506481"
+          }
         }
       ]
     },
@@ -165,7 +175,12 @@
           "reasoning": "City's front line still looks dangerous even at Anfield and he's been finishing cleanly.",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "fill": {
+            "signature": "5SGaXXQwrv2Qu3P1pFjxKmunY4ELdCzD2YJSzNXwGjw7u6EXEvRL7ouRLpkomme18Hna6x5i7TmhRcUsqnfYHr4C",
+            "shares": "5.866322",
+            "avgPrice": "0.511393"
+          }
         }
       ]
     },
@@ -203,7 +218,12 @@
           "reasoning": "Haaland 8+ against Liverpool. He's always a threat in big games, and his finishing makes him worth watching.",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "fill": {
+            "signature": "4gS7TmBK8saxmAUKDkynuFwU7Fjk2frE69c9GUUdXRLZg79ECJbssHyfS47DeJBFb78a3RxcPr5rBfQA4wjPBf7Z",
+            "shares": "5.811034",
+            "avgPrice": "0.516259"
+          }
         }
       ]
     },
@@ -222,7 +242,12 @@
           "reasoning": "Haaland 8+ looks interesting given his scoring consistency and attacking threat.",
           "probability": null,
           "confidence": "low",
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "fill": {
+            "signature": "2erkXQyk4gpNLAmPSJs6h5asaLvUjCBgHBQbDqBmSP65ck6nwvBtpC5qnT5PNJys6Lvtp2SrJkvzuW43reitVS3Z",
+            "shares": "5.75728",
+            "avgPrice": "0.521079"
+          }
         }
       ]
     },
@@ -241,7 +266,12 @@
           "reasoning": "Haaland 8+ due to his strong scoring record lately.",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "fill": {
+            "signature": "2jWNhR6kCqgpGJwe6UhKdbBsk2smkwiWCRgZxRH2yBP7CNbFbqfVfXNxoJBd1GvGv7VhwJqxQTPT2zi4eXGwJ8jc",
+            "shares": "5.704991",
+            "avgPrice": "0.525855"
+          }
         }
       ]
     }
