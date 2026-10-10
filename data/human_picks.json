@@ -4,33 +4,35 @@
     "",
     "This is a RESEARCH record, not a betting ledger. Everything here was said in",
     "public, by someone who chose to say it, and is reproduced as they wrote it.",
+    "Nothing is paraphrased and nothing is tidied: \"guy's inevitable\" sits next to",
+    "\"home form + set pieces should deliver\" because the difference between a",
+    "feeling and a forecast is itself a finding.",
     "",
     "Two states a participant can be in, and the page must never blur them:",
     "  - 'stated': they gave a prediction and a reason publicly. Nothing on chain.",
     "  - 'onchain': we helped them place it, and 'wallet' + 'fill' are filled in.",
     "",
-    "Only mark someone 'onchain' with their agreement and their own wallet. The",
-    "handle is theirs; the money must be too.",
+    "Only mark someone 'onchain' with their explicit agreement and their own",
+    "wallet. The handle is theirs; the money must be too.",
     "",
-    "prediction.side is what they said, not what we think they meant. If someone",
-    "wrote 'no way Haaland gets 8' that is side 'no' with their words as the reason.",
-    "Where a prediction is ambiguous, leave it 'unclear' rather than resolving it",
-    "for them -- an inferred opinion is not evidence about their judgement."
+    "context records what each person was replying to, because a prediction made",
+    "with the market price visible is a different thing from one made blind."
   ],
   "_fields": {
     "handle": "X handle including the @, exactly as posted",
     "displayName": "as shown on X; may be empty",
-    "avatarUrl": "their X profile picture URL; may be empty, page falls back to initials",
-    "url": "link to the post or comment, so a reader can check it",
+    "avatarUrl": "X profile picture, resolved through unavatar.io by handle since the X API is not available to us. If the lookup fails the page falls back to initials, so a dead URL is cosmetically harmless.",
+    "url": "link to the post, so a reader can check it",
     "status": "stated | onchain",
     "wallet": "only when status is onchain and it is their own wallet",
+    "context": "the gameweek, and the fact that pool prices were visible when they called it",
     "predictions": [
       {
-        "market_id": "must match a market in data/markets.json",
+        "market_id": "matches a market in data/markets.json",
         "side": "yes | no | unclear",
-        "reasoning": "their words. Lightly trimmed for length, never rewritten",
-        "probability": "0-1, ONLY if they actually gave a number. Else null",
-        "confidence": "high | medium | low | null -- their own framing, not ours",
+        "reasoning": "their words, verbatim. Trimmed only for length, never rewritten",
+        "probability": "0-1, ONLY if they actually gave a number. None of GW6's callers did, which is recorded as null rather than invented",
+        "confidence": "high | medium | low | null -- and this is OUR reading of their wording, not something they said. Treated as a note, never as data",
         "statedAt": "ISO 8601, when they said it"
       }
     ],
@@ -39,8 +41,209 @@
       "shares": "",
       "avgPrice": "",
       "placedAt": "ISO 8601",
-      "helpedBy": "who onboarded them, so the assistance is on the record"
+      "helpedBy": "who onboarded them, so the assistance is on the record",
+      "stakeSource": "us | them -- CRITICAL for interpretation. A call backed by our money and one backed by theirs are not the same evidence, and GW6 is all our money"
     }
   },
-  "participants": []
+  "gw": 6,
+  "_gw6_summary": {
+    "posted": "2026-10-10, morning",
+    "replies": 47,
+    "interpretable_calls": 10,
+    "sides": "10 YES, 0 NO",
+    "observation": "Every human call was YES. The five models placed ten positions and nine of them were NO. On Haaland and Saka the two groups are on OPPOSITE SIDES OF THE SAME PARIMUTUEL POOL, so the winning side is paid out of the losing side's stake. This is a literal head-to-head, not a comparison we tabulate ourselves.",
+    "caveat": "Staked by us, not by them. A forecast with no cost behind it is weaker evidence than one with money on it, and the write-up has to say so."
+  },
+  "participants": [
+    {
+      "handle": "@Veeekthorr",
+      "displayName": "Victor ×͜×",
+      "avatarUrl": "https://unavatar.io/twitter/Veeekthorr",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "haaland 8+ easy, guy's inevitable",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@ABDULLEGEND111",
+      "displayName": "Abdul Legend",
+      "avatarUrl": "https://unavatar.io/twitter/ABDULLEGEND111",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "yes",
+          "reasoning": "Love this — on-chain predictions with receipts. My call: Saka 7+ vs Leeds, home form + set pieces should deliver",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@GenixJNR",
+      "displayName": "Geñix.jnr",
+      "avatarUrl": "https://unavatar.io/twitter/GenixJNR",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "yes",
+          "reasoning": "I'm leaning Saka 7+ against Leeds. Arsenal will create chances at home, and Saka's ability to find space in the final third makes this an interesting call.",
+          "probability": null,
+          "confidence": "low",
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@CalmlyUnique",
+      "displayName": "Calmly",
+      "avatarUrl": "https://unavatar.io/twitter/CalmlyUnique",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "Love the transparency. Haaland 8+ vs Liverpool. City's attack is flying and he's in ridiculous form.",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@JoyBsol",
+      "displayName": "Joy_B ❤️‍🔥",
+      "avatarUrl": "https://unavatar.io/twitter/JoyBsol",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "yes",
+          "reasoning": "Let's me stake. I think I'm going with YES. I have big faith in Saka. One of my favorites footballer",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@Bigkelceey",
+      "displayName": "OLIVIA ⋆˚🦋༘🗿",
+      "avatarUrl": "https://unavatar.io/twitter/Bigkelceey",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible. Did not name the market; read as Haaland 8+ from 'City's front line' and 'he's been finishing'",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "City's front line still looks dangerous even at Anfield and he's been finishing cleanly.",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@AmiliaD_",
+      "displayName": "Davo.eth",
+      "avatarUrl": "https://unavatar.io/twitter/AmiliaD_",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "C86nbpSX4ntRWvN4HMrdnhzHjHTtLooNtnw6k7hnmx1F",
+          "side": "yes",
+          "reasoning": "Saka 7+ in Arsenal v Leeds over because he handles both set pieces and penalties at home making a haul almost guaranteed against that defense",
+          "probability": null,
+          "confidence": "high",
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@BasmerW3",
+      "displayName": "Basma",
+      "avatarUrl": "https://unavatar.io/twitter/BasmerW3",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "Haaland 8+ against Liverpool. He's always a threat in big games, and his finishing makes him worth watching.",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@stillgawu",
+      "displayName": "𝐍€𝐖𝐁𝐎𝐑𝐍🌴💫",
+      "avatarUrl": "https://unavatar.io/twitter/stillgawu",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "Haaland 8+ looks interesting given his scoring consistency and attacking threat.",
+          "probability": null,
+          "confidence": "low",
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    },
+    {
+      "handle": "@Rand_Rnc",
+      "displayName": "RAND🇵🇹",
+      "avatarUrl": "https://unavatar.io/twitter/Rand_Rnc",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "Haaland 8+ due to his strong scoring record lately.",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-10T06:00:00Z"
+        }
+      ]
+    }
+  ]
 }

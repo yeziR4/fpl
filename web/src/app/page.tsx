@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ComingUp } from "@/components/research/ComingUp";
-import { ForecastTable, ParticipantSummary } from "@/components/research/ForecastTable";
+import { ParticipantTable } from "@/components/research/ParticipantTable";
 import { StudyMarkets } from "@/components/research/StudyMarkets";
 import { Avatar, LabBadge } from "@/components/research/Marks";
 import { HUMAN_COUNT, STUDY, forecastsForForecasters, statusCounts } from "@/lib/study";
@@ -28,12 +28,6 @@ export default function Home() {
   const committed = agentForecasts
     .filter((f) => f.status === "placed")
     .reduce((sum, f) => sum + (f.stakeUsdc ?? 0), 0);
-  const passedEntirely = STUDY.participants.filter(
-    (p) =>
-      p.kind === "agent" &&
-      agentForecasts.some((f) => f.participant.id === p.id) &&
-      agentForecasts.filter((f) => f.participant.id === p.id).every((f) => f.status === "passed"),
-  ).length;
 
   return (
     <main className="flex flex-1 flex-col">
@@ -47,32 +41,28 @@ export default function Home() {
       <Section
         id="data"
         kicker={`Gameweek ${STUDY.gw}`}
-        title="Every forecast, side by side"
-        lede="One row per participant per market, grouped by market so the disagreement is visible: four models read the forwards the same way and one did not."
+        title="Humans vs AI models"
+        lede="One row per participant. Click anyone to see every call they made — what they said, what the price was, and whether it reached the chain. Sorting is by position actually placed, because on a page about who committed what, the order should answer that question."
       >
         <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Stat label="Positions on chain" value={String(agents.placed)} accent />
           <Stat label="Capital committed" value={`$${committed.toFixed(2)}`} />
-          <Stat label="Forecasts that found no edge" value={String(agents["no-trade"])} />
-          <Stat label="Models that passed entirely" value={String(passedEntirely)} />
+          <Stat label="Human calls recorded" value={String(HUMAN_COUNT)} />
+          <Stat label="Humans backing YES" value={String(humanForecasts.filter((f) => f.side === "yes").length)} />
         </div>
 
-        <h3 className="mb-3 text-[12px] font-semibold uppercase tracking-[0.09em] text-foreground/45">
-          By participant
-        </h3>
-        <ParticipantSummary forecasts={agentForecasts} />
+        <ParticipantTable forecasts={[...agentForecasts, ...humanForecasts]} />
 
-        <h3 className="mb-3 mt-8 text-[12px] font-semibold uppercase tracking-[0.09em] text-foreground/45">
-          Every forecast
-        </h3>
-        <ForecastTable forecasts={[...agentForecasts, ...humanForecasts]} />
-
+        {/*
+          The one piece of context a reader genuinely cannot infer. The models
+          risk their own money; the humans do not, and pretending otherwise would
+          be the single most misleading thing this page could do.
+        */}
         <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-foreground/45">
-          <strong className="font-semibold text-foreground/65">Reading the columns.</strong>{" "}
-          <em>Stated P</em> is the probability the participant gave for the market resolving YES, as
-          they gave it. <em>Pool price</em> is what the side they took cost at that moment.{" "}
-          <em>Edge</em> is the difference between the two — their claim that the market was wrong.{" "}
-          <em>On chain</em> means a real transaction exists and links to it.
+          <strong className="font-semibold text-foreground/65">One thing to hold in mind.</strong>{" "}
+          Every model stakes its own bankroll, so its calls are filtered through &ldquo;do I
+          actually believe this?&rdquo;. The human calls this gameweek are staked by us — they
+          risked nothing to make them, and that difference is recorded rather than smoothed over.
         </p>
       </Section>
 
@@ -231,12 +221,12 @@ function Masthead({
           An open study · Gameweek {STUDY.gw}
         </span>
         <h1 className="mt-4 max-w-4xl font-display text-4xl font-black uppercase leading-[0.98] text-foreground sm:text-6xl">
-          Can a machine price a footballer better than a crowd?
+          Can AI agents price a footballer better than the crowd?
         </h1>
         <p className="mt-5 max-w-2xl text-[15.5px] leading-relaxed text-foreground/60">
           Five frontier models and a set of public forecasters, all pricing the same Fantasy Premier
-          League markets, all on the record before kickoff. Every position is real, on Solana, and
-          checkable by anyone.
+          League markets, all on the record before kickoff. On this gameweek&rsquo;s three markets
+          they ended up on opposite sides of the same pool — so the payout decides it, not us.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-[12.5px] text-foreground/50">
