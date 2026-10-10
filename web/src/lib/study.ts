@@ -173,6 +173,10 @@ interface RawHuman {
     reasoning?: string;
     probability?: number | null;
     confidence?: string | null;
+    // Per-prediction, because a person can call several markets and each one is
+    // placed separately. The participant-level `fill` below is the older shape
+    // and is kept only so an older file still parses.
+    fill?: { signature?: string; shares?: string; avgPrice?: string } | null;
   }[];
   fill?: { signature?: string; shares?: string; avgPrice?: string } | null;
 }
@@ -287,22 +291,40 @@ function buildHumanForecasts(gw: number): Forecast[] {
       const market = MARKET_REFS.get(prediction.market_id);
       if (!market) continue; // a market we do not know about is skipped, never guessed
       const side = prediction.side === "yes" || prediction.side === "no" ? prediction.side : null;
+
+      // The fill lives on the PREDICTION, not the participant. Reading it off the
+      // participant was a real bug: the humans were on chain for a whole turn
+      // while the page still showed them as never placed.
+      const fill = prediction.fill ?? null;
+      const signature = fill?.signature && !fill.signature.startsWith("(") ? fill.signature : null;
+      // Stake derived from what the chain recorded rather than from a constant,
+      // so a fill that went through at a different size shows its true size
+      // instead of the size we intended.
+      const sharesNum = fill?.shares ? Number(fill.shares) : null;
+      const fillPriceNum = fill?.avgPrice ? Number(fill.avgPrice) : null;
+      const stakeUsdc =
+        sharesNum !== null && fillPriceNum !== null && Number.isFinite(sharesNum * fillPriceNum)
+          ? sharesNum * fillPriceNum
+          : null;
+
       out.push({
         key: `${h.handle}|${prediction.market_id}`,
         participant,
         market,
         side,
         probability: prediction.probability ?? null,
-        // Humans state a view, not a price; there is nothing to compare against
-        // unless we record the pool price at the time they said it, which we do not.
+        // A human states a view, not a price. We know what they PAID, which is
+        // shown under fill price -- but that is the price after their own
+        // impact, not the price they were looking at when they called it, and
+        // conflating the two would credit them with an edge they never claimed.
         priceAtDecision: null,
         edge: null,
-        stakeUsdc: null,
+        stakeUsdc,
         reasoning: prediction.reasoning ?? "",
-        status: h.fill?.signature ? "placed" : side ? "no-trade" : "passed",
-        shares: h.fill?.shares ?? null,
-        fillPrice: h.fill?.avgPrice ?? null,
-        signature: h.fill?.signature ?? null,
+        status: signature ? "placed" : side ? "unfilled" : "passed",
+        shares: fill?.shares ?? null,
+        fillPrice: fill?.avgPrice ?? null,
+        signature,
         gw,
       });
     }
