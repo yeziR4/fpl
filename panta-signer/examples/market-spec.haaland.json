@@ -3,12 +3,11 @@
   "_timing": "endTime is KICKOFF: Panta stops trading at endTime, so anything later lets traders act on in-play information.",
   "_line": "Calibrated per position: FWD 8+ / MID 7+ / DEF 5+ all land in Panta's full 20%% creator-royalty band. A 10+ forward line clears only 7.2%% of the time and drops it to 5%%.",
   "_pool": "Top 10-20 by ownership, price or season points -- not every player in the gameweek.",
-  "_verified": "ownership 73.9%",
+  "_verified": "ownership 74.2%",
   "title": "Haaland 8+ points, GW6",
   "question": "Will Erling Haaland score 8 or more Fantasy Premier League points in Gameweek 6 (Liverpool v Manchester City)?",
-  "resolutionRule": "Resolves YES if the official Fantasy Premier League site credits Erling Haaland with 8 or more points for Gameweek 6, once every match in that gameweek is marked finished and bonus points are final. Resolves NO otherwise.",
+  "resolutionRule": "Resolves YES if the official Fantasy Premier League site credits Erling Haaland with 8 or more points in Gameweek 6 SPECIFICALLY -- the gameweek figure, not season totals -- once every match in that gameweek is marked finished and bonus points are final. Resolves NO otherwise.",
   "sourcesOfTruth": [
-    "https://fantasy.premierleague.com/api/bootstrap-static/",
     "https://fantasy.premierleague.com/api/event/6/live/"
   ],
   "category": "sports",

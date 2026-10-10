@@ -80,11 +80,28 @@ for slug, display, match, line, pos, kickoff, fixture in TARGETS:
         "question": "Will %s score %d or more Fantasy Premier League points in Gameweek %d (%s)?" % (display, line, gw, fixture),
         "resolutionRule": (
             "Resolves YES if the official Fantasy Premier League site credits %s with %d or more "
-            "points for Gameweek %d, once every match in that gameweek is marked finished and bonus "
-            "points are final. Resolves NO otherwise." % (display, line, gw)
+            "points in Gameweek %d SPECIFICALLY -- the gameweek figure, not season totals -- once "
+            "every match in that gameweek is marked finished and bonus points are final. "
+            "Resolves NO otherwise." % (display, line, gw)
         ),
+        # ONE source, and it is the gameweek figure.
+        #
+        # bootstrap-static used to sit here alongside it, and it is actively
+        # dangerous. Its total_points is the SEASON total; an agent reading it
+        # would see a number far above any line we set and resolve EVERY market
+        # YES. Measured on a finished gameweek, the same player read 30 there and
+        # 1 in /event/<gw>/live/ -- a thirty-fold difference pointing the wrong
+        # way. Four of the five models bet NO on the forwards, so a misread would
+        # have inverted the entire study.
+        #
+        # One unambiguous source leaves nothing to choose between. Listing two and
+        # hoping the agent prefers the right one is not a resolution policy, it is
+        # a coin flip with our money on it.
+        #
+        # The live endpoint's total_points already includes bonus, and bonus is
+        # final about an hour after each match -- long before our resolution time,
+        # which is set roughly two days out.
         "sourcesOfTruth": [
-            "https://fantasy.premierleague.com/api/bootstrap-static/",
             "https://fantasy.premierleague.com/api/event/%d/live/" % gw,
         ],
         "category": "sports",
