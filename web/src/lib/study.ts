@@ -109,29 +109,71 @@ export interface GameweekStudy {
 
 interface LabMeta {
   lab: string;
-  /** Drawn as a monogram badge rather than the vendor's real logo. */
+  /** Monogram. Still the fallback wherever a logo is too small or fails to load. */
   mark: string;
-  /** Brand colour, for the badge and the participant chip. */
+  /** Brand colour, for the fallback badge and the participant chip. */
   color: string;
+  /**
+   * The lab's domain, which is how its logo is fetched.
+   *
+   * Changed from a drawn monogram to the labs' real marks. The earlier reasoning
+   * was that a vendor's logo implies an association that does not exist. That
+   * concern is real, but it is answered by HOW the marks are used rather than by
+   * refusing to name the models: this is a benchmark table comparing five named
+   * systems, and it never claims endorsement. The submission says plainly that
+   * none of the labs were involved.
+   *
+   * Favicons rather than hand-drawn SVG paths, because they are the vendor's own
+   * published asset, they need no key, and one source for all five keeps the row
+   * visually consistent. Simple Icons would be sharper but has dropped OpenAI
+   * for trademark reasons, which would have left four logos and one monogram.
+   */
+  domain: string;
 }
 
-/**
- * A deliberate choice worth stating: these are monogram badges in each lab's
- * brand colour, NOT the vendors' actual logo files. Using the real marks on a
- * public page implies an association that does not exist, and a research page
- * loses credibility faster by overclaiming than by looking plain. Swap in the
- * official assets only if the labs are asked first.
- */
 const LAB_META: Record<string, LabMeta> = {
-  "~openai/gpt-latest": { lab: "OpenAI", mark: "OA", color: "#10a37f" },
-  "~anthropic/claude-opus-latest": { lab: "Anthropic", mark: "AN", color: "#d97757" },
-  "~google/gemini-pro-latest": { lab: "Google DeepMind", mark: "GD", color: "#4285f4" },
-  "x-ai/grok-4.20": { lab: "xAI", mark: "xA", color: "#8b5cf6" },
-  "deepseek/deepseek-v4-pro": { lab: "DeepSeek", mark: "DS", color: "#4d6bfe" },
+  "~openai/gpt-latest": {
+    lab: "OpenAI",
+    mark: "OA",
+    color: "#10a37f",
+    domain: "openai.com",
+  },
+  "~anthropic/claude-opus-latest": {
+    lab: "Anthropic",
+    mark: "AN",
+    color: "#d97757",
+    domain: "anthropic.com",
+  },
+  "~google/gemini-pro-latest": {
+    lab: "Google DeepMind",
+    mark: "GD",
+    color: "#4285f4",
+    domain: "deepmind.google",
+  },
+  "x-ai/grok-4.20": { lab: "xAI", mark: "xA", color: "#8b5cf6", domain: "x.ai" },
+  "deepseek/deepseek-v4-pro": {
+    lab: "DeepSeek",
+    mark: "DS",
+    color: "#4d6bfe",
+    domain: "deepseek.com",
+  },
 };
 
 export function labMeta(slug: string): LabMeta {
-  return LAB_META[slug] ?? { lab: slug, mark: slug.slice(0, 2).toUpperCase(), color: "#6b7280" };
+  return (
+    LAB_META[slug] ?? {
+      lab: slug,
+      mark: slug.slice(0, 2).toUpperCase(),
+      color: "#6b7280",
+      domain: "",
+    }
+  );
+}
+
+/** The lab's logo, or null when we have no domain for it. */
+export function labLogoUrl(slug: string, size = 64): string | null {
+  const { domain } = labMeta(slug);
+  return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=${size}` : null;
 }
 
 const PANTA_BASE = "https://panta.market/markets/";
