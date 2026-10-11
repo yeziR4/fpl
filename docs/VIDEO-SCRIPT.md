@@ -20,16 +20,53 @@ these in a row; the second minute is where they decide.
 
 ---
 
-## The critical timing decision
+## The schedule — confirmed, not guessed
 
-**Haaland resolves Sunday 15:30Z.** If you record **Sunday evening**, the video
-ends with a real, settled result and the winning side's payout on chain. That is
-a materially stronger video — it turns "here is a market" into "here is what
-happened".
+```
+Sat 11 Oct  15:30 UTC   Haaland's match ends. All three real-world results known.
+Sun 12 Oct  12:00 UTC   all three on-chain markets resolve. Panta posts Discord
+                        alerts with a confidence and a rationale, and payouts
+                        become claimable.
+Mon 13 Oct  06:59 UTC   SUBMISSION DEADLINE.
 
-**If you record before that**, the video is honest but open-ended, and you should
-say so rather than imply a conclusion. Either is acceptable; the settled version
-is better if you have the hours.
+WINDOW: 19 hours between the resolution and the deadline.
+```
+
+**The resolution fits in the video.** That was not obvious when this was first
+written — our markets resolve at a fixed `resolutionTime` set at creation, a
+two-day buffer after the last kickoff so bonus points are final, and it happens
+to land 19 hours before the deadline.
+
+**Record in TWO sessions, not one.** The single-session version is stronger and
+riskier: if Panta's resolver is slow, wrong, or down, you have nothing.
+
+**Session 1 — today, after 17:30 UTC (after Haaland's match).**
+Shots 1–6 in full. Every real-world result is known by then and the page shows
+them. This version stands alone and is submittable as-is.
+
+**Session 2 — tomorrow, after 12:00 UTC.**
+A 45-second addendum: the Discord alert, the claimable payout, the settled page.
+Append it. Do not re-record session 1.
+
+**Submit by 04:59 UTC on 13 Oct**, leaving two hours of buffer. A submission at
+06:58 is a submission that did not happen.
+
+### The addendum (record only if the markets actually resolve)
+
+**On screen:** the Panta Discord alert, then the Panta market page showing the
+position and the claim button.
+
+> *"And this settled an hour ago. Panta's resolver read the official FPL data and
+> posted its verdict with a confidence and a reason. The winning side is paid out
+> of the losing side's stake, on chain — and nobody had to trust us for any of it."*
+
+**If it has not resolved by Monday morning**, say so and move on:
+
+> *"The markets resolve at noon UTC today. Everything else you have seen is final
+> — sixteen positions on chain and three results from the official data."*
+
+**Never imply a settlement that has not happened.** A judge who checks will find
+it, and the honest version is a stronger submission anyway.
 
 ---
 
