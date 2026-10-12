@@ -181,12 +181,12 @@ function Detail({ forecasts }: { forecasts: Forecast[] }) {
 
   return (
     <div className="border-t border-hairline bg-surface-strong px-4 py-3">
-      <div className="grid grid-cols-[1.6fr_0.6fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] gap-2 pb-2 text-[9.5px] font-semibold uppercase tracking-[0.07em] text-foreground/35">
+      <div className="grid grid-cols-[1.6fr_0.6fr_0.7fr_0.7fr_1fr_0.7fr_1fr] gap-2 pb-2 text-[9.5px] font-semibold uppercase tracking-[0.07em] text-foreground/35">
         <span>Market</span>
         <span>Side</span>
         <span className="text-right">Stated P</span>
         <span className="text-right">Price</span>
-        <span className="text-right">Edge</span>
+        <span className="text-right">Result</span>
         <span className="text-right">Stake</span>
         <span>Status</span>
       </div>
@@ -197,7 +197,7 @@ function Detail({ forecasts }: { forecasts: Forecast[] }) {
           f.side === "yes" ? "text-accent" : f.side === "no" ? "text-rose-400" : "text-foreground/25";
         return (
           <div key={f.key} className="border-t border-hairline/60 py-2">
-            <div className="grid grid-cols-[1.6fr_0.6fr_0.8fr_0.8fr_0.8fr_0.8fr_1fr] items-baseline gap-2">
+            <div className="grid grid-cols-[1.6fr_0.6fr_0.7fr_0.7fr_1fr_0.7fr_1fr] items-baseline gap-2">
               <span className="text-[12.5px] text-foreground/80">
                 {f.market.player} {f.market.line}+
                 <span className="ml-1.5 text-[10px] text-foreground/30">{f.market.position}</span>
@@ -207,16 +207,30 @@ function Detail({ forecasts }: { forecasts: Forecast[] }) {
               <span className="tnum text-right text-[12px] text-foreground/50">
                 {f.priceAtDecision === null ? "—" : f.priceAtDecision.toFixed(3)}
               </span>
-              <span
-                className={`tnum text-right text-[12px] font-semibold ${
-                  f.edge === null
-                    ? "text-foreground/25"
-                    : f.edge > 0
-                      ? "text-accent"
-                      : "text-foreground/50"
-                }`}
-              >
-                {signed(f.edge)}
+              {/*
+                Was "Edge" -- the gap between the stated probability and the
+                price. That is the researcher's number; anyone reading a
+                leaderboard wants the outcome of the bet, which is this.
+              */}
+              <span className="text-right">
+                {f.pnlUsdc === null ? (
+                  <span className="text-[11.5px] text-foreground/25">
+                    {f.status === "placed" ? "pending" : "—"}
+                  </span>
+                ) : (
+                  <span
+                    className={`tnum text-[12px] font-semibold ${
+                      f.pnlUsdc > 0
+                        ? "text-accent"
+                        : f.pnlUsdc < 0
+                          ? "text-rose-400"
+                          : "text-foreground/60"
+                    }`}
+                  >
+                    {f.pnlUsdc > 0 ? "won " : f.pnlUsdc < 0 ? "lost " : ""}
+                    {f.pnlUsdc >= 0 ? "+" : "−"}${Math.abs(f.pnlUsdc).toFixed(2)}
+                  </span>
+                )}
               </span>
               <span className="tnum text-right text-[12px] text-foreground/75">{usd(f.stakeUsdc)}</span>
               <span className="flex flex-col gap-0.5">

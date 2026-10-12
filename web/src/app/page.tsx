@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ComingUp } from "@/components/research/ComingUp";
+import { Roadmap } from "@/components/research/Roadmap";
 import { ParticipantTable } from "@/components/research/ParticipantTable";
 import { StudyMarkets } from "@/components/research/StudyMarkets";
 import { Avatar, LabBadge } from "@/components/research/Marks";
@@ -198,7 +198,7 @@ export default function Home() {
         </div>
       </Section>
 
-      <ComingUp />
+      <Roadmap />
     </main>
   );
 }
