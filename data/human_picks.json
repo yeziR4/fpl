@@ -49,10 +49,12 @@
   "_gw6_summary": {
     "posted": "2026-10-10, morning",
     "replies": 47,
-    "interpretable_calls": 10,
-    "sides": "10 YES, 0 NO",
+    "interpretable_calls": 12,
+    "sides": "12 YES, 0 NO",
     "observation": "Every human call was YES. The five models placed ten positions and nine of them were NO. On Haaland and Saka the two groups are on OPPOSITE SIDES OF THE SAME PARIMUTUEL POOL, so the winning side is paid out of the losing side's stake. This is a literal head-to-head, not a comparison we tabulate ourselves.",
-    "caveat": "Staked by us, not by them. A forecast with no cost behind it is weaker evidence than one with money on it, and the write-up has to say so."
+    "caveat": "Staked by us, not by them. A forecast with no cost behind it is weaker evidence than one with money on it, and the write-up has to say so.",
+    "onchain": "6 of 12 placed",
+    "placement_note": "The Haaland market moved to secondary phase before the later calls arrived, and the buy path refuses anything not in primary. Their calls are recorded from what they said publicly and are NOT on chain. The page says so on every row."
   },
   "participants": [
     {
@@ -94,7 +96,8 @@
           "reasoning": "Love this — on-chain predictions with receipts. My call: Saka 7+ vs Leeds, home form + set pieces should deliver",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "placementBlocked": "The market left the primary phase before this call arrived, and Panta's buy path refuses anything not in primary. The call is recorded from what they said publicly; it is not a failed order."
         }
       ]
     },
@@ -113,7 +116,8 @@
           "reasoning": "I'm leaning Saka 7+ against Leeds. Arsenal will create chances at home, and Saka's ability to find space in the final third makes this an interesting call.",
           "probability": null,
           "confidence": "low",
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "placementBlocked": "The market left the primary phase before this call arrived, and Panta's buy path refuses anything not in primary. The call is recorded from what they said publicly; it is not a failed order."
         }
       ]
     },
@@ -156,7 +160,8 @@
           "reasoning": "Let's me stake. I think I'm going with YES. I have big faith in Saka. One of my favorites footballer",
           "probability": null,
           "confidence": null,
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "placementBlocked": "The market left the primary phase before this call arrived, and Panta's buy path refuses anything not in primary. The call is recorded from what they said publicly; it is not a failed order."
         }
       ]
     },
@@ -199,7 +204,8 @@
           "reasoning": "Saka 7+ in Arsenal v Leeds over because he handles both set pieces and penalties at home making a haul almost guaranteed against that defense",
           "probability": null,
           "confidence": "high",
-          "statedAt": "2026-10-10T06:00:00Z"
+          "statedAt": "2026-10-10T06:00:00Z",
+          "placementBlocked": "The market left the primary phase before this call arrived, and Panta's buy path refuses anything not in primary. The call is recorded from what they said publicly; it is not a failed order."
         }
       ]
     },
@@ -272,6 +278,46 @@
             "shares": "5.704991",
             "avgPrice": "0.525855"
           }
+        }
+      ]
+    },
+    {
+      "handle": "@Mustyweb3_",
+      "displayName": "Musty Ich",
+      "avatarUrl": "https://unavatar.io/twitter/Mustyweb3_",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible. Called after the original post, before kickoff",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "Haaland's goal threat makes him capable of clearing the line.",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-11T12:00:00Z",
+          "placementBlocked": "The market left the primary phase before this call arrived, and Panta's buy path refuses anything not in primary. The call is recorded from what they said publicly; it is not a failed order."
+        }
+      ]
+    },
+    {
+      "handle": "@_Rio_Blake",
+      "displayName": "リオ🦅",
+      "avatarUrl": "https://unavatar.io/twitter/_Rio_Blake",
+      "url": null,
+      "status": "stated",
+      "wallet": null,
+      "context": "GW6, pool prices visible. Called after the original post, before kickoff",
+      "predictions": [
+        {
+          "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
+          "side": "yes",
+          "reasoning": "Haaland YES. He's always a threat in big games, and one clear chance could be enough.",
+          "probability": null,
+          "confidence": null,
+          "statedAt": "2026-10-11T12:00:00Z",
+          "placementBlocked": "The market left the primary phase before this call arrived, and Panta's buy path refuses anything not in primary. The call is recorded from what they said publicly; it is not a failed order."
         }
       ]
     }

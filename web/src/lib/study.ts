@@ -37,6 +37,7 @@ export type ParticipantKind = "agent" | "human";
 export type ForecastStatus =
   | "placed" // forecast made, order filled
   | "unfilled" // forecast made, order attempted, no fill
+  | "closed" // forecast made, order NEVER attempted -- the market left primary first
   | "no-trade" // forecast made, no +EV side at the price, so nothing was tried
   | "passed"; // the participant looked and declined to forecast
 
@@ -251,6 +252,13 @@ interface RawHuman {
     // placed separately. The participant-level `fill` below is the older shape
     // and is kept only so an older file still parses.
     fill?: { signature?: string; shares?: string; avgPrice?: string } | null;
+    /**
+     * Set when a call could not be placed for a reason that is not the caller's
+     * fault -- the market left the primary phase before the order went in. The
+     * row reads "market closed" rather than "unfilled", because "unfilled"
+     * implies we tried, and we did not.
+     */
+    placementBlocked?: string | null;
   }[];
   fill?: { signature?: string; shares?: string; avgPrice?: string } | null;
 }
@@ -426,7 +434,13 @@ function buildHumanForecasts(gw: number): Forecast[] {
         edge: null,
         stakeUsdc,
         reasoning: prediction.reasoning ?? "",
-        status: signature ? "placed" : side ? "unfilled" : "passed",
+        status: signature
+          ? "placed"
+          : prediction.placementBlocked
+            ? "closed"
+            : side
+              ? "unfilled"
+              : "passed",
         shares: fill?.shares ?? null,
         fillPrice: fill?.avgPrice ?? null,
         signature,
@@ -455,7 +469,13 @@ export function forecastsForForecasters(kind: ParticipantKind): Forecast[] {
 
 /** Status counts, for the summary strip. */
 export function statusCounts(forecasts: Forecast[]): Record<ForecastStatus, number> {
-  const counts: Record<ForecastStatus, number> = { placed: 0, unfilled: 0, "no-trade": 0, passed: 0 };
+  const counts: Record<ForecastStatus, number> = {
+    placed: 0,
+    unfilled: 0,
+    closed: 0,
+    "no-trade": 0,
+    passed: 0,
+  };
   for (const f of forecasts) counts[f.status] += 1;
   return counts;
 }

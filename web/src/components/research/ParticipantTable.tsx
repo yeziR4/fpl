@@ -23,6 +23,11 @@ import type { Forecast, Participant } from "@/lib/study";
 const STATUS_LABEL: Record<Forecast["status"], { text: string; tone: string }> = {
   placed: { text: "on chain", tone: "text-accent" },
   unfilled: { text: "unfilled", tone: "text-amber-500" },
+  // Distinct from "unfilled" on purpose: we never placed an order. The market
+  // left the primary phase before the call arrived, and Panta's buy path refuses
+  // anything not in primary. Saying "unfilled" would claim an attempt we did not
+  // make.
+  closed: { text: "market closed", tone: "text-foreground/40" },
   "no-trade": { text: "no edge", tone: "text-foreground/40" },
   passed: { text: "passed", tone: "text-foreground/30" },
 };
