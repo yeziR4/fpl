@@ -1,128 +1,108 @@
-# Overline demo — transcript (v1)
+# Overline demo — transcript (v2)
 
-2:21 · 1920×1080. Voiceover lines as spoken, with what is on screen in each scene.
+~2:00 · 1920×1080 · voice: Kokoro `af_heart`.
 
 ## 1 · Hook  ·  0:00
 
-**On screen:** Dark pitch outline. Word-by-word titles: EVERY WEEKEND, / MILLIONS PLAY / FANTASY PREMIER LEAGUE. → AND EVERYONE HAS AN OPINION. Two real fan replies slide in as cards (Victor, Davo.eth, both YES). → OPINIONS ARE FREE. → SO WHAT HAPPENS WHEN YOU PUT A PRICE ON THEM? zooms through the camera.
+**On screen:** Full-bleed player collage behind the titles, slow push-in: EVERY WEEKEND, MILLIONS PLAY FANTASY PREMIER LEAGUE. → AND EVERYONE HAS AN OPINION. Then on black: OPINIONS ARE FREE. → SO WHAT HAPPENS WHEN YOU PUT A PRICE ON THEM?
 
 > `0:00` Every weekend, millions of people play Fantasy Premier League.
 > `0:04` And every one of them has an opinion.
-> `0:05` Haaland eight plus? Easy. Guy's inevitable.
-> `0:08` Saka at home? A haul, almost guaranteed.
-> `0:12` But opinions are free.
-> `0:14` So what happens when you put a price on them?
+> `0:07` But opinions are free.
+> `0:08` So what happens when you put a price on them?
 
-## 2 · Logo  ·  0:17
+## 2 · Logo  ·  0:12
 
 **On screen:** Overline ring spins in, wordmark, AN OPEN STUDY · BUILT ON PANTA.
 
-> `0:17` This is Overline. An open study, built on Panta.
+> `0:12` This is Overline. An open study, built on Panta.
 
-## 3 · The markets  ·  0:20
+## 3 · Launch week  ·  0:15
 
-**On screen:** Live site hero in a frame. Chips: SAKA 7+ PTS · HAALAND 8+ PTS · JOÃO PEDRO 8+ PTS. Tag: LIVE ON SOLANA MAINNET · VIA PANTA.
+**On screen:** LAUNCH WEEK · GAMEWEEK 6 over an outlined GW6. Saka, Haaland and João Pedro rise in on club-colour glows, each with a chip: crest · SAKA 7+ vs Leeds crest, HAALAND 8+ at Liverpool, JOÃO PEDRO 8+ vs Bournemouth. LIVE ON PANTA.
 
-> `0:20` Three Fantasy Premier League markets, live on Solana.
+> `0:15` For our launch week, we created three Fantasy Premier League markets, live on Panta.
 
-## 4 · The models  ·  0:24
+## 4 · The models  ·  0:21
 
-**On screen:** FIVE FRONTIER MODELS. Five cards pop in as each is named (Claude, GPT, Gemini, Grok, DeepSeek), each tagged OWN WALLET · $5. SAME PROMPT · SAME MARKETS · SAME LIVE PRICE.
+**On screen:** WE STARTED WITH / FIVE FRONTIER AI MODELS. Five cards with real logos: Claude, GPT, Gemini, Grok, DeepSeek, each OWN WALLET · $5. SAME PROMPT · SAME MARKETS · SAME LIVE PRICE.
 
-> `0:24` Five frontier AI models. Claude. GPT. Gemini. Grok. DeepSeek. Each with its own wallet, five dollars, and the same live price.
+> `0:21` We started with five frontier AI models. Each with its own wallet, five dollars, and the same live price.
 
-## 5 · Claude's call  ·  0:34
+## 5 · Claude's call  ·  0:28
 
-**On screen:** Zoom into the site's expanded Claude row. Highlights on 33.0% and the written reason for Haaland.
+**On screen:** Zoom into Claude's row on the site; highlights on 33.0% and the written reason.
 
-> `0:34` They state a probability, and a reason. Then they trade.
+> `0:28` They state a probability, and a reason. Then they trade.
 
-## 6 · The fans  ·  0:37
+## 6 · The fans  ·  0:32
 
-**On screen:** 47 REPLIES → 12 CALLS, WORD FOR WORD. Grid of 12 fan cards, each with avatar, handle, their own words and a YES pill. Slam: 12/12 SAID YES.
+**On screen:** 47 REPLIES → 12 CALLS, WORD FOR WORD. Grid of 12 fan cards with their own words. 12/12 SAID YES.
 
-> `0:37` Then we asked football fans on X to make their call, in public.
-> `0:41` Forty seven replies. Twelve calls, recorded word for word.
-> `0:46` Every single one said yes.
+> `0:32` Then we asked football fans on X to make their call, in public.
+> `0:36` Forty seven replies. Twelve calls, recorded word for word.
+> `0:40` Every single one said yes.
 
-## 7 · On chain  ·  0:48
+## 7 · The free stake  ·  0:42
 
-**On screen:** Site table: Victor's expanded row, pan to stake $3.00 and ON CHAIN with the tx signature highlighted. Chip: ON CHAIN · SOLANA MAINNET.
+**On screen:** Victor's row on the site, pan to the $3.00 stake and its status. LIVE ON PANTA.
 
-> `0:48` We gave six of them a free three dollar stake, and placed it on chain, in a wallet with their name on it.
+> `0:42` We gave six of them a free three dollar stake, placed on Panta, in a wallet with their name on it.
 
-## 8 · The price  ·  0:54
+## 8 · Full time  ·  0:49
 
-**On screen:** Line chart: Haaland YES price as each fan's order filled. 0.5015 → 0.5065 → 0.5114 → 0.5163 → 0.5211 → 0.5259, an avatar at each point, in fill order. SAME CALL. WORSE PRICE.
+**On screen:** Black. FULL TIME. Music drops out.
 
-> `0:54` Now watch the price. Every fan who piled in on yes pushed it higher. The sixth caller paid more than the first, for saying exactly the same thing.
+> `0:49` Then the matches were played.
 
-## 9 · Poll vs market  ·  1:03
+## 9 · Results  ·  0:51
 
-**On screen:** Two cards: A POLL 6/6 = A SIGNAL · A MARKET 6/6 = WORSE ODDS.
+**On screen:** Two player cards. Saka (Arsenal v Leeds), line 7+: counts to 2, NO stamp, player greys out. Haaland (Liverpool v Man City), line 8+: counts to 6, "Scored at Anfield. Still short.", NO stamp.
 
-> `1:03` A poll would call six out of six a signal. A market charges you for agreeing.
+> `0:51` Saka, at home to Leeds. Two points. The line was seven.
+> `0:55` Haaland scored at Anfield, and still finished on six. The line was eight.
 
-## 10 · The models disagree  ·  1:08
+## 10 · The misses  ·  1:00
 
-**On screen:** Left: THE FANS, 12 avatars, YES. Right: THE MODELS, Claude (33%, NO) and Gemini (35%, NO) quote cards.
+**On screen:** 12 fan avatars grey out, red X each. 12 CALLS. 12 MISSES.
 
-> `1:08` The models disagreed. Claude put Haaland nearer thirty percent than fifty. Gemini said Anfield is a tough place for City. They went no.
+> `1:00` Twelve calls. Twelve misses.
 
-## 11 · Full time  ·  1:17
+## 11 · The board  ·  1:03
 
-**On screen:** Black. FULL TIME. Music cuts out.
+**On screen:** João Pedro card (Chelsea v Bournemouth, line 8+, models said NO) counts to 12, YES stamp. Then the site board: Claude/Gemini/GPT in profit highlighted, humans at -$3.00.
 
-> `1:17` Then the matches were played.
+> `1:03` The models weren't perfect. They missed João Pedro's twelve point haul against Bournemouth. But on the board, Claude, Gemini and GPT all finished in profit.
 
-## 12 · The results  ·  1:19
+## 12 · Panta API  ·  1:15
 
-**On screen:** Two scoreboards count up: BUKAYO SAKA, line 7+, 2 → NO stamp. ERLING HAALAND, line 8+, 6 → NO stamp. Source line: official FPL data.
+**On screen:** POWERED BY THE PANTA API. Endpoints light up in order.
 
-> `1:19` Saka. Two points. The line was seven.
-> `1:22` Haaland. Six points. The line was eight.
+> `1:15` Every step runs on the Panta API. Creating the markets. Quoting the price. Building, signing, submitting, and verifying every order.
 
-## 13 · The misses  ·  1:26
+## 13 · Settlement  ·  1:24
 
-**On screen:** 12 avatars go grey, red X on each. 12 CALLS. 12 MISSES.
+**On screen:** Site markets section. Chips: Each model signs with its own key · Settled by Panta vs official FPL data · Every position, fully transparent.
 
-> `1:26` Twelve calls. Twelve misses.
+> `1:24` Each model signs with its own key. Panta settles against the official FPL data. Every position, fully transparent.
 
-## 14 · The board  ·  1:29
+## 14 · The vision  ·  1:33
 
-**On screen:** Site P&L table. Highlight Claude/Gemini/GPT in profit, then the humans at -$3.00. Chip: MISSED: JOÃO PEDRO SCORED 12 (LINE 8).
+**On screen:** RESEARCH FIRST. THE AUDIENCE IS ALREADY ON 𝕏. Reply card → YOUR POSITION · PANTA card. THEN: BET STRAIGHT FROM 𝕏 — WITH X MONEY.
 
-> `1:29` The models weren't perfect. They missed João Pedro's twelve point haul. But on the board, Claude, Gemini and GPT all finished in profit.
+> `1:33` Overline is research first. But the audience is already on X.
+> `1:37` Next gameweek, you reply with your call, and it becomes your own position on Panta.
+> `1:43` Then, betting straight from X, with X Money.
 
-## 15 · Panta API  ·  1:38
+## 15 · Montage  ·  1:46
 
-**On screen:** POWERED BY THE PANTA API. Three rows of endpoints light up in order. CREATE: /marketquote → /marketbuild → /marketregister. PRICE: /primaryorderquote. TRADE: /primaryorderbuild → sign · own key → /primaryordersubmit → /primaryorderverify.
+**On screen:** GAMEWEEK 6 OF 38 · THIS IS JUST THE START. EVERY GAMEWEEK. / MORE MODELS (lab logos) / MORE PLAYERS (the three players) / MORE LEAGUES (NFL helmet) / EVERY CALL, ON THE RECORD.
 
-> `1:38` Every step runs on the Panta API. Creating the markets. Quoting the price. Building, signing, submitting, and verifying every order.
+> `1:46` Every gameweek. More models. More players. More leagues. Every call, on the record.
 
-## 16 · Settlement  ·  1:47
+## 16 · Close  ·  1:52
 
-**On screen:** Site markets section (RESOLVED NO / NO / YES cards). Chips: Each model signs with its own key · Settled by Panta vs official FPL data · We don't run a book.
+**On screen:** OPINIONS ARE FREE. / CONVICTION HAS A PRICE. → End card: OVERLINE, Every call, on the record., fpl-y1ck.vercel.app, BUILT ON PANTA.
 
-> `1:47` Each model signs with its own key. Panta settles against the official FPL data. Nobody has to trust us.
-
-## 17 · The vision  ·  1:55
-
-**On screen:** RESEARCH FIRST. THE AUDIENCE IS ALREADY ON 𝕏. Then ROADMAP · NEXT GAMEWEEK: a reply card ("Haaland 8+ — NO. Quiet away from home.") → arrow → YOUR POSITION · PANTA card, $3.00 staked, on chain. Then THEN: BET STRAIGHT FROM 𝕏 — WITH X MONEY.
-
-> `1:55` Overline is research first. But the audience is already on X.
-> `1:59` Next gameweek, you reply with your call, and it becomes your own position on Panta.
-> `2:04` Then, betting straight from X, with X Money.
-
-## 18 · Montage  ·  2:07
-
-**On screen:** EVERY GAMEWEEK. / MORE MODELS. / MORE LEAGUES. / EVERY CALL, ON THE RECORD.
-
-> `2:07` Every gameweek. More models. More leagues. Every call, on the record.
-
-## 19 · Close  ·  2:13
-
-**On screen:** OPINIONS ARE FREE. / CONVICTION HAS A PRICE. → End card on a moving green/purple gradient: Overline logo, OVERLINE, Every call, on the record., fpl-y1ck.vercel.app, BUILT ON PANTA · SOLANA.
-
-> `2:13` Opinions are free. Conviction has a price.
-> `2:16` Overline. Built on Panta.
+> `1:52` Opinions are free. Conviction has a price.
+> `1:55` Overline. Built on Panta.

@@ -1,185 +1,156 @@
 {
- "total": 141.5,
+ "total": 120.32,
+ "voice": "af_heart",
  "cues": [
   {
    "id": "h1",
    "text": "Every weekend, millions of people play Fantasy Premier League.",
    "start": 0.6,
-   "dur": 3.1
+   "dur": 3.627
   },
   {
    "id": "h2",
    "text": "And every one of them has an opinion.",
-   "start": 4.0,
-   "dur": 1.649
-  },
-  {
-   "id": "h3",
-   "text": "Haaland eight plus? Easy. Guy's inevitable.",
-   "start": 5.898,
-   "dur": 2.892
-  },
-  {
-   "id": "h4",
-   "text": "Saka at home? A haul, almost guaranteed.",
-   "start": 8.99,
-   "dur": 3.152
+   "start": 4.577,
+   "dur": 2.112
   },
   {
    "id": "h5",
    "text": "But opinions are free.",
-   "start": 12.593,
-   "dur": 1.254
+   "start": 7.139,
+   "dur": 1.429
   },
   {
    "id": "h6",
    "text": "So what happens when you put a price on them?",
-   "start": 14.196,
-   "dur": 1.904
+   "start": 8.918,
+   "dur": 2.347
   },
   {
    "id": "i1",
    "text": "This is Overline. An open study, built on Panta.",
-   "start": 17.0,
-   "dur": 3.489
+   "start": 12.165,
+   "dur": 3.243
   },
   {
    "id": "i2",
-   "text": "Three Fantasy Premier League markets, live on Solana.",
-   "start": 20.79,
-   "dur": 3.251
+   "text": "For our launch week, we created three Fantasy Premier League markets, live on Panta.",
+   "start": 15.757,
+   "dur": 5.163
   },
   {
    "id": "i3",
-   "text": "Five frontier A I models. Claude. G P T. Gemini. Grok. DeepSeek. Each with its own wallet, five dollars, and the same live price.",
-   "start": 24.34,
-   "dur": 9.708
+   "text": "We started with five frontier AI models. Each with its own wallet, five dollars, and the same live price.",
+   "start": 21.32,
+   "dur": 6.891
   },
   {
    "id": "i4",
    "text": "They state a probability, and a reason. Then they trade.",
-   "start": 34.349,
-   "dur": 2.874
+   "start": 28.561,
+   "dur": 3.285
   },
   {
    "id": "f1",
    "text": "Then we asked football fans on X to make their call, in public.",
-   "start": 37.922,
-   "dur": 3.483
+   "start": 32.546,
+   "dur": 3.477
   },
   {
    "id": "f2",
    "text": "Forty seven replies. Twelve calls, recorded word for word.",
-   "start": 41.705,
-   "dur": 4.058
+   "start": 36.323,
+   "dur": 3.989
   },
   {
    "id": "f3",
    "text": "Every single one said yes.",
-   "start": 46.063,
-   "dur": 1.614
+   "start": 40.613,
+   "dur": 1.643
   },
   {
    "id": "f4",
-   "text": "We gave six of them a free three dollar stake, and placed it on chain, in a wallet with their name on it.",
-   "start": 48.277,
-   "dur": 5.201
-  },
-  {
-   "id": "p1",
-   "text": "Now watch the price. Every fan who piled in on yes pushed it higher. The sixth caller paid more than the first, for saying exactly the same thing.",
-   "start": 54.078,
-   "dur": 8.639
-  },
-  {
-   "id": "p2",
-   "text": "A poll would call six out of six a signal. A market charges you for agreeing.",
-   "start": 63.117,
-   "dur": 4.836
-  },
-  {
-   "id": "m1",
-   "text": "The models disagreed. Claude put Haaland nearer thirty percent than fifty. Gemini said Anfield is a tough place for City. They went no.",
-   "start": 68.653,
-   "dur": 7.728
+   "text": "We gave six of them a free three dollar stake, placed on Panta, in a wallet with their name on it.",
+   "start": 42.855,
+   "dur": 5.632
   },
   {
    "id": "r1",
    "text": "Then the matches were played.",
-   "start": 77.38,
-   "dur": 1.277
+   "start": 49.487,
+   "dur": 1.429
   },
   {
    "id": "r2",
-   "text": "Saka. Two points. The line was seven.",
-   "start": 79.558,
-   "dur": 2.741
+   "text": "Saka, at home to Leeds. Two points. The line was seven.",
+   "start": 51.817,
+   "dur": 3.605
   },
   {
    "id": "r3",
-   "text": "Haaland. Six points. The line was eight.",
-   "start": 82.648,
-   "dur": 3.159
+   "text": "Haaland scored at Anfield, and still finished on six. The line was eight.",
+   "start": 55.822,
+   "dur": 4.267
   },
   {
    "id": "r4",
    "text": "Twelve calls. Twelve misses.",
-   "start": 86.407,
-   "dur": 2.247
+   "start": 60.689,
+   "dur": 1.877
   },
   {
    "id": "r5",
-   "text": "The models weren't perfect. They missed Joao Pedro's twelve point haul. But on the board, Claude, Gemini and G P T all finished in profit.",
-   "start": 89.654,
-   "dur": 8.372
+   "text": "The models weren't perfect. They missed Jo\u00e3o Pedro's twelve point haul against Bournemouth. But on the board, Claude, Gemini and GPT all finished in profit.",
+   "start": 63.566,
+   "dur": 10.667
   },
   {
    "id": "t1",
-   "text": "Every step runs on the Panta A P I. Creating the markets. Quoting the price. Building, signing, submitting, and verifying every order.",
-   "start": 98.825,
-   "dur": 8.529
+   "text": "Every step runs on the Panta API. Creating the markets. Quoting the price. Building, signing, submitting, and verifying every order.",
+   "start": 75.033,
+   "dur": 9.216
   },
   {
    "id": "t2",
-   "text": "Each model signs with its own key. Panta settles against the official F P L data. Nobody has to trust us.",
-   "start": 107.654,
-   "dur": 6.537
+   "text": "Each model signs with its own key. Panta settles against the official FPL data. Every position, fully transparent.",
+   "start": 84.549,
+   "dur": 8.235
   },
   {
    "id": "v1",
    "text": "Overline is research first. But the audience is already on X.",
-   "start": 115.091,
-   "dur": 4.046
+   "start": 93.683,
+   "dur": 4.011
   },
   {
    "id": "v2",
    "text": "Next gameweek, you reply with your call, and it becomes your own position on Panta.",
-   "start": 119.438,
-   "dur": 4.296
+   "start": 97.994,
+   "dur": 4.779
   },
   {
    "id": "v3",
    "text": "Then, betting straight from X, with X Money.",
-   "start": 124.033,
-   "dur": 2.74
+   "start": 103.073,
+   "dur": 2.517
   },
   {
    "id": "v4",
-   "text": "Every gameweek. More models. More leagues. Every call, on the record.",
-   "start": 127.373,
-   "dur": 4.767
+   "text": "Every gameweek. More models. More players. More leagues. Every call, on the record.",
+   "start": 106.19,
+   "dur": 5.141
   },
   {
    "id": "e1",
    "text": "Opinions are free. Conviction has a price.",
-   "start": 133.04,
-   "dur": 2.839
+   "start": 112.231,
+   "dur": 2.752
   },
   {
    "id": "e2",
    "text": "Overline. Built on Panta.",
-   "start": 136.379,
-   "dur": 2.119
+   "start": 115.483,
+   "dur": 1.835
   }
  ]
 }

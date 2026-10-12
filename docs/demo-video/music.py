@@ -73,7 +73,7 @@ add(impact(),t_i1,0,0.6)
 t_r1=C['r1']['start']-0.3
 section(t_i1,t_r1-0.0,claps=False)
 # tension during price/model part: add claps from p1
-section(C['p1']['start']-0.3,t_r1,kickon=False,hats=False,claps=True,bassOn=False,padg=0.0)
+section(C['f1']['start']-0.3,t_r1,kickon=False,hats=False,claps=True,bassOn=False,padg=0.0)
 # 3. reveal: silence, riser into r2, impact at r4
 add(riser(1.6),C['r2']['start']-1.6,0,0.8)
 add(impact(),C['r2']['start']-0.05,0,0.5)
