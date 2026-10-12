@@ -1,0 +1,109 @@
+{
+ "total": 84.43,
+ "cues": [
+  {
+   "id": "a1",
+   "text": "I'm a solo builder from Nigeria. I studied mass communication, and I research things as a hobby. I build things to find out whether they're true.",
+   "start": 0.8,
+   "dur": 5.956,
+   "sec": "01 \u00b7 Who",
+   "big": "Solo builder.|*Nigeria.*"
+  },
+  {
+   "id": "a2",
+   "text": "And I'm a Fantasy Premier League fan first. Every weekend, my timeline is full of people who are completely certain.",
+   "start": 7.256,
+   "dur": 5.421,
+   "sec": "01 \u00b7 Who",
+   "big": "*FPL* fan first."
+  },
+  {
+   "id": "b1",
+   "text": "FPL gives you millions of opinions every week, and none of them cost anything.",
+   "start": 13.376,
+   "dur": 3.613,
+   "sec": "02 \u00b7 Why this",
+   "big": "Millions of opinions.|*Zero cost.*"
+  },
+  {
+   "id": "b2",
+   "text": "Prediction markets are the opposite. They're the one place where being wrong costs you. And they can price things a sportsbook never will. Will Saka score seven fantasy points? Will Haaland haul?",
+   "start": 17.389,
+   "dur": 8.018,
+   "sec": "02 \u00b7 Why this",
+   "big": "Prediction markets|*price what sportsbooks can't.*"
+  },
+  {
+   "id": "b3",
+   "text": "I wanted to play that game. Nobody had built it. So I did.",
+   "start": 25.808,
+   "dur": 3.366,
+   "sec": "02 \u00b7 Why this",
+   "big": "Nobody built it.|*So I did.*"
+  },
+  {
+   "id": "c1",
+   "text": "Overline is an open study, built on Panta. For launch week, I created three FPL markets on Panta.",
+   "start": 29.974,
+   "dur": 5.243,
+   "sec": "03 \u00b7 What",
+   "big": "*Overline*|built on Panta."
+  },
+  {
+   "id": "c2",
+   "text": "Five frontier AI models each got their own wallet and five dollars, stated a probability before kickoff, and traded. Twelve fans on X made the same calls, in public.",
+   "start": 35.617,
+   "dur": 8.537,
+   "sec": "03 \u00b7 What",
+   "big": "5 AI models.|*12 fans.*"
+  },
+  {
+   "id": "c3",
+   "text": "The models went six for ten. The fans went zero for twelve. They all agreed with each other, and every new caller made the payout worse for the rest.",
+   "start": 44.654,
+   "dur": 6.455,
+   "sec": "03 \u00b7 What",
+   "big": "SCORE"
+  },
+  {
+   "id": "d1",
+   "text": "I'm not a machine learning researcher, and that's the point. AI benchmarks never make a model pay for being wrong. Prediction markets do.",
+   "start": 51.909,
+   "dur": 6.151,
+   "sec": "04 \u00b7 Why me",
+   "big": "Benchmarks don't make you pay.|*Markets do.*"
+  },
+  {
+   "id": "d2",
+   "text": "I'm the fan in the group chat. I'm the person who would trade these markets. If someone else had built this, with real liquidity, I'd already be playing it.",
+   "start": 58.559,
+   "dur": 6.445,
+   "sec": "04 \u00b7 Why me",
+   "big": "I'd already|*be playing it.*"
+  },
+  {
+   "id": "e1",
+   "text": "Gameweek six was round one, of thirty eight. Next, fans call straight from X, into their own position on Panta.",
+   "start": 65.805,
+   "dur": 5.742,
+   "sec": "05 \u00b7 Next",
+   "big": "Round 1|*of 38.*"
+  },
+  {
+   "id": "e2",
+   "text": "More models as they ship. More sports the sportsbooks can't cover. And the market fees fund the next round, so it keeps running.",
+   "start": 71.947,
+   "dur": 6.01,
+   "sec": "05 \u00b7 Next",
+   "big": "More models.|More sports.|*Self-funding.*"
+  },
+  {
+   "id": "e3",
+   "text": "Opinions are free. Conviction has a price. This is Overline.",
+   "start": 78.557,
+   "dur": 3.273,
+   "sec": "",
+   "big": "END"
+  }
+ ]
+}

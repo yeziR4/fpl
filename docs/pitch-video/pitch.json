@@ -1,0 +1,15 @@
+[
+ ["a1","I'm a solo builder from Nigeria. I studied mass communication, and I research things as a hobby. I build things to find out whether they're true.",0.5,"01 · Who","Solo builder.|*Nigeria.*"],
+ ["a2","And I'm a Fantasy Premier League fan first. Every weekend, my timeline is full of people who are completely certain.",0.7,"01 · Who","*FPL* fan first."],
+ ["b1","FPL gives you millions of opinions every week, and none of them cost anything.",0.4,"02 · Why this","Millions of opinions.|*Zero cost.*"],
+ ["b2","Prediction markets are the opposite. They're the one place where being wrong costs you. And they can price things a sportsbook never will. Will Saka score seven fantasy points? Will Haaland haul?",0.4,"02 · Why this","Prediction markets|*price what sportsbooks can't.*"],
+ ["b3","I wanted to play that game. Nobody had built it. So I did.",0.8,"02 · Why this","Nobody built it.|*So I did.*"],
+ ["c1","Overline is an open study, built on Panta. For launch week, I created three FPL markets on Panta.",0.4,"03 · What","*Overline*|built on Panta."],
+ ["c2","Five frontier AI models each got their own wallet and five dollars, stated a probability before kickoff, and traded. Twelve fans on X made the same calls, in public.",0.5,"03 · What","5 AI models.|*12 fans.*"],
+ ["c3","The models went six for ten. The fans went zero for twelve. They all agreed with each other, and every new caller made the payout worse for the rest.",0.8,"03 · What","SCORE"],
+ ["d1","I'm not a machine learning researcher, and that's the point. AI benchmarks never make a model pay for being wrong. Prediction markets do.",0.5,"04 · Why me","Benchmarks don't make you pay.|*Markets do.*"],
+ ["d2","I'm the fan in the group chat. I'm the person who would trade these markets. If someone else had built this, with real liquidity, I'd already be playing it.",0.8,"04 · Why me","I'd already|*be playing it.*"],
+ ["e1","Gameweek six was round one, of thirty eight. Next, fans call straight from X, into their own position on Panta.",0.4,"05 · Next","Round 1|*of 38.*"],
+ ["e2","More models as they ship. More sports the sportsbooks can't cover. And the market fees fund the next round, so it keeps running.",0.6,"05 · Next","More models.|More sports.|*Self-funding.*"],
+ ["e3","Opinions are free. Conviction has a price. This is Overline.",2.2,"","END"]
+]

@@ -1,0 +1,171 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;800;900&family=Space+Grotesk:wght@400;500;600;700&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{--bg:#f5f2eb;--fg:#0e1512;--mut:#6a756f;--acc:#00b87a;--acc2:#04845a;--red:#e8364f;--hair:rgba(14,21,18,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--fg);font-family:'Space Grotesk',sans-serif}
+.D{font-family:'Big Shoulders',sans-serif;font-weight:900;text-transform:uppercase;line-height:.92}
+.acc{color:var(--acc)}.red{color:var(--red)}
+#mesh{position:absolute;inset:0;overflow:hidden}
+#mesh i{position:absolute;border-radius:50%;filter:blur(120px)}
+#mesh .b1{width:900px;height:900px;left:-300px;top:-350px;background:#a6f2d3;opacity:.5}
+#mesh .b2{width:700px;height:700px;right:-250px;bottom:-300px;background:#cfe9ff;opacity:.55}
+#mesh .b3{width:600px;height:600px;right:200px;top:-300px;background:#e6ffa8;opacity:.35}
+#grain{position:absolute;inset:0;pointer-events:none;z-index:50;opacity:.04;mix-blend-mode:multiply;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#top{position:absolute;top:56px;left:110px;right:110px;display:flex;align-items:center;justify-content:space-between;z-index:10}
+#brand{display:flex;align-items:center;gap:14px}
+#brand .D{font-size:34px;letter-spacing:.08em}
+#sec{font-weight:700;font-size:24px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc2)}
+#prog{position:absolute;top:120px;left:110px;right:110px;display:flex;gap:12px;z-index:10}
+#prog i{flex:1;height:4px;border-radius:4px;background:var(--hair);overflow:hidden;position:relative}
+#prog i b{position:absolute;inset:0;background:var(--acc);transform-origin:0 50%;transform:scaleX(0)}
+.st{position:absolute;left:110px;top:300px;opacity:0}
+.st .line{display:block;white-space:nowrap}
+.st .w{display:inline-block;margin-right:.2em;opacity:0}
+.vis{position:absolute;opacity:0}
+#cap{position:absolute;left:110px;right:110px;bottom:84px;font-size:34px;font-weight:500;line-height:1.35;color:#2d3632;z-index:20;max-width:1150px}
+#cap .k{color:var(--fg)}
+.q{display:inline-block;background:#fff;border:1px solid var(--hair);border-radius:999px;padding:16px 30px;font-size:30px;font-weight:600;margin-right:18px;box-shadow:0 14px 40px rgba(14,21,18,.08)}
+.logo{width:110px;height:110px;border-radius:28px;background:#fff;box-shadow:0 10px 30px rgba(14,21,18,.08);display:flex;align-items:center;justify-content:center}
+.logo svg{width:60px;height:60px}
+.av{width:78px;height:78px;border-radius:50%;object-fit:cover;box-shadow:0 6px 18px rgba(14,21,18,.12)}
+.score{background:#fff;border-radius:30px;padding:40px 56px;box-shadow:0 30px 80px rgba(14,21,18,.10);text-align:left;width:520px}
+.score .l{font-weight:700;letter-spacing:.16em;font-size:24px;color:var(--mut)}
+.score .n{font-size:220px;margin-top:10px}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--hair)}
+.dot.on{background:var(--acc);border-color:var(--acc)}
+.cut{position:absolute;bottom:0;-webkit-mask-image:linear-gradient(180deg,#000 70%,transparent 100%);mask-image:linear-gradient(180deg,#000 70%,transparent 100%)}
+#end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;opacity:0;z-index:30}
+#endbg{position:absolute;inset:-200px;background:conic-gradient(from 0deg,#f5f2eb,#b8f5dc,#00d68f,#7fd4ff,#c9b6ff,#ffe08a,#f5f2eb);filter:blur(110px);opacity:.9}
+</style></head><body>
+<div id="mesh"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+<div id="top"><div id="brand"><svg viewBox="0 0 46 46" width="42" height="42" fill="none"><circle cx="23" cy="23" r="18" stroke="#00b87a" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="#00b87a"/></svg><span class="D">OVERLINE</span><span class="D" style="font-size:24px;color:var(--mut)">×</span><img src="A/panta_ink.png" style="height:36px"><span class="D">PANTA</span></div><div id="sec"></div></div>
+<div id="prog"><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i><i><b></b></i></div>
+<div id="stmts"></div>
+
+<!-- visuals -->
+<div class="vis" id="v_a2" style="right:-60px;bottom:0;width:900px;height:900px;transform-origin:100% 100%;scale:.78">
+  <img class="cut" src="A/players/saka.png" style="height:520px;left:0">
+  <img class="cut" src="A/players/pedro.png" style="height:720px;left:470px">
+  <img class="cut" src="A/players/haaland.png" style="height:620px;left:200px">
+</div>
+<div class="vis" id="v_b2" style="left:110px;top:640px"><span class="q">Saka 7+ FPL points?</span><span class="q">Haaland 8+?</span><span class="q">João Pedro 8+?</span></div>
+<div class="vis" id="v_c1" style="right:170px;top:330px;display:flex;align-items:center;gap:40px">
+  <svg viewBox="0 0 46 46" width="200" height="200" fill="none"><circle cx="23" cy="23" r="18" stroke="#00b87a" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="#00b87a"/></svg>
+  <span class="D" style="font-size:90px;color:var(--mut)">×</span>
+  <img src="A/panta_ink.png" style="height:200px">
+</div>
+<div class="vis" id="v_c2" style="left:110px;top:610px">
+  <div style="display:flex;gap:22px">__LOGOS__</div>
+  <div id="avrow" style="display:flex;gap:14px;margin-top:34px"></div>
+</div>
+<div class="vis" id="v_c3" style="left:110px;top:300px;display:flex;gap:50px">
+  <div class="score" id="sc1"><div class="l">THE AI MODELS</div><div class="D n acc"><span id="n1">0</span>/10</div></div>
+  <div class="score" id="sc2"><div class="l">THE FANS</div><div class="D n red"><span id="n2">0</span>/12</div></div>
+</div>
+<div class="vis" id="v_e1" style="left:110px;top:620px;display:grid;grid-template-columns:repeat(19,26px);gap:16px"></div>
+
+<div id="end"><div id="endbg"></div>
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:26px">
+    <div class="D" id="endl1" style="font-size:120px">Opinions are free.</div>
+    <div class="D acc2" id="endl2" style="font-size:120px;color:var(--acc2)">Conviction has a price.</div>
+    <div id="endlock" style="display:flex;align-items:center;gap:22px;margin-top:40px"><svg viewBox="0 0 46 46" width="90" height="90" fill="none"><circle cx="23" cy="23" r="18" stroke="#0e1512" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="#0e1512"/></svg><span class="D" style="font-size:110px;letter-spacing:.05em">OVERLINE</span><span class="D" style="font-size:60px;color:var(--mut)">×</span><img src="A/panta_ink.png" style="height:84px"><span class="D" style="font-size:110px;letter-spacing:.05em">PANTA</span></div>
+    <div id="endurl" style="font-size:32px;font-weight:600">fpl-y1ck.vercel.app</div>
+  </div>
+</div>
+<div id="cap"></div>
+<div id="grain"></div>
+<script>
+const CUES = __CUES__;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+const W = (id, f) => { const c = C[id]; const i = c.text.indexOf(f); if (i < 0) console.log('MISSING', f); return c.start + c.dur * Math.max(0, i) / c.text.length; };
+const tl = gsap.timeline({ paused: true }); const $ = q => document.querySelector(q);
+const SECS = ['01 · Who', '02 · Why this', '03 · What', '04 · Why me', '05 · Next'];
+const SW = [];
+tl.fromTo('#mesh .b1', { x: -80, y: -40 }, { x: 140, y: 90, duration: CUES.total, ease: 'sine.inOut' }, 0);
+tl.fromTo('#mesh .b2', { x: 60, y: 40 }, { x: -120, y: -60, duration: CUES.total, ease: 'sine.inOut' }, 0);
+tl.fromTo('#top,#prog', { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: .6 }, 0);
+
+// statements, one per cue
+const nextStart = {}; CUES.cues.forEach((c, i) => nextStart[c.id] = i + 1 < CUES.cues.length ? CUES.cues[i + 1].start : CUES.total);
+CUES.cues.forEach(c => {
+  // section label + progress
+  const si = SECS.indexOf(c.sec);
+  if (si >= 0) {
+    SW.push(['#sec', c.start - .2, c.sec]);
+    const secCues = CUES.cues.filter(x => x.sec === c.sec);
+    if (secCues[0].id === c.id) {
+      const last = secCues[secCues.length - 1];
+      tl.fromTo(`#prog i:nth-child(${si + 1}) b`, { scaleX: 0 }, { scaleX: 1, duration: (last.start + last.dur) - c.start, ease: 'none' }, c.start);
+      tl.fromTo('#sec', { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: .35 }, c.start - .2);
+    }
+  }
+  if (c.big === 'SCORE' || c.big === 'END') return;
+  const el = document.createElement('div'); el.className = 'st D'; el.style.fontSize = (c.big.split('|').length > 2 ? 130 : 150) + 'px';
+  if (c.id === 'd1' || c.id === 'b2') el.style.fontSize = '112px';
+  $('#stmts').appendChild(el);
+  let k = 0;
+  c.big.split('|').forEach((ln, li) => {
+    const line = document.createElement('span'); line.className = 'line';
+    let acc = false;
+    ln.split(' ').forEach(w => {
+      const s = document.createElement('span'); s.className = 'w';
+      if (w.startsWith('*')) { acc = true; w = w.slice(1); }
+      const on = acc; if (w.endsWith('*')) { acc = false; w = w.slice(0, -1); }
+      if (on) s.classList.add('acc'); s.textContent = w; line.appendChild(s);
+      tl.fromTo(s, { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .4, ease: 'power3.out' }, c.start + li * Math.min(.9, c.dur / 4) + (k++) * .06);
+    });
+    el.appendChild(line);
+  });
+  tl.set(el, { opacity: 1 }, c.start - .01);
+  tl.to(el, { opacity: 0, y: -20, duration: .3, ease: 'power2.in' }, nextStart[c.id] - .3);
+});
+function vis(sel, a, b) { tl.fromTo(sel, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, ease: 'power3.out' }, a); tl.to(sel, { opacity: 0, duration: .3 }, b - .3); }
+vis('#v_a2', S('a2') + .2, nextStart['a2']);
+vis('#v_b2', W('b2', 'Will Saka') - .2, nextStart['b2']);
+tl.fromTo('#v_b2 .q', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .3, stagger: .5 }, W('b2', 'Will Saka') - .2);
+vis('#v_c1', S('c1') + .3, nextStart['c1']);
+// logos + avatars
+const humans = ['Veeekthorr','Bigkelceey','stillgawu','CalmlyUnique','Rand_Rnc','BasmerW3','ABDULLEGEND111','AmiliaD_','GenixJNR','JoyBsol','Mustyweb3_','_Rio_Blake'];
+humans.forEach(h => { const i = document.createElement('img'); i.className = 'av'; i.src = `A/av/${h}.jpg`; $('#avrow').appendChild(i); });
+vis('#v_c2', S('c2'), nextStart['c2']);
+tl.fromTo('#v_c2 .logo', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .3, stagger: .12 }, S('c2'));
+tl.fromTo('#avrow .av', { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .25, stagger: .06 }, W('c2', 'Twelve fans'));
+// score
+vis('#v_c3', S('c3') - .1, nextStart['c3']);
+const o1 = { v: 0 }, o2 = { v: 0 };
+tl.to(o1, { v: 6, duration: .8, ease: 'power2.out', onUpdate: () => $('#n1').textContent = Math.round(o1.v) }, W('c3', 'six'));
+tl.fromTo('#sc2', { opacity: .25 }, { opacity: 1, duration: .3 }, W('c3', 'The fans'));
+tl.fromTo('#sc2', { scale: 1 }, { scale: 1.06, duration: .15, yoyo: true, repeat: 1 }, W('c3', 'zero'));
+// 38 dots
+for (let i = 0; i < 38; i++) { const d = document.createElement('div'); d.className = 'dot' + (i === 0 ? ' on' : ''); $('#v_e1').appendChild(d); }
+vis('#v_e1', S('e1') + .2, nextStart['e1']);
+tl.fromTo('#v_e1 .dot', { opacity: 0, scale: .5 }, { opacity: 1, scale: 1, duration: .2, stagger: .025 }, S('e1') + .2);
+// end
+tl.to('#top,#prog,#cap', { opacity: 0, duration: .4 }, S('e3') - .2);
+tl.fromTo('#end', { opacity: 0 }, { opacity: 1, duration: .5 }, S('e3') - .2);
+tl.fromTo('#endbg', { rotation: 0 }, { rotation: 120, duration: CUES.total - S('e3') + 1, ease: 'none' }, S('e3') - .2);
+tl.fromTo('#endl1', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45 }, S('e3'));
+tl.fromTo('#endl2', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45 }, W('e3', 'Conviction'));
+tl.fromTo('#endlock,#endurl', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .5, stagger: .2 }, W('e3', 'This is'));
+tl.to('body', { opacity: 0, duration: .6 }, CUES.total - .6);
+// captions: sentence-level
+const chunks = [];
+CUES.cues.forEach(c => {
+  if (c.id === 'e3') return;
+  const sents = c.text.match(/[^.?!]+[.?!]+/g) || [c.text]; const tot = c.text.length; let acc = 0;
+  sents.forEach(s => { const a = acc; acc += s.length; chunks.push({ t0: c.start + c.dur * a / tot, t1: c.start + c.dur * acc / tot, s: s.trim() }); });
+});
+// merge very short sentences with the next
+window.seek = t => {
+  tl.seek(t, false);
+  SW.filter(x => t >= x[1]).slice(-1).forEach(([sel, , h]) => { if ($(sel).textContent !== h) $(sel).textContent = h; });
+  const k = chunks.find(k => t >= k.t0 - .05 && t < k.t1 + .15); const cap = $('#cap'); const h = k ? k.s : '';
+  if (cap.textContent !== h) cap.textContent = h;
+};
+window.TOTAL = CUES.total;
+Promise.all([document.fonts.ready, ...[...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))]).then(() => { window.READY = true; });
+</script></body></html>
