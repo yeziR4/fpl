@@ -1,0 +1,25 @@
+import { chromium } from '/opt/node22/lib/node_modules/playwright/index.mjs';
+const out='v/assets/';
+const b = await chromium.launch();
+const p = await b.newPage({viewport:{width:1440,height:810}, deviceScaleFactor:2});
+await p.goto('https://fpl-y1ck.vercel.app/',{waitUntil:'networkidle'});
+await p.getByRole('button',{name:/^dark$/i}).first().click({timeout:5000});
+await p.waitForTimeout(2000);
+await p.screenshot({path:out+'hero.png'});
+await p.addStyleTag({content:'header{display:none !important}'});
+await p.waitForTimeout(300);
+await p.screenshot({path:out+'page.png', fullPage:true});
+const sec = async (re, name) => { const s=p.locator('section',{has:p.locator('h2',{hasText:re})}).first(); await s.screenshot({path:out+name}); };
+await sec(/HUMANS VS AI/i,'board.png');
+await sec(/FIVE MODELS, ONE/i,'who.png');
+await sec(/EVERY MARKET/i,'markets.png');
+await sec(/WHERE THIS GOES/i,'roadmap.png');
+await sec(/SAME QUESTION/i,'method.png');
+const tbl = p.locator('section',{has:p.locator('h2',{hasText:/HUMANS VS AI/i})}).first();
+await p.getByText('@Veeekthorr').first().click(); await p.waitForTimeout(1000);
+await tbl.screenshot({path:out+'table_victor.png'});
+await p.getByText('@Veeekthorr').first().click(); await p.waitForTimeout(800);
+await p.getByText('Claude Opus (latest)').first().click(); await p.waitForTimeout(1000);
+await tbl.screenshot({path:out+'table_claude.png'});
+
+await b.close();

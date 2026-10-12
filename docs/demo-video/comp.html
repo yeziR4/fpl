@@ -1,0 +1,481 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders:wght@600;800;900&family=Big+Shoulders+Display:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{--bg:#05080a;--fg:#f4f7f6;--mut:#8a9794;--acc:#2bffc0;--accd:#123b34;--red:#ff5470;--card:#0c1215;--hair:rgba(255,255,255,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--fg);font-family:'Space Grotesk',sans-serif}
+.D{font-family:'Big Shoulders','Big Shoulders Display',sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.005em;line-height:.9}
+#stage{position:absolute;inset:0;overflow:hidden}
+.sc{position:absolute;inset:0;opacity:0;display:flex;align-items:center;justify-content:center}
+.acc{color:var(--acc)} .red{color:var(--red)} .mut{color:var(--mut)}
+#grain{position:absolute;inset:0;pointer-events:none;z-index:50;opacity:.07;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+#vig{position:absolute;inset:0;pointer-events:none;z-index:49;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+#cap{position:absolute;left:0;right:0;bottom:64px;z-index:60;text-align:center;font-weight:600;font-size:40px;line-height:1.2;text-shadow:0 2px 14px rgba(0,0,0,.9),0 0 3px #000;padding:0 260px}
+#cap span{display:inline-block;margin:0 .14em}
+#bug{position:absolute;bottom:52px;right:56px;z-index:60;display:flex;align-items:center;gap:14px;opacity:0}
+#bug .D{font-size:34px;letter-spacing:.08em}
+.ring{animation:none}
+/* kinetic */
+.kin{text-align:center;font-size:150px}
+.kin .w{display:inline-block;margin:0 .12em;opacity:0}
+.kin .line{display:block;white-space:nowrap}
+/* cards */
+.qcard{position:absolute;width:820px;background:var(--card);border:1px solid var(--hair);border-radius:28px;padding:40px 46px;box-shadow:0 40px 120px rgba(0,0,0,.6)}
+.qhead{display:flex;align-items:center;gap:20px;margin-bottom:24px}
+.qhead img{width:84px;height:84px;border-radius:50%;object-fit:cover}
+.qname{font-weight:700;font-size:32px}.qhandle{color:var(--mut);font-size:26px}
+.qtext{font-size:52px;font-weight:600;line-height:1.15}
+.pill{display:inline-block;padding:8px 20px;border-radius:999px;font-weight:700;font-size:24px;letter-spacing:.06em}
+.pill.yes{background:var(--accd);color:var(--acc)} .pill.no{background:#3a1019;color:var(--red)}
+.shot{position:absolute;left:0;top:0;transform-origin:0 0;border-radius:0}
+.frame{position:absolute;overflow:hidden;border-radius:22px;border:1px solid var(--hair);box-shadow:0 40px 140px rgba(0,0,0,.7);background:#000}
+.hl{position:absolute;border:4px solid var(--acc);border-radius:14px;box-shadow:0 0 40px rgba(43,255,192,.45);opacity:0}
+.tag{position:absolute;font-weight:700;font-size:26px;letter-spacing:.14em;text-transform:uppercase;color:var(--acc)}
+.chip{background:rgba(12,18,21,.92);border:1px solid var(--hair);border-radius:18px;padding:22px 30px;font-size:30px;font-weight:600;backdrop-filter:blur(8px)}
+.mcard{width:300px;height:340px;background:var(--card);border:1px solid var(--hair);border-radius:26px;padding:34px 28px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;opacity:0}
+.badge{width:120px;height:120px;border-radius:30px;display:flex;align-items:center;justify-content:center;font-family:'Big Shoulders';font-weight:900;font-size:64px;color:#05080a}
+.mname{font-weight:700;font-size:34px;text-align:center}.mlab{color:var(--mut);font-size:22px;text-align:center;margin-top:6px}
+.wal{font-size:21px;color:var(--acc);letter-spacing:.06em;font-weight:600;opacity:0;text-align:center}
+.av{border-radius:50%;object-fit:cover}
+.gcard{width:400px;height:150px;background:var(--card);border:1px solid var(--hair);border-radius:22px;padding:20px 22px;display:flex;gap:18px;align-items:center;position:relative;opacity:0}
+.gcard img{width:70px;height:70px}
+.gcard .h{font-weight:700;font-size:23px}.gcard .q{color:#c9d3d0;font-size:19px;line-height:1.25;margin-top:6px;max-height:48px;overflow:hidden}
+.gcard .pill{position:absolute;top:16px;right:16px;font-size:18px;padding:5px 14px}
+.x{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0}
+.node{background:var(--card);border:2px solid var(--hair);border-radius:18px;padding:22px 26px;font-family:'Space Grotesk';font-weight:600;font-size:27px;color:var(--mut);white-space:nowrap}
+.node.on{border-color:var(--acc);color:var(--fg);box-shadow:0 0 36px rgba(43,255,192,.3)}
+.arrow{color:var(--mut);font-size:36px;margin:0 10px}
+.score{width:700px;background:var(--card);border:1px solid var(--hair);border-radius:30px;padding:44px 52px;position:relative;opacity:0}
+.score .pl{font-size:72px}.score .ln{color:var(--mut);font-size:30px;margin-top:10px;font-weight:600;letter-spacing:.08em}
+.score .big{font-size:260px;line-height:.85;margin-top:30px}
+.score .stamp{position:absolute;right:46px;bottom:56px;font-size:140px;color:var(--red);border:10px solid var(--red);border-radius:24px;padding:0 30px;transform:rotate(-10deg);opacity:0}
+#endbg{position:absolute;inset:-200px;background:conic-gradient(from 0deg at 50% 50%,#05080a,#0b3d33,#2bffc0,#0e5c78,#2a1a6e,#05080a);filter:blur(120px);opacity:.85}
+</style></head>
+<body>
+<div id="stage">
+  <!-- pitch background -->
+  <svg id="pitch" width="1920" height="1080" style="position:absolute;inset:0;opacity:0" viewBox="0 0 1920 1080" fill="none" stroke="#2bffc0" stroke-width="2">
+    <rect x="160" y="90" width="1600" height="900" rx="4"/><line x1="960" y1="90" x2="960" y2="990"/><circle cx="960" cy="540" r="150"/><circle cx="960" cy="540" r="5" fill="#2bffc0"/>
+    <rect x="160" y="330" width="250" height="420"/><rect x="1510" y="330" width="250" height="420"/><rect x="160" y="440" width="90" height="200"/><rect x="1670" y="440" width="90" height="200"/>
+  </svg>
+
+  <div class="sc" id="sA"><div class="kin D" id="kA"></div></div>
+  <div class="sc" id="sA2">
+    <div class="qcard" id="q1"><div class="qhead"><img class="av" src="assets/av/Veeekthorr.jpg"><div><div class="qname">Victor</div><div class="qhandle">@Veeekthorr · GW6</div></div><span class="pill yes" style="margin-left:auto">YES</span></div><div class="qtext">“haaland 8+ easy, guy’s inevitable”</div></div>
+    <div class="qcard" id="q2"><div class="qhead"><img class="av" src="assets/av/AmiliaD_.jpg"><div><div class="qname">Davo.eth</div><div class="qhandle">@AmiliaD_ · GW6</div></div><span class="pill yes" style="margin-left:auto">YES</span></div><div class="qtext">“Saka 7+ … making a haul almost guaranteed”</div></div>
+  </div>
+  <div class="sc" id="sA3"><div class="kin D" id="kA3"></div></div>
+
+  <!-- B logo -->
+  <div class="sc" id="sB"><div style="display:flex;flex-direction:column;align-items:center;gap:40px">
+    <svg id="logo" viewBox="0 0 46 46" width="260" height="260" fill="none"><circle id="lring" cx="23" cy="23" r="18" stroke="#2bffc0" stroke-width="4" stroke-dasharray="10 6.2"/><circle id="ldot" cx="23" cy="23" r="5.5" fill="#2bffc0"/></svg>
+    <div class="D" id="lword" style="font-size:200px;letter-spacing:.06em">OVERLINE</div>
+    <div id="lsub" style="font-size:34px;letter-spacing:.3em;font-weight:600;color:var(--mut)">AN OPEN STUDY · BUILT ON <span class="acc">PANTA</span></div>
+  </div></div>
+
+  <!-- C hero -->
+  <div class="sc" id="sC">
+    <div class="frame" id="heroF" style="left:210px;top:110px;width:1500px;height:844px"><img class="shot" src="assets/hero.png" style="width:1500px"></div>
+    <div id="chips" style="position:absolute;bottom:120px;left:0;right:0;display:flex;gap:28px;justify-content:center">
+      <div class="chip D c3" style="font-size:52px">Saka <span class="acc">7+</span> pts</div>
+      <div class="chip D c3" style="font-size:52px">Haaland <span class="acc">8+</span> pts</div>
+      <div class="chip D c3" style="font-size:52px">João Pedro <span class="acc">8+</span> pts</div>
+    </div>
+    <div class="tag" id="liveTag" style="top:60px;left:0;right:0;text-align:center;font-size:30px">● Live on Solana mainnet · via Panta</div>
+  </div>
+
+  <!-- D models -->
+  <div class="sc" id="sD"><div style="display:flex;flex-direction:column;align-items:center;gap:60px">
+    <div class="D" id="dTitle" style="font-size:110px">Five frontier models</div>
+    <div style="display:flex;gap:34px" id="mrow">
+      <div class="mcard" id="m_claude"><div class="badge" style="background:#d97757">A</div><div><div class="mname">Claude</div><div class="mlab">Anthropic</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard" id="m_gpt"><div class="badge" style="background:#f4f7f6">G</div><div><div class="mname">GPT</div><div class="mlab">OpenAI</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard" id="m_gemini"><div class="badge" style="background:#5b8cff">G</div><div><div class="mname">Gemini</div><div class="mlab">Google DeepMind</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard" id="m_grok"><div class="badge" style="background:#9aa4a2">X</div><div><div class="mname">Grok</div><div class="mlab">xAI</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard" id="m_deepseek"><div class="badge" style="background:#4d6bfe">D</div><div><div class="mname">DeepSeek</div><div class="mlab">DeepSeek</div></div><div class="wal">OWN WALLET · $5</div></div>
+    </div>
+    <div class="D acc" id="samePrice" style="font-size:64px;opacity:0">Same prompt · same markets · same live price</div>
+  </div></div>
+
+  <!-- E claude expanded -->
+  <div class="sc" id="sE">
+    <div class="frame" id="eF" style="left:110px;top:150px;width:1700px;height:760px"><img class="shot" id="eImg" src="assets/table_claude.png"><div class="hl" id="eHl1"></div><div class="hl" id="eHl2"></div></div>
+    <div class="tag" style="top:70px;left:110px;font-size:30px">Claude’s call, on the record before kickoff</div>
+  </div>
+
+  <!-- F humans grid -->
+  <div class="sc" id="sF">
+    <div style="position:absolute;top:70px;left:0;right:0;text-align:center"><span class="D" id="fCount" style="font-size:110px">47 replies</span></div>
+    <div id="grid" style="position:absolute;top:240px;left:0;right:0;display:grid;grid-template-columns:repeat(4,400px);gap:22px;justify-content:center"></div>
+    <div class="x" id="fBig"><div class="D" style="font-size:300px;background:rgba(5,8,10,.82);padding:20px 80px;border-radius:40px"><span class="acc">12/12</span> said yes</div></div>
+  </div>
+
+  <!-- G victor on chain -->
+  <div class="sc" id="sG">
+    <div class="frame" id="gF" style="left:110px;top:150px;width:1700px;height:700px"><img class="shot" id="gImg" src="assets/table_victor.png"><div class="hl" id="gHl"></div></div>
+    <div class="tag" style="top:70px;left:110px;font-size:30px">A free $3 stake · a real position on Panta</div>
+    <div class="chip" id="gChip" style="position:absolute;top:52px;right:110px;font-size:34px;opacity:0"><span class="acc">●</span> ON CHAIN · Solana mainnet</div>
+  </div>
+
+  <!-- H price ladder -->
+  <div class="sc" id="sH">
+    <div class="tag" style="top:70px;left:150px;font-size:30px">Haaland 8+ · YES price, as each fan’s order filled</div>
+    <svg id="ladder" width="1620" height="700" style="position:absolute;left:150px;top:170px" viewBox="0 0 1620 700"></svg>
+    <div class="D" id="hCall" style="position:absolute;right:150px;bottom:190px;font-size:96px;text-align:right;opacity:0">Same call.<br><span class="red">Worse price.</span></div>
+  </div>
+
+  <!-- I poll vs market -->
+  <div class="sc" id="sI"><div style="display:flex;gap:80px">
+    <div class="score" id="iPoll" style="width:760px"><div class="ln">A POLL</div><div class="D" style="font-size:150px;margin-top:20px">6 / 6</div><div class="D acc" style="font-size:80px;margin-top:20px">= a signal</div></div>
+    <div class="score" id="iMkt" style="width:760px"><div class="ln">A MARKET</div><div class="D" style="font-size:150px;margin-top:20px">6 / 6</div><div class="D red" style="font-size:80px;margin-top:20px">= worse odds</div></div>
+  </div></div>
+
+  <!-- J models disagree -->
+  <div class="sc" id="sJ">
+    <div style="position:absolute;left:110px;top:120px;width:780px">
+      <div class="tag" style="position:static;color:var(--fg);font-size:30px">THE FANS</div>
+      <div id="jav" style="display:grid;grid-template-columns:repeat(6,110px);gap:18px;margin-top:30px"></div>
+      <div class="D acc" style="font-size:200px;margin-top:40px">Yes</div>
+    </div>
+    <div style="position:absolute;left:980px;top:120px;width:830px">
+      <div class="tag" style="position:static;color:var(--fg);font-size:30px">THE MODELS</div>
+      <div class="qcard" id="jq1" style="position:relative;width:830px;margin-top:30px;padding:30px 36px;opacity:0"><div class="qhead" style="margin-bottom:14px"><div class="badge" style="background:#d97757;width:64px;height:64px;font-size:36px;border-radius:16px">A</div><div class="qname">Claude · 33%</div><span class="pill no" style="margin-left:auto">NO</span></div><div style="font-size:31px;line-height:1.3">“Haaland needs a goal plus extras or a brace to hit 8+; at Anfield … likely nearer 30–35% than the market’s 50%.”</div></div>
+      <div class="qcard" id="jq2" style="position:relative;width:830px;margin-top:24px;padding:30px 36px;opacity:0"><div class="qhead" style="margin-bottom:14px"><div class="badge" style="background:#5b8cff;width:64px;height:64px;font-size:36px;border-radius:16px">G</div><div class="qname">Gemini · 35%</div><span class="pill no" style="margin-left:auto">NO</span></div><div style="font-size:31px;line-height:1.3">“Away at Anfield is historically a tough fixture for City.”</div></div>
+    </div>
+  </div>
+
+  <!-- K full time -->
+  <div class="sc" id="sK"><div class="D" style="font-size:280px" id="ftText">Full time.</div></div>
+
+  <!-- L scoreboards -->
+  <div class="sc" id="sL"><div style="display:flex;gap:70px">
+    <div class="score" id="L1"><div class="D pl">Bukayo Saka</div><div class="ln">LINE: 7+ POINTS · GW6</div><div class="D big" id="L1n">0</div><div class="mut" style="font-size:26px;margin-top:14px">FPL points</div><div class="D stamp" id="L1s">NO</div></div>
+    <div class="score" id="L2"><div class="D pl">Erling Haaland</div><div class="ln">LINE: 8+ POINTS · GW6</div><div class="D big" id="L2n">0</div><div class="mut" style="font-size:26px;margin-top:14px">FPL points</div><div class="D stamp" id="L2s">NO</div></div>
+  </div>
+  <div style="position:absolute;bottom:170px;left:0;right:0;text-align:center;color:var(--mut);font-size:24px;letter-spacing:.12em" id="Lsrc">SOURCE: OFFICIAL FPL DATA · fantasy.premierleague.com/api/event/6/live</div></div>
+
+  <!-- M misses -->
+  <div class="sc" id="sM">
+    <div id="mgrid" style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,200px);gap:40px;justify-content:center;align-content:center"></div>
+    <div class="x" id="mBig" style="flex-direction:column"><div class="D" style="font-size:230px;text-align:center;background:rgba(5,8,10,.8);padding:30px 90px;border-radius:40px">12 calls.<br><span class="red">12 misses.</span></div></div>
+  </div>
+
+  <!-- N board pnl -->
+  <div class="sc" id="sN">
+    <div class="frame" id="nF" style="left:110px;top:150px;width:1700px;height:760px"><img class="shot" id="nImg" src="assets/board.png"><div class="hl" id="nHl1"></div><div class="hl" id="nHl2" style="border-color:var(--red);box-shadow:0 0 40px rgba(255,84,112,.4)"></div></div>
+    <div class="tag" style="top:70px;left:110px;font-size:30px">Profit &amp; loss, from Panta’s own pool figures</div>
+    <div class="chip" id="nChip" style="position:absolute;top:56px;right:110px;font-size:26px;opacity:0">Missed: João Pedro scored <b class="acc">12</b> (line 8)</div>
+  </div>
+
+  <!-- O panta api flow -->
+  <div class="sc" id="sO"><div style="display:flex;flex-direction:column;align-items:center;gap:56px">
+    <div class="D" style="font-size:110px">Powered by the <span class="acc">Panta API</span></div>
+    <div style="display:flex;align-items:center" id="row1"><div class="tag" style="position:static;width:230px;font-size:24px">CREATE</div><div class="node" id="n1">/marketquote</div><span class="arrow">→</span><div class="node" id="n2">/marketbuild</div><span class="arrow">→</span><div class="node" id="n3">/marketregister</div></div>
+    <div style="display:flex;align-items:center"><div class="tag" style="position:static;width:230px;font-size:24px">PRICE</div><div class="node" id="n4">/primaryorderquote</div><div style="width:980px"></div></div>
+    <div style="display:flex;align-items:center"><div class="tag" style="position:static;width:230px;font-size:24px">TRADE</div><div class="node" id="n5">/primaryorderbuild</div><span class="arrow">→</span><div class="node" id="n6">sign · own key</div><span class="arrow">→</span><div class="node" id="n7">/primaryordersubmit</div><span class="arrow">→</span><div class="node" id="n8">/primaryorderverify</div></div>
+  </div></div>
+
+  <!-- P markets resolved -->
+  <div class="sc" id="sP">
+    <div class="frame" id="pF" style="left:110px;top:120px;width:1700px;height:640px"><img class="shot" id="pImg" src="assets/markets.png"></div>
+    <div id="pchips" style="position:absolute;bottom:150px;left:0;right:0;display:flex;gap:26px;justify-content:center">
+      <div class="chip pc"><span class="acc">●</span> Each model signs with its own key</div>
+      <div class="chip pc"><span class="acc">●</span> Settled by Panta vs official FPL data</div>
+      <div class="chip pc"><span class="acc">●</span> We don’t run a book</div>
+    </div>
+  </div>
+
+  <!-- Q X roadmap -->
+  <div class="sc" id="sQ"><div class="kin D" id="kQ"></div></div>
+  <div class="sc" id="sQ2">
+    <div class="tag" id="qTag" style="top:90px;left:0;right:0;text-align:center;font-size:30px">Roadmap · next gameweek</div>
+    <div style="display:flex;align-items:center;gap:70px">
+      <div class="qcard" id="xr" style="position:relative;width:700px;opacity:0"><div class="qhead"><div class="badge" style="background:#f4f7f6;width:84px;height:84px;font-size:46px;border-radius:50%">𝕏</div><div><div class="qname">You</div><div class="qhandle">replying to @overline · GW7</div></div></div><div class="qtext" style="font-size:44px">“Haaland 8+ — <span class="red">NO</span>. Quiet away from home.”</div></div>
+      <div class="D acc" id="xArrow" style="font-size:140px;opacity:0">→</div>
+      <div class="qcard" id="xp" style="position:relative;width:640px;opacity:0"><div class="tag" style="position:static;font-size:24px">YOUR POSITION · PANTA</div><div class="D" style="font-size:96px;margin-top:20px">Haaland 8+ <span class="red">NO</span></div><div style="display:flex;justify-content:space-between;margin-top:26px;font-size:30px;font-weight:600"><span>$3.00 staked</span><span class="acc">● on chain</span></div></div>
+    </div>
+    <div class="D" id="xMoney" style="position:absolute;bottom:150px;left:0;right:0;text-align:center;font-size:96px;opacity:0">Then: bet straight from 𝕏 — with <span class="acc">X Money</span></div>
+  </div>
+  <div class="sc" id="sR"><div class="kin D" id="kR"></div></div>
+  <div class="sc" id="sS"><div class="kin D" id="kS"></div></div>
+
+  <!-- end card -->
+  <div class="sc" id="sZ"><div id="endbg"></div><div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:34px">
+    <svg viewBox="0 0 46 46" width="200" height="200" fill="none"><circle id="zring" cx="23" cy="23" r="18" stroke="#f4f7f6" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="#f4f7f6"/></svg>
+    <div class="D" style="font-size:220px;letter-spacing:.06em">OVERLINE</div>
+    <div style="font-size:46px;font-weight:600">Every call, on the record.</div>
+    <div style="font-size:34px;margin-top:30px;opacity:.9">fpl-y1ck.vercel.app</div>
+    <div style="font-size:26px;letter-spacing:.3em;font-weight:600;opacity:.8">BUILT ON PANTA · SOLANA</div>
+  </div></div>
+</div>
+<div id="bug"><svg viewBox="0 0 46 46" width="44" height="44" fill="none"><circle cx="23" cy="23" r="18" stroke="#2bffc0" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="#2bffc0"/></svg><span class="D">OVERLINE</span></div>
+<div id="cap"></div>
+<div id="vig"></div><div id="grain"></div>
+<script>
+const CUES = __CUES__;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+// time at which a word/phrase is spoken inside a cue (char-proportional)
+const W = (id, frag) => { const c = C[id]; const i = c.text.indexOf(frag); return c.start + c.dur * (Math.max(0, i) / c.text.length); };
+const tl = gsap.timeline({ paused: true });
+const SW = [], CL = [];
+const $ = q => document.querySelector(q);
+function show(sel, a, b, fin = .35, fout = .35) {
+  tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: fin, ease: 'power2.out' }, a);
+  if (b != null) tl.to(sel, { opacity: 0, duration: fout, ease: 'power2.in' }, b - fout);
+}
+// kinetic words: lines = [[text, startTime], ...] each line = words revealed with stagger
+function kinetic(el, lines, opts = {}) {
+  el.innerHTML = ''; const size = opts.size || 150;
+  el.style.fontSize = size + 'px';
+  lines.forEach(([txt, t, cls]) => {
+    const line = document.createElement('span'); line.className = 'line ' + (cls || '');
+    let accOn = false;
+    txt.split(' ').forEach((w, k) => {
+      const s = document.createElement('span'); s.className = 'w';
+      let a = accOn; if (w.startsWith('*')) { a = true; accOn = true; w = w.slice(1); }
+      if (w.endsWith('*')) { accOn = false; w = w.slice(0, -1); }
+      if (a) s.classList.add('acc');
+      s.textContent = w; line.appendChild(s);
+      tl.fromTo(s, { opacity: 0, y: 60, scale: 1.25, filter: 'blur(12px)' }, { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: .32, ease: 'power3.out' }, t + k * (opts.stagger || .16));
+    });
+    el.appendChild(line);
+  });
+}
+// camera: make rect [x,y,w,h] (image px) fill frame element
+function cam(frameSel, imgSel, rect, t, dur, ease = 'power2.inOut', set = false) {
+  const f = $(frameSel); const fw = f.offsetWidth, fh = f.offsetHeight;
+  const s = Math.min(fw / rect[2], fh / rect[3]);
+  const x = -(rect[0] + rect[2] / 2) * s + fw / 2, y = -(rect[1] + rect[3] / 2) * s + fh / 2;
+  if (set) tl.set(imgSel, { x, y, scale: s }, t); else tl.to(imgSel, { x, y, scale: s, duration: dur, ease }, t);
+  return { s, x, y };
+}
+function hl(frameSel, imgSel, hlSel, rect, camState, t, t2) {
+  const pad = 14;
+  tl.set(hlSel, { left: rect[0] * camState.s + camState.x - pad, top: rect[1] * camState.s + camState.y - pad, width: rect[2] * camState.s + pad * 2, height: rect[3] * camState.s + pad * 2 }, t);
+  tl.fromTo(hlSel, { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: .3 }, t);
+  if (t2) tl.to(hlSel, { opacity: 0, duration: .25 }, t2);
+}
+const humans = ['Veeekthorr','Bigkelceey','stillgawu','CalmlyUnique','Rand_Rnc','BasmerW3','ABDULLEGEND111','AmiliaD_','GenixJNR','JoyBsol','Mustyweb3_','_Rio_Blake'];
+const HQ = HUMANS_Q;
+
+// ---------- persistent: pitch bg + bug ----------
+tl.to('#pitch', { opacity: .07, duration: 2 }, 0);
+tl.fromTo('#pitch', { scale: 1.25 }, { scale: 1, duration: S('i1'), ease: 'none' }, 0);
+tl.to('#pitch', { opacity: 0, duration: .4 }, S('i1') - .4);
+tl.to('#bug', { opacity: 1, duration: .5 }, S('i2'));
+tl.to('#bug', { opacity: 0, duration: .3 }, S('e1') - .3);
+
+// ---------- A: hook ----------
+show('#sA', S('h1') - .2, S('h3'));
+kinetic($('#kA'), [['Every weekend,', S('h1')], ['millions play', W('h1', 'millions')], ['*Fantasy* Premier League.', W('h1', 'Fantasy')]], { size: 140 });
+tl.to('#kA', { opacity: 0, duration: .25 }, S('h2') - .25);
+// h2 swaps text
+const kA2 = document.createElement('div'); kA2.className = 'kin D'; kA2.style.position = 'absolute'; $('#sA').appendChild(kA2);
+kinetic(kA2, [['And everyone', S('h2')], ['has an *opinion.*', W('h2', 'has')]], { size: 170 });
+show('#sA2', S('h3') - .15, S('h5'));
+tl.fromTo('#q1', { left: -900, top: 190, rotate: -6 }, { left: 170, rotate: -3, duration: .7, ease: 'power4.out' }, S('h3') - .15);
+tl.fromTo('#q2', { left: 1920, top: 560, rotate: 6 }, { left: 930, rotate: 2.5, duration: .7, ease: 'power4.out' }, S('h4') - .15);
+tl.to('#q1', { y: -20, duration: 6, ease: 'none' }, S('h3'));
+show('#sA3', S('h5') - .1, S('i1') - .2, .2, .3);
+kinetic($('#kA3'), [['Opinions are *free.*', S('h5')]], { size: 190 });
+tl.to('#kA3 .line', { opacity: 0, duration: .2 }, S('h6') - .2);
+const kA4 = document.createElement('div'); kA4.className = 'kin D'; kA4.style.position = 'absolute'; $('#sA3').appendChild(kA4);
+kinetic(kA4, [['So what happens', S('h6')], ['when you put', W('h6', 'when')], ['*a price* on them?', W('h6', 'price') - .1]], { size: 150, stagger: .1 });
+tl.to(kA4, { scale: 4, opacity: 0, duration: .5, ease: 'power3.in' }, S('i1') - .5);
+
+// ---------- B: logo ----------
+show('#sB', S('i1') - .15, S('i2'));
+tl.fromTo('#lring', { rotation: -200, transformOrigin: '50% 50%', scale: .2, opacity: 0 }, { rotation: -14, scale: 1, opacity: 1, duration: 1.1, ease: 'power4.out' }, S('i1') - .1);
+tl.fromTo('#ldot', { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: .5, ease: 'back.out(3)' }, S('i1') + .3);
+tl.fromTo('#lword', { opacity: 0, letterSpacing: '.4em' }, { opacity: 1, letterSpacing: '.06em', duration: .9, ease: 'power3.out' }, S('i1') + .2);
+tl.fromTo('#lsub', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .5 }, W('i1', 'An open'));
+tl.to('#lring', { rotation: 60, duration: 3, ease: 'none' }, S('i1') + 1.1);
+
+// ---------- C: hero ----------
+show('#sC', S('i2') - .2, S('i3'));
+tl.fromTo('#heroF', { scale: .92, y: 40 }, { scale: 1.0, y: 0, duration: 3.6, ease: 'power2.out' }, S('i2') - .2);
+tl.fromTo('#sC .c3', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .4, stagger: .25, ease: 'back.out(2)' }, W('i2', 'markets') - .3);
+tl.fromTo('#liveTag', { opacity: 0 }, { opacity: 1, duration: .4 }, W('i2', 'live'));
+
+// ---------- D: models ----------
+show('#sD', S('i3') - .2, S('i4'));
+tl.fromTo('#dTitle', { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: .4 }, S('i3'));
+[['claude', 'Claude'], ['gpt', 'G P T'], ['gemini', 'Gemini'], ['grok', 'Grok'], ['deepseek', 'DeepSeek']].forEach(([k, w]) =>
+  tl.fromTo('#m_' + k, { opacity: 0, y: 80, scale: .85 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: 'back.out(2)' }, W('i3', w) - .15));
+tl.to('#sD .wal', { opacity: 1, duration: .3, stagger: .08 }, W('i3', 'own wallet'));
+tl.fromTo('#samePrice', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, W('i3', 'same live'));
+
+// ---------- E: claude expanded ----------
+show('#sE', S('i4') - .25, S('f1'));
+// table_claude.png section coords: c_33 [1087,1140,248,36], c_reason [274,1192,1792,37], row [376,821]
+const eWide = [200, 700, 2480, 1110];
+cam('#eF', '#eImg', eWide, S('i4') - .25, 0, 'none', true);
+const eZ = cam('#eF', '#eImg', [250, 1000, 1880, 300], S('i4') + .2, 1.0);
+hl('#eF', '#eImg', '#eHl1', [1087, 1140, 248, 36], eZ, W('i4', 'probability') + .2);
+hl('#eF', '#eImg', '#eHl2', [274, 1192, 1792, 37], eZ, W('i4', 'reason'));
+
+// ---------- F: humans grid ----------
+const grid = $('#grid');
+humans.forEach((h, i) => {
+  const d = document.createElement('div'); d.className = 'gcard';
+  d.innerHTML = `<img class="av" src="assets/av/${h}.jpg"><div><div class="h">@${h}</div><div class="q">${HQ[h]}</div></div><span class="pill yes">YES</span>`;
+  grid.appendChild(d);
+  tl.fromTo(d, { opacity: 0, y: 40, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .35, ease: 'back.out(2)' }, S('f1') + .3 + i * .2);
+});
+show('#sF', S('f1') - .2, S('f4'));
+tl.fromTo('#fCount', { opacity: 0 }, { opacity: 1, duration: .3 }, S('f2'));
+tl.to('#fCount', { opacity: 0, duration: .15 }, W('f2', 'Twelve') - .15);
+SW.push(['#fCount', W('f2', 'Twelve') - .1, '12 calls, word for word', '47 replies']);
+tl.to('#fCount', { opacity: 1, duration: .15 }, W('f2', 'Twelve'));
+tl.to('#grid .pill', { scale: 1.35, duration: .15, yoyo: true, repeat: 1, stagger: .03 }, S('f3') - .1);
+tl.fromTo('#fBig', { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: .4, ease: 'power3.out' }, W('f3', 'said'));
+
+// ---------- G: victor on chain ----------
+show('#sG', S('f4') - .2, S('p1'));
+// table_victor: v_row [376,1310], v_quote [274,1540,1792,37]; expanded block approx y 1280-1620
+cam('#gF', '#gImg', [200, 650, 2480, 1300], S('f4') - .2, 0, 'none', true);
+cam('#gF', '#gImg', [240, 1250, 1500, 420], W('f4', 'free') - .3, 1.0);
+const gZ = cam('#gF', '#gImg', [1240, 1250, 1500, 420], W('f4', 'placed') - .5, 1.0);
+hl('#gF', '#gImg', '#gHl', [2235, 1445, 150, 85], gZ, W('f4', 'placed') + .6);
+tl.fromTo('#gChip', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, W('f4', 'on chain'));
+
+// ---------- H: price ladder ----------
+show('#sH', S('p1') - .2, S('p2'));
+(function () {
+  const svg = $('#ladder'); const P = [0.501520, 0.506481, 0.511393, 0.516259, 0.521079, 0.525855];
+  const who = ['Veeekthorr', 'CalmlyUnique', 'Bigkelceey', 'BasmerW3', 'stillgawu', 'Rand_Rnc']; // order of fills, from data/human_picks.json avgPrice
+  const X = i => 120 + i * 270, Y = p => 620 - (p - 0.495) / (0.53 - 0.495) * 560;
+  let h = '';
+  [0.50, 0.51, 0.52, 0.53].forEach(g => h += `<line x1="80" x2="1600" y1="${Y(g)}" y2="${Y(g)}" stroke="rgba(255,255,255,.08)"/><text x="0" y="${Y(g) + 8}" fill="#8a9794" font-size="24" font-family="Space Grotesk">${g.toFixed(2)}</text>`);
+  h += `<polyline id="lline" fill="none" stroke="#2bffc0" stroke-width="6" stroke-linejoin="round" points="${P.map((p, i) => X(i) + ',' + Y(p)).join(' ')}"/>`;
+  P.forEach((p, i) => {
+    h += `<g class="lpt" id="lp${i}" opacity="0"><circle cx="${X(i)}" cy="${Y(p)}" r="14" fill="#2bffc0"/>
+      <clipPath id="cp${i}"><circle cx="${X(i)}" cy="${Y(p) + 90}" r="38"/></clipPath>
+      <image href="assets/av/${who[i]}.jpg" x="${X(i) - 38}" y="${Y(p) + 52}" width="76" height="76" clip-path="url(#cp${i})"/>
+      <text x="${X(i)}" y="${Y(p) - 34}" text-anchor="middle" fill="#f4f7f6" font-size="44" font-weight="700" font-family="Space Grotesk">${p.toFixed(4)}</text>
+      <text x="${X(i)}" y="${Y(p) + 160}" text-anchor="middle" fill="#8a9794" font-size="22" font-family="Space Grotesk">${['1st', '2nd', '3rd', '4th', '5th', '6th'][i]} fan</text></g>`;
+  });
+  svg.innerHTML = h;
+  const L = $('#lline'); const len = 1500; L.setAttribute('stroke-dasharray', len); L.setAttribute('stroke-dashoffset', len);
+  const t0 = W('p1', 'Every fan'), t1 = W('p1', 'The sixth');
+  tl.to(L, { attr: { 'stroke-dashoffset': 0 }, duration: t1 - t0 + .4, ease: 'none' }, t0);
+  P.forEach((p, i) => tl.fromTo('#lp' + i, { opacity: 0 }, { opacity: 1, duration: .25 }, t0 + i * (t1 - t0 + .4) / 6));
+  tl.fromTo('#hCall', { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: .4 }, W('p1', 'for saying'));
+})();
+
+// ---------- I: poll vs market ----------
+show('#sI', S('p2') - .2, S('m1'));
+tl.fromTo('#iPoll', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .45, ease: 'back.out(1.6)' }, S('p2'));
+tl.fromTo('#iMkt', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .45, ease: 'back.out(1.6)' }, W('p2', 'A market'));
+
+// ---------- J: disagree ----------
+const jav = $('#jav');
+humans.forEach(h => { const im = document.createElement('img'); im.className = 'av'; im.src = `assets/av/${h}.jpg`; im.style.cssText = 'width:110px;height:110px'; jav.appendChild(im); });
+show('#sJ', S('m1') - .2, S('r1') - .3);
+tl.fromTo('#jav img', { opacity: 0, scale: .6 }, { opacity: 1, scale: 1, duration: .3, stagger: .04 }, S('m1'));
+tl.fromTo('#jq1', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: .45 }, W('m1', 'Claude') - .2);
+tl.fromTo('#jq2', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: .45 }, W('m1', 'Gemini') - .2);
+
+// ---------- K: full time ----------
+show('#sK', S('r1') - .1, S('r2') - .1, .1, .2);
+tl.fromTo('#ftText', { scale: 1.6, opacity: 0, filter: 'blur(20px)' }, { scale: 1, opacity: 1, filter: 'blur(0px)', duration: .5, ease: 'power4.out' }, S('r1') - .1);
+
+// ---------- L: scoreboards ----------
+show('#sL', S('r2') - .15, S('r4') - .1, .2, .25);
+function countUp(sel, to, t, d) { const o = { v: 0 }; tl.to(o, { v: to, duration: d, ease: 'power2.out', onUpdate: () => $(sel).textContent = Math.round(o.v) }, t); }
+tl.fromTo('#L1', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .35 }, S('r2') - .15);
+countUp('#L1n', 2, W('r2', 'Two'), .5);
+tl.fromTo('#L1s', { opacity: 0, scale: 2.5 }, { opacity: 1, scale: 1, duration: .25, ease: 'power4.in' }, W('r2', 'line') + .3);
+tl.fromTo('#L2', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .35 }, S('r3') - .15);
+countUp('#L2n', 6, W('r3', 'Six'), .7);
+tl.fromTo('#L2s', { opacity: 0, scale: 2.5 }, { opacity: 1, scale: 1, duration: .25, ease: 'power4.in' }, W('r3', 'line') + .3);
+tl.fromTo('#Lsrc', { opacity: 0 }, { opacity: 1, duration: .4 }, S('r2') + .4);
+
+// ---------- M: misses ----------
+const mg = $('#mgrid');
+humans.forEach(h => { const d = document.createElement('div'); d.style.cssText = 'position:relative;width:200px;height:200px'; d.innerHTML = `<img class="av mi" src="assets/av/${h}.jpg" style="width:200px;height:200px"><div class="mx D red" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:220px;opacity:0">×</div>`; mg.appendChild(d); });
+show('#sM', S('r4') - .15, S('r5'), .15);
+tl.fromTo('#mgrid .mi', { filter: 'grayscale(0)' }, { filter: 'grayscale(1) brightness(.5)', duration: .2, stagger: .05 }, S('r4'));
+tl.fromTo('#mgrid .mx', { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: .18, stagger: .05 }, S('r4'));
+tl.fromTo('#mBig', { opacity: 0, scale: 1.2 }, { opacity: 1, scale: 1, duration: .35, ease: 'power3.out' }, W('r4', 'Twelve misses'));
+
+// ---------- N: board pnl ----------
+show('#sN', S('r5') - .2, S('t1'));
+cam('#nF', '#nImg', [200, 620, 2480, 1300], S('r5') - .2, 0, 'none', true);
+tl.fromTo('#nChip', { opacity: 0 }, { opacity: 1, duration: .4 }, W('r5', 'They missed'));
+const nZ = cam('#nF', '#nImg', [240, 760, 2420, 1120], W('r5', 'But on'), .8);
+hl('#nF', '#nImg', '#nHl1', [250, 805, 2380, 330], nZ, W('r5', 'Claude, Gemini') + .2);
+hl('#nF', '#nImg', '#nHl2', [250, 1250, 2380, 680], nZ, W('r5', 'all finished') + .6);
+
+// ---------- O: API flow ----------
+show('#sO', S('t1') - .2, S('t2'));
+[['#n1', 'Creating'], ['#n2', 'Creating'], ['#n3', 'Creating'], ['#n4', 'Quoting'], ['#n5', 'Building'], ['#n6', 'signing'], ['#n7', 'submitting'], ['#n8', 'verifying']].forEach(([n, w], i) =>
+  CL.push([n, W('t1', w) + (i < 3 ? i * .25 : 0)]));
+tl.fromTo('#sO .node', { opacity: .4 }, { opacity: 1, duration: .3, stagger: .05 }, S('t1'));
+
+// ---------- P: markets ----------
+show('#sP', S('t2') - .2, S('v1'));
+cam('#pF', '#pImg', [180, 180, 2520, 1200], S('t2') - .2, 0, 'none', true);
+cam('#pF', '#pImg', [180, 280, 2520, 950], S('t2') - .2 + .01, 6, 'none');
+[['own key'], ['Panta settles'], ['Nobody']].forEach(([w], i) => tl.fromTo(`#pchips .pc:nth-child(${i + 1})`, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .35 }, W('t2', w) - .1));
+
+// ---------- Q: X ----------
+show('#sQ', S('v1') - .15, S('v2') - .1, .2, .25);
+kinetic($('#kQ'), [['Research first.', S('v1')], ['The audience is', W('v1', 'But')], ['already on *𝕏.*', W('v1', 'already')]], { size: 150 });
+show('#sQ2', S('v2') - .15, S('v4'));
+tl.fromTo('#xr', { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: .45 }, S('v2'));
+tl.fromTo('#xArrow', { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: .3 }, W('v2', 'becomes'));
+tl.fromTo('#xp', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: .45 }, W('v2', 'becomes') + .3);
+tl.to('#qTag', { opacity: 0, duration: .2 }, S('v3') - .3);
+SW.push(['#qTag', S('v3') - .1, 'Roadmap · the vision', 'Roadmap · next gameweek']);
+tl.to('#qTag', { opacity: 1, duration: .2 }, S('v3') - .1);
+tl.fromTo('#xMoney', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45 }, S('v3'));
+
+// ---------- R ----------
+show('#sR', S('v4') - .15, S('e1') - .1, .2, .3);
+kinetic($('#kR'), [['Every gameweek.', S('v4')], ['More models.', W('v4', 'More models')], ['More leagues.', W('v4', 'More leagues')], ['*Every call, on the record.*', W('v4', 'Every call')]], { size: 120, stagger: .1 });
+
+// ---------- S ----------
+show('#sS', S('e1') - .1, S('e2') - .05, .2, .3);
+kinetic($('#kS'), [['Opinions are free.', S('e1')], ['*Conviction has a price.*', W('e1', 'Conviction')]], { size: 150, stagger: .12 });
+
+// ---------- Z end ----------
+show('#sZ', S('e2') - .1, null, .5);
+tl.fromTo('#endbg', { rotation: 0 }, { rotation: 140, duration: CUES.total - S('e2') + 1, ease: 'none' }, S('e2') - .1);
+tl.fromTo('#zring', { rotation: -120, transformOrigin: '50% 50%' }, { rotation: -14, duration: 1.2, ease: 'power3.out' }, S('e2'));
+tl.to('#stage', { opacity: 0, duration: .8 }, CUES.total - .8);
+
+// ---------- captions ----------
+const NOCAP = new Set(['h1', 'h2', 'h5', 'h6', 'f3', 'r1', 'r2', 'r3', 'r4', 'v4', 'e1', 'e2']);
+const cap = $('#cap');
+const chunks = [];
+CUES.cues.forEach(c => {
+  if (NOCAP.has(c.id)) return;
+  const words = c.text.replace(/A I/g, 'AI').replace(/G P T/g, 'GPT').replace(/A P I/g, 'API').replace(/F P L/g, 'FPL').replace(/Joao/g, 'João').split(' ');
+  // break on punctuation / max 7 words
+  let cur = [];
+  const flush = () => { if (cur.length) chunks.push({ cid: c.id, words: cur }); cur = []; };
+  words.forEach(w => { cur.push(w); if (/[.?!,]$/.test(w) && cur.length >= 3 || cur.length >= 7) flush(); });
+  flush();
+});
+// time chunks proportionally within cue
+const byCue = {}; chunks.forEach(k => (byCue[k.cid] = byCue[k.cid] || []).push(k));
+Object.entries(byCue).forEach(([cid, ks]) => {
+  const c = C[cid]; const total = ks.reduce((a, k) => a + k.words.join(' ').length + 1, 0); let acc = 0;
+  ks.forEach(k => { const L = k.words.join(' ').length + 1; k.t0 = c.start + c.dur * acc / total; acc += L; k.t1 = c.start + c.dur * acc / total; });
+});
+window.seek = t => {
+  tl.seek(t, false);
+  SW.forEach(([sel, at, a, b]) => { const h = t >= at ? a : b; const el = $(sel); if (el.innerHTML !== h) el.innerHTML = h; });
+  CL.forEach(([sel, at]) => $(sel).classList.toggle('on', t >= at));
+  const k = chunks.find(k => t >= k.t0 - .05 && t < k.t1 + .25);
+  const key = k ? k.t0 : -1;
+  if (cap.dataset.k != key) { cap.dataset.k = key; cap.innerHTML = k ? k.words.map(w => `<span>${w}</span>`).join('') : ''; }
+};
+window.TOTAL = CUES.total;
+document.fonts.ready.then(() => { window.READY = true; });
+</script>
+</body></html>
