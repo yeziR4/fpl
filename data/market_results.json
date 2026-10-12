@@ -8,11 +8,15 @@
     "confirmed. A market can be decided while the gameweek is not final,",
     "and the two are recorded separately rather than collapsed.",
     "",
+    "'pool' carries the parimutuel figures used to compute P&L. They come",
+    "from Panta, not from us, so the profit numbers on the board are",
+    "derived from the venue's own accounting rather than our arithmetic.",
+    "",
     "This is our record, not Panta's. Panta resolves the market; we",
     "publish what the data said and when we read it."
   ],
   "gw": 6,
-  "asOf": "2026-10-10T18:55:46.044131Z",
+  "asOf": "2026-10-12T12:51:32.122005Z",
   "sources": [
     "https://fantasy.premierleague.com/api/event/6/live/",
     "https://fantasy.premierleague.com/api/bootstrap-static/"
@@ -35,7 +39,20 @@
           "value": 90,
           "points": 2
         }
-      ]
+      ],
+      "pool": {
+        "yesVolumeUsdc": 2.6,
+        "noVolumeUsdc": 7.5,
+        "poolUsdc": 10.1,
+        "yesShares": 5.199966,
+        "noShares": 14.921278,
+        "resolvedOnChain": false,
+        "proposedToUma": true,
+        "proposedOutcome": null,
+        "winningSide": "no",
+        "payoutPerShare": 0.67688572,
+        "_note": "Payout per share = pool / shares on the winning side. P&L for a position is shares * payoutPerShare - stake, or -stake if it lost. Null when the market has not resolved, because the winning side is not yet a fact."
+      }
     },
     {
       "market_id": "HLPNPsoRDk36jGF1FqtBENmEq3NRFgMe1wpSos2QyQBq",
@@ -63,18 +80,56 @@
           "value": 2,
           "points": 2
         }
-      ]
+      ],
+      "pool": {
+        "yesVolumeUsdc": 2.5,
+        "noVolumeUsdc": 6.6,
+        "poolUsdc": 9.1,
+        "yesShares": 5.0,
+        "noShares": 13.144718,
+        "resolvedOnChain": false,
+        "proposedToUma": true,
+        "proposedOutcome": null,
+        "winningSide": "yes",
+        "payoutPerShare": 1.82,
+        "_note": "Payout per share = pool / shares on the winning side. P&L for a position is shares * payoutPerShare - stake, or -stake if it lost. Null when the market has not resolved, because the winning side is not yet a fact."
+      }
     },
     {
       "market_id": "GM2wvtGY5HaG3T4DiVnJTDXsScZLMc9JU9ABzSRGUvKn",
       "player": "Haaland",
+      "position": "FWD",
       "line": 8,
-      "points": null,
-      "outcome": null,
+      "points": 6,
+      "outcome": "no",
       "decided": false,
       "final": false,
-      "status": "pending",
-      "reason": "has not played yet, or could not be identified"
+      "status": "provisional",
+      "breakdown": [
+        {
+          "event": "minutes",
+          "value": 79,
+          "points": 2
+        },
+        {
+          "event": "goals_scored",
+          "value": 1,
+          "points": 4
+        }
+      ],
+      "pool": {
+        "yesVolumeUsdc": 29.7,
+        "noVolumeUsdc": 6.3,
+        "poolUsdc": 36.0,
+        "yesShares": 57.719809,
+        "noShares": 12.582357,
+        "resolvedOnChain": false,
+        "proposedToUma": true,
+        "proposedOutcome": null,
+        "winningSide": "no",
+        "payoutPerShare": 2.86114915,
+        "_note": "Payout per share = pool / shares on the winning side. P&L for a position is shares * payoutPerShare - stake, or -stake if it lost. Null when the market has not resolved, because the winning side is not yet a fact."
+      }
     }
   ]
 }

@@ -67,6 +67,20 @@ export interface MarketRef {
   /** FPL has confirmed bonus for the gameweek. */
   final: boolean;
   outcomeAsOf: string | null;
+  /**
+   * What one share of the winning side is worth, from Panta's own pool figures.
+   *
+   * This is the whole P&L calculation: `shares * payoutPerShare - stake`. Read
+   * off the venue rather than computed from our own notion of the odds, so a
+   * profit number on the board cannot be an artefact of our arithmetic.
+   */
+  payoutPerShare: number | null;
+  /** The side that won, per the official data. */
+  winningSide: "yes" | "no" | null;
+  /** Panta has sent the proposal to UMA. Not the same as settled. */
+  proposedToUma: boolean;
+  /** Panta has marked it resolved on chain. */
+  resolvedOnChain: boolean;
 }
 
 export interface Participant {
@@ -91,6 +105,19 @@ export interface Forecast {
   priceAtDecision: number | null;
   edge: number | null;
   stakeUsdc: number | null;
+  /**
+   * What the position made or lost, in USDC. Null until the market has an
+   * outcome.
+   *
+   * Replaces edge as the headline number on the board. Edge answers "was the
+   * market mispriced", which is the researcher's question; P&L answers "did they
+   * make money", which is everyone's, and needs no explanation of what a
+   * percentage point of edge is.
+   *
+   * A losing position is exactly -stake. A winning one is
+   * shares x payoutPerShare - stake, both taken from Panta's own pool figures.
+   */
+  pnlUsdc: number | null;
   reasoning: string;
   status: ForecastStatus;
   shares: string | null;
@@ -200,6 +227,21 @@ interface RawOutcome {
   final: boolean;
   status: string;
   breakdown?: { event: string | null; value: number | null; points: number | null }[];
+  /**
+   * The parimutuel figures, straight from Panta.
+   *
+   * `payoutPerShare` is what one share of the WINNING side is now worth: the
+   * whole pool divided by the shares held on that side. It is the only input
+   * needed to turn a position into a profit, and it comes from the venue rather
+   * than from our arithmetic.
+   */
+  pool?: {
+    poolUsdc: number;
+    winningSide: "yes" | "no" | null;
+    payoutPerShare: number | null;
+    resolvedOnChain: boolean;
+    proposedToUma: boolean;
+  } | null;
 }
 
 interface RawPick {
@@ -302,7 +344,38 @@ function toMarketRef(m: RawMarket): MarketRef {
     decided: Boolean(outcome?.decided),
     final: Boolean(outcome?.final),
     outcomeAsOf: outcome ? RESULTS_AS_OF : null,
+    payoutPerShare: outcome?.pool?.payoutPerShare ?? null,
+    winningSide: outcome?.pool?.winningSide ?? null,
+    proposedToUma: Boolean(outcome?.pool?.proposedToUma),
+    resolvedOnChain: Boolean(outcome?.pool?.resolvedOnChain),
   };
+}
+
+/**
+ * Profit or loss on one position, in USDC.
+ *
+ * A losing position is exactly minus its stake. A winning one is what its shares
+ * pay out, less what they cost -- and both inputs for the second come from
+ * Panta's pool figures rather than from our own notion of the odds.
+ *
+ * Returns null rather than a guess when a market has no outcome yet, because a
+ * board showing 0.00 for an unresolved position reads as break-even, which is a
+ * claim we cannot make.
+ */
+function pnlFor(args: {
+  side: "yes" | "no" | null;
+  shares: string | null;
+  stakeUsdc: number | null;
+  market: MarketRef;
+}): number | null {
+  const { side, shares, stakeUsdc, market } = args;
+  if (side === null || stakeUsdc === null) return null;
+  if (market.winningSide === null) return null;
+  if (side !== market.winningSide) return -stakeUsdc;
+  if (!shares || market.payoutPerShare === null) return null;
+  const payout = Number(shares) * market.payoutPerShare;
+  if (!Number.isFinite(payout)) return null;
+  return payout - stakeUsdc;
 }
 
 const MARKET_REFS = new Map((markets as unknown as RawMarket[]).map((m) => [m.market_id, toMarketRef(m)]));
@@ -384,6 +457,15 @@ function buildAgentForecasts(gw: number): Forecast[] {
         priceAtDecision,
         edge: pick?.edge ?? null,
         stakeUsdc: pick?.stake_usdc ?? null,
+        pnlUsdc:
+          status === "placed"
+            ? pnlFor({
+                side: pick?.side === "yes" || pick?.side === "no" ? pick.side : null,
+                shares: fill?.shares ?? null,
+                stakeUsdc: pick?.stake_usdc ?? null,
+                market,
+              })
+            : null,
         reasoning: pick?.reasoning ?? "",
         status,
         shares: fill?.shares ?? null,
@@ -433,6 +515,9 @@ function buildHumanForecasts(gw: number): Forecast[] {
         priceAtDecision: null,
         edge: null,
         stakeUsdc,
+        pnlUsdc: signature
+          ? pnlFor({ side, shares: fill?.shares ?? null, stakeUsdc, market })
+          : null,
         reasoning: prediction.reasoning ?? "",
         status: signature
           ? "placed"

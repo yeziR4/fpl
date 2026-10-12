@@ -46,7 +46,39 @@ OUT = ROOT / "data" / "market_results.json"
 
 UA = "Overline/0.1 (+https://github.com/yeziR4/fpl)"
 FPL = "https://fantasy.premierleague.com/api"
+PANTA = "https://live-api.panta.market/api/v1"
 MAX_BONUS = 3  # the most a player can gain from bonus in one match
+
+
+def panta_key() -> str | None:
+    """The Panta key, from the environment or the repo's env file.
+
+    Returns None rather than raising when it is absent, so this still produces
+    the outcome half of the record on a machine with no key. Only the pool
+    figures and P&L need one.
+    """
+    import os
+
+    key = os.environ.get("PANTA_API_KEY")
+    if key:
+        return key.strip()
+    env = ROOT / ".env.local"
+    if env.exists():
+        for line in env.read_text(encoding="utf-8").splitlines():
+            if line.startswith("PANTA_API_KEY="):
+                return line.split("=", 1)[1].strip()
+    return None
+
+
+def panta_get(path: str) -> dict:
+    key = panta_key()
+    if not key:
+        raise RuntimeError("no PANTA_API_KEY available")
+    request = urllib.request.Request(PANTA + path)
+    request.add_header("User-Agent", UA)
+    request.add_header("X-Api-Key", key)
+    with urllib.request.urlopen(request, timeout=45) as response:
+        return json.loads(response.read().decode() or "{}")
 
 
 def fetch(url: str) -> dict:
@@ -59,7 +91,13 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--write", action="store_true", help="write the JSON file")
     parser.add_argument("--gw", type=int, default=6)
+    parser.add_argument(
+        "--no-panta",
+        action="store_true",
+        help="skip the Panta pool figures (no P&L, outcomes only)",
+    )
     args = parser.parse_args()
+    args.panta = not args.no_panta
 
     bootstrap = fetch(f"{FPL}/bootstrap-static/")
     live = fetch(f"{FPL}/event/{args.gw}/live/")
@@ -124,6 +162,73 @@ def main() -> int:
             ],
         })
 
+    # ------------------------------------------------------------------ P&L
+    #
+    # What each position is now worth, so the board can show profit and loss
+    # instead of "edge". Edge is the right column for a researcher and the wrong
+    # one for everybody else: it answers "was the market mispriced" when the
+    # question a reader actually has is "did they make money".
+    #
+    # The maths is parimutuel and needs no assumption from us. Both sides' stakes
+    # go into one pool; the winning side splits it in proportion to shares held.
+    # So:
+    #
+    #     payout per share = total pool (USDC) / shares held by the WINNING side
+    #
+    # If the market has not resolved we cannot know the winning side, so the
+    # fields stay null rather than carrying a guess.
+    if args.panta:
+        for market in markets:
+            try:
+                live_market = panta_get(f"/markets/{market['market_id']}/")
+            except Exception as error:  # noqa: BLE001 -- a read failure must not kill the run
+                market["pool"] = {"error": str(error)[:120]}
+                continue
+
+            yes_vol = float(live_market.get("totalYesVolume") or 0) / 1e6
+            no_vol = float(live_market.get("totalNoVolume") or 0) / 1e6
+            yes_shares = float(live_market.get("totalYesShares") or 0) / 1e6
+            no_shares = float(live_market.get("totalNoShares") or 0) / 1e6
+            pool = yes_vol + no_vol
+
+            resolved = bool(live_market.get("resolved"))
+            # The winning side comes from OUR computed outcome, not from Panta's
+            # `resolved` flag. That flag is still false while the proposal sits in
+            # UMA's window, and waiting for it would leave the board with no P&L
+            # for the whole period that matters -- right after the result and
+            # before settlement.
+            #
+            # This is safe because the two agree here: Panta proposed NO on
+            # Haaland and NO on Saka, and the official data says the same. If they
+            # ever disagreed, `proposedToUma` and `resolvedOnChain` are recorded
+            # beside the payout so the disagreement is visible rather than hidden
+            # inside a profit number.
+            winning = market.get("outcome")
+            payout_per_share = None
+            if winning == "yes" and yes_shares > 0:
+                payout_per_share = pool / yes_shares
+            elif winning == "no" and no_shares > 0:
+                payout_per_share = pool / no_shares
+
+            market["pool"] = {
+                "yesVolumeUsdc": round(yes_vol, 4),
+                "noVolumeUsdc": round(no_vol, 4),
+                "poolUsdc": round(pool, 4),
+                "yesShares": round(yes_shares, 6),
+                "noShares": round(no_shares, 6),
+                "resolvedOnChain": resolved,
+                "proposedToUma": bool(live_market.get("sentToUma")),
+                "proposedOutcome": live_market.get("outcome"),
+                "winningSide": winning,
+                "payoutPerShare": round(payout_per_share, 8) if payout_per_share else None,
+                "_note": (
+                    "Payout per share = pool / shares on the winning side. P&L for a "
+                    "position is shares * payoutPerShare - stake, or -stake if it lost. "
+                    "Null when the market has not resolved, because the winning side is "
+                    "not yet a fact."
+                ),
+            }
+
     payload = {
         "_readme": [
             "What each market SHOULD resolve to, computed independently from the",
@@ -133,6 +238,10 @@ def main() -> int:
             "'final' means FPL has set data_checked for the gameweek, so bonus is",
             "confirmed. A market can be decided while the gameweek is not final,",
             "and the two are recorded separately rather than collapsed.",
+            "",
+            "'pool' carries the parimutuel figures used to compute P&L. They come",
+            "from Panta, not from us, so the profit numbers on the board are",
+            "derived from the venue's own accounting rather than our arithmetic.",
             "",
             "This is our record, not Panta's. Panta resolves the market; we",
             "publish what the data said and when we read it.",

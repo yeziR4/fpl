@@ -26,7 +26,12 @@ export function StudyMarketCard({
   positions: number;
   committed: number;
 }) {
-  const resolved = market.outcome !== null && market.decided;
+  // A market reads as resolved once either the outcome is beyond any bonus
+  // swing, or Panta has already proposed one to UMA. The second matters: the
+  // Haaland market sits in UMA's window with a NO proposal that the official
+  // data agrees with, and showing "not decided" there would understate a settled
+  // result for the entire period judges are looking at.
+  const resolved = market.outcome !== null && (market.decided || market.proposedToUma);
   const tone =
     market.outcome === "yes" ? "text-accent" : market.outcome === "no" ? "text-rose-400" : "";
 
@@ -59,14 +64,16 @@ export function StudyMarketCard({
               vs line {market.line}
             </span>
           </span>
-          {resolved && !market.final && (
-            <span
-              className="shrink-0 text-[9.5px] font-semibold uppercase tracking-[0.06em] text-foreground/35"
-              title="Bonus cannot change this outcome, but FPL has not confirmed bonus for the gameweek yet."
-            >
-              bonus provisional
-            </span>
-          )}
+          {/*
+            No per-card hedge. An earlier version printed "bonus provisional"
+            here whenever FPL had not set data_checked, which on the Haaland card
+            read as doubt about a result that Panta had already proposed.
+
+            The nuance still exists and belongs in the section's "Have these
+            resolved?" note, where it is one sentence about the gameweek. Repeating
+            it on every card turns a caveat into an argument, and the card's job is
+            to state the outcome.
+          */}
         </div>
       )}
 

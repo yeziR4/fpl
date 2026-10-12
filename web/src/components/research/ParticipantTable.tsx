@@ -48,7 +48,8 @@ interface Row {
   made: number;
   placed: number;
   committed: number;
-  avgEdge: number | null;
+  /** Total profit or loss across every settled position. Null if none settled. */
+  pnl: number | null;
 }
 
 export function ParticipantTable({ forecasts }: { forecasts: Forecast[] }) {
@@ -63,22 +64,28 @@ export function ParticipantTable({ forecasts }: { forecasts: Forecast[] }) {
 
   const rows: Row[] = [...byParticipant.entries()].map(([id, list]) => {
     const placed = list.filter((f) => f.status === "placed");
-    const edges = list.map((f) => f.edge).filter((e): e is number => e !== null);
+    // Only positions that have actually settled count. Including an unsettled
+    // one as zero would drag every average toward break-even and make a losing
+    // record look flat.
+    const settled = placed.map((f) => f.pnlUsdc).filter((v): v is number => v !== null);
     return {
       participant: list[0].participant,
       forecasts: list,
       made: list.filter((f) => f.side !== null || f.probability !== null).length,
       placed: placed.length,
       committed: placed.reduce((s, f) => s + (f.stakeUsdc ?? 0), 0),
-      avgEdge: edges.length ? edges.reduce((a, b) => a + b, 0) / edges.length : null,
+      pnl: settled.length ? settled.reduce((a, b) => a + b, 0) : null,
     };
   });
 
+  // Sorted by money made, then by settled positions. On a board that shows
+  // profit, the ordering should BE the profit -- an alphabetical list of a
+  // competition buries the point of it.
   rows.sort(
     (a, b) =>
+      (b.pnl ?? -Infinity) - (a.pnl ?? -Infinity) ||
       b.placed - a.placed ||
       b.made - a.made ||
-      (b.avgEdge ?? -1) - (a.avgEdge ?? -1) ||
       a.participant.name.localeCompare(b.participant.name),
   );
 
@@ -89,7 +96,7 @@ export function ParticipantTable({ forecasts }: { forecasts: Forecast[] }) {
         <span className="text-right">Calls</span>
         <span className="text-right">On chain</span>
         <span className="text-right">Committed</span>
-        <span className="text-right">Avg edge</span>
+        <span className="text-right">P&amp;L</span>
       </div>
 
       <div className="divide-y divide-hairline">
@@ -137,8 +144,18 @@ export function ParticipantTable({ forecasts }: { forecasts: Forecast[] }) {
                 <span className="tnum text-right text-[12.5px] text-foreground/70">
                   {r.committed ? `$${r.committed.toFixed(2)}` : "—"}
                 </span>
-                <span className="tnum text-right text-[12.5px] text-foreground/70">
-                  {signed(r.avgEdge)}
+                <span
+                  className={`tnum text-right text-[12.5px] font-semibold ${
+                    r.pnl === null
+                      ? "text-foreground/30"
+                      : r.pnl > 0
+                        ? "text-accent"
+                        : r.pnl < 0
+                          ? "text-rose-400"
+                          : "text-foreground/60"
+                  }`}
+                >
+                  {r.pnl === null ? "—" : `${r.pnl >= 0 ? "+" : "−"}$${Math.abs(r.pnl).toFixed(2)}`}
                 </span>
               </button>
 

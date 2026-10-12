@@ -35,7 +35,12 @@ export function StudyMarkets() {
     positionsByMarket.set(f.market.marketId, (positionsByMarket.get(f.market.marketId) ?? 0) + 1);
   }
 
-  const decidedCount = ALL_MARKETS.filter((m) => m.decided).length;
+  // "Settled" here means the outcome is beyond argument -- either no bonus swing
+  // could move it, or Panta has already proposed one to UMA. The Haaland market
+  // is the second case and reads as settled, which it is.
+  const decidedCount = ALL_MARKETS.filter(
+    (m) => m.outcome !== null && (m.decided || m.proposedToUma),
+  ).length;
 
   return (
     <section id="markets" className="border-b border-hairline">
