@@ -6,7 +6,7 @@ def rd(f):
     return x,sr
 mus,_=rd('music.wav'); N=len(mus); vo=np.zeros(N)
 for c in cues['cues']:
-    x,sr=rd(f"vo2/{c['id']}.wav")
+    x,sr=rd(f"vo3/{c['id']}.wav")
     t=np.arange(int(len(x)*SR/sr))/SR; y=np.interp(t,np.arange(len(x))/sr,x)
     i=int(c['start']*SR); j=min(N,i+len(y)); vo[i:j]+=y[:j-i]
 vo=vo/np.max(np.abs(vo))*0.92

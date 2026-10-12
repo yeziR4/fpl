@@ -1,6 +1,6 @@
-# Overline demo — transcript (v2)
+# Overline demo — transcript (v3)
 
-~2:00 · 1920×1080 · voice: Kokoro `af_heart`.
+~2:00 · 1920×1080 · light theme · voice: Fish Audio `933563129e564b19a115bedd57b7406a` (key read from a local file, never committed).
 
 ## 1 · Hook  ·  0:00
 

@@ -1,0 +1,414 @@
+<style>
+#hookbg{position:absolute;inset:-60px;background:url(assets/collage.webp) center/cover;filter:saturate(1.05) contrast(1.05)}
+#hookshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,8,10,.55),rgba(5,8,10,.35) 40%,rgba(5,8,10,.85)),radial-gradient(ellipse at center,rgba(5,8,10,.25),rgba(5,8,10,.75))}
+.kin.shadow .w{text-shadow:0 6px 40px rgba(0,0,0,.65)}
+.cut{position:absolute;bottom:0;-webkit-mask-image:linear-gradient(180deg,#000 72%,transparent 100%);mask-image:linear-gradient(180deg,#000 72%,transparent 100%)}
+.pslot{position:absolute;bottom:0;width:560px;height:880px;display:flex;justify-content:center}
+.pslot .glow{position:absolute;bottom:230px;left:50%;width:520px;height:520px;transform:translateX(-50%);border-radius:50%;filter:blur(60px);opacity:.55}
+.pslot .cut{left:50%;transform:translateX(-50%)}
+.pchip{position:absolute;bottom:150px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:18px;background:rgba(8,13,15,.88);border:1px solid var(--hair);border-radius:20px;padding:16px 26px;white-space:nowrap;backdrop-filter:blur(10px)}
+.pchip .D{font-size:56px}
+.pchip img{width:44px;height:44px}
+.vs{color:var(--mut);font-size:22px;font-weight:600;letter-spacing:.1em}
+.logo{width:120px;height:120px;border-radius:30px;background:#11181b;border:1px solid var(--hair);display:flex;align-items:center;justify-content:center}
+.logo svg{width:68px;height:68px}
+.sc2{width:860px;height:720px;background:linear-gradient(160deg,#0f171a,#080d0f);border:1px solid var(--hair);border-radius:34px;position:relative;overflow:hidden;opacity:0}
+.sc2 .cut{right:-30px;height:640px;left:auto}
+.sc2 .info{position:absolute;left:56px;top:52px;z-index:2}
+.match{display:flex;align-items:center;gap:14px;font-weight:600;font-size:24px;letter-spacing:.08em;color:var(--mut)}
+.match img{width:56px;height:56px}
+.sc2 .pl{font-size:84px;margin-top:22px}
+.sc2 .ln{color:var(--mut);font-size:28px;margin-top:10px;font-weight:600;letter-spacing:.08em}
+.sc2 .big{font-size:300px;line-height:.82;margin-top:26px;text-shadow:0 10px 50px rgba(0,0,0,.6)}
+.sc2 .unit{color:var(--mut);font-size:24px;margin-top:6px;letter-spacing:.1em;font-weight:600}
+.sc2 .stamp{position:absolute;left:300px;bottom:150px;z-index:3;font-size:130px;color:var(--red);border:10px solid var(--red);border-radius:24px;padding:0 28px;transform:rotate(-10deg);opacity:0;background:rgba(8,13,15,.55)}
+.sc2 .note{position:absolute;left:56px;bottom:46px;z-index:2;font-size:24px;color:#c9d3d0;font-weight:600}
+#pedro{position:absolute;left:50%;top:50%;width:1100px;height:640px;margin:-320px 0 0 -550px;z-index:5}
+#pedro .stamp{background:rgba(8,13,15,.55);color:var(--acc);border-color:var(--acc)}
+#rstage{position:absolute;right:120px;top:0;bottom:0;width:820px}
+#rstage > *{position:absolute;opacity:0}
+</style>
+<div id="stage">
+  <!-- A: hook over collage -->
+  <div id="mesh"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>
+  <div id="wipe"></div>
+  <div class="sc" id="sA"><div id="hookbg"></div><div id="hookshade"></div><div class="kin D shadow" id="kA" style="position:absolute"></div><div class="kin D shadow" id="kA2" style="position:absolute"></div></div>
+  <div class="sc" id="sA3"><div class="kin D" id="kA3" style="position:absolute"></div><div class="kin D" id="kA4" style="position:absolute"></div></div>
+
+  <!-- B logo -->
+  <div class="sc" id="sB"><div style="display:flex;flex-direction:column;align-items:center;gap:40px">
+    <svg viewBox="0 0 46 46" width="260" height="260" fill="none"><circle id="lring" cx="23" cy="23" r="18" stroke="var(--acc)" stroke-width="4" stroke-dasharray="10 6.2"/><circle id="ldot" cx="23" cy="23" r="5.5" fill="var(--acc)"/></svg>
+    <div class="D" id="lword" style="font-size:200px;letter-spacing:.06em">OVERLINE</div>
+    <div id="lsub" style="font-size:34px;letter-spacing:.3em;font-weight:600;color:var(--mut)">AN OPEN STUDY · BUILT ON <img class="pm" style="height:46px" src="assets/panta_ink.png"> <span style="color:var(--fg)">PANTA</span></div>
+  </div></div>
+
+  <!-- C: launch week, three players -->
+  <div class="sc" id="sC">
+    <div class="D" id="cGW" style="position:absolute;top:40px;left:0;right:0;text-align:center;font-size:520px;color:transparent;-webkit-text-stroke:3px rgba(0,184,122,.22);line-height:.8">GW6</div>
+    <div class="tag" id="cTag" style="top:70px;left:0;right:0;text-align:center;font-size:30px">Launch week · Gameweek 6</div>
+    <div class="pslot" id="pS" style="left:100px"><div class="glow" style="background:#e0202d"></div><img class="cut" src="assets/players/saka.png" style="height:620px;bottom:235px"><div class="pchip"><img src="assets/crest/ARS.svg"><span class="D">Saka <span class="acc">7+</span></span><span class="vs">VS</span><img src="assets/crest/LEE.svg"></div></div>
+    <div class="pslot" id="pH" style="left:680px"><div class="glow" style="background:#6cabdd"></div><img class="cut" src="assets/players/haaland.png" style="height:650px;bottom:235px"><div class="pchip"><img src="assets/crest/MCI.svg"><span class="D">Haaland <span class="acc">8+</span></span><span class="vs">AT</span><img src="assets/crest/LIV.svg"></div></div>
+    <div class="pslot" id="pP" style="left:1260px"><div class="glow" style="background:#1f4fd8"></div><img class="cut" src="assets/players/pedro.png" style="height:700px;bottom:235px"><div class="pchip"><img src="assets/crest/CHE.svg"><span class="D">João Pedro <span class="acc">8+</span></span><span class="vs">VS</span><img src="assets/crest/BOU.svg"></div></div>
+    <div class="chip" id="cLive" style="position:absolute;top:56px;right:110px;font-size:26px;letter-spacing:.12em;opacity:0"><span class="live"></span>LIVE ON <img class="pm" src="assets/panta_ink.png"> PANTA</div>
+  </div>
+
+  <!-- D models -->
+  <div class="sc" id="sD"><div style="display:flex;flex-direction:column;align-items:center;gap:60px">
+    <div style="text-align:center"><div class="D mut" id="dPre" style="font-size:56px;letter-spacing:.06em">We started with</div><div class="D" id="dTitle" style="font-size:130px;margin-top:10px">Five frontier <span class="acc">AI models</span></div></div>
+    <div style="display:flex;gap:34px" id="mrow">
+      <div class="mcard"><div class="logo">__LOGO_claude-color__</div><div><div class="mname">Claude</div><div class="mlab">Anthropic</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard"><div class="logo">__LOGO_openai__</div><div><div class="mname">GPT</div><div class="mlab">OpenAI</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard"><div class="logo">__LOGO_gemini-color__</div><div><div class="mname">Gemini</div><div class="mlab">Google DeepMind</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard"><div class="logo">__LOGO_grok__</div><div><div class="mname">Grok</div><div class="mlab">xAI</div></div><div class="wal">OWN WALLET · $5</div></div>
+      <div class="mcard"><div class="logo">__LOGO_deepseek-color__</div><div><div class="mname">DeepSeek</div><div class="mlab">DeepSeek</div></div><div class="wal">OWN WALLET · $5</div></div>
+    </div>
+    <div class="D acc" id="samePrice" style="font-size:60px;opacity:0">Same prompt · same markets · same live price</div>
+  </div></div>
+
+  <!-- E claude expanded -->
+  <div class="sc" id="sE">
+    <div class="frame" id="eF" style="left:110px;top:150px;width:1700px;height:760px"><img class="shot" id="eImg" src="assets/light/table_claude.png"><div class="hl" id="eHl1"></div><div class="hl" id="eHl2"></div></div>
+    <div class="tag" style="top:80px;left:110px;font-size:30px">Claude’s call, on the record before kickoff</div>
+  </div>
+
+  <!-- F humans grid -->
+  <div class="sc" id="sF">
+    <div style="position:absolute;top:70px;left:0;right:0;text-align:center"><span class="D" id="fCount" style="font-size:110px">47 replies</span></div>
+    <div id="grid" style="position:absolute;top:240px;left:0;right:0;display:grid;grid-template-columns:repeat(4,400px);gap:22px;justify-content:center"></div>
+    <div class="x" id="fBig"><div class="D" style="font-size:300px;background:rgba(255,255,255,.92);padding:20px 80px;border-radius:40px;box-shadow:0 40px 120px rgba(14,21,18,.18)"><span class="acc">12/12</span> said yes</div></div>
+  </div>
+
+  <!-- G victor on panta -->
+  <div class="sc" id="sG">
+    <div class="frame" id="gF" style="left:110px;top:150px;width:1700px;height:700px"><img class="shot" id="gImg" src="assets/light/table_victor.png"><div class="hl" id="gHl"></div></div>
+    <div class="tag" style="top:80px;left:110px;font-size:30px">A free $3 stake · a real position on Panta</div>
+    <div class="chip" id="gChip" style="position:absolute;top:60px;right:110px;font-size:30px;opacity:0;letter-spacing:.08em"><span class="live"></span>LIVE ON <img class="pm" src="assets/panta_ink.png"> PANTA</div>
+  </div>
+
+  <!-- K full time -->
+  <div class="sc" id="sK"><div class="D" style="font-size:280px" id="ftText">Full time.</div></div>
+
+  <!-- L scoreboards -->
+  <div class="sc" id="sL"><div style="display:flex;gap:60px">
+    <div class="sc2" id="L1"><img class="cut" src="assets/players/saka.png"><div class="info"><div class="match"><img src="assets/crest/ARS.svg">ARSENAL v LEEDS<img src="assets/crest/LEE.svg"></div><div class="D pl">Saka</div><div class="ln">LINE · 7+ POINTS</div><div class="D big" id="L1n">0</div><div class="unit">FPL POINTS</div></div><div class="D stamp" id="L1s">NO</div></div>
+    <div class="sc2" id="L2"><img class="cut" src="assets/players/haaland.png"><div class="info"><div class="match"><img src="assets/crest/LIV.svg">LIVERPOOL v MAN CITY<img src="assets/crest/MCI.svg"></div><div class="D pl">Haaland</div><div class="ln">LINE · 8+ POINTS</div><div class="D big" id="L2n">0</div><div class="unit">FPL POINTS</div></div><div class="note" id="L2note" style="opacity:0">⚽ Scored at Anfield. Still short.</div><div class="D stamp" id="L2s">NO</div></div>
+  </div>
+  <div style="position:absolute;bottom:40px;left:0;right:0;text-align:center;color:var(--mut);font-size:22px;letter-spacing:.12em" id="Lsrc">SOURCE: OFFICIAL FPL DATA · GAMEWEEK 6</div></div>
+
+  <!-- M misses -->
+  <div class="sc" id="sM">
+    <div id="mgrid" style="position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,200px);gap:40px;justify-content:center;align-content:center"></div>
+    <div class="x" id="mBig" style="flex-direction:column"><div class="D" style="font-size:230px;text-align:center;background:rgba(255,255,255,.92);padding:30px 90px;border-radius:40px;box-shadow:0 40px 120px rgba(14,21,18,.18)">12 calls.<br><span class="red">12 misses.</span></div></div>
+  </div>
+
+  <!-- N board pnl + pedro -->
+  <div class="sc" id="sN">
+    <div class="frame" id="nF" style="left:110px;top:150px;width:1700px;height:760px"><img class="shot" id="nImg" src="assets/light/board.png"><div class="hl" id="nHl1"></div><div class="hl" id="nHl2" style="border-color:var(--red);box-shadow:0 0 40px rgba(255,84,112,.4)"></div></div>
+    <div class="tag" style="top:80px;left:110px;font-size:30px">Profit &amp; loss, from Panta’s own pool figures</div>
+    <div class="sc2" id="pedro" style="box-shadow:0 60px 160px rgba(0,0,0,.8)"><img class="cut" src="assets/players/pedro.png" style="height:700px;right:40px"><div class="info"><div class="match"><img src="assets/crest/CHE.svg">CHELSEA v BOURNEMOUTH<img src="assets/crest/BOU.svg"></div><div class="D pl">João Pedro</div><div class="ln">LINE · 8+ POINTS · MODELS SAID NO</div><div class="D big acc" id="Pn">0</div><div class="unit">FPL POINTS · 2 GOALS</div></div><div class="D stamp" id="Ps" style="left:420px;bottom:120px">YES</div></div>
+  </div>
+
+  <!-- O panta api flow -->
+  <div class="sc" id="sO"><div style="display:flex;flex-direction:column;align-items:center;gap:56px">
+    <div class="D" style="font-size:110px">Powered by the <img src="assets/panta_ink.png" style="height:96px;vertical-align:-10px;margin:0 6px"> <span class="acc">Panta API</span></div>
+    <div style="display:flex;align-items:center"><div class="tag" style="position:static;width:230px;font-size:24px">CREATE</div><div class="node" id="n1">/marketquote</div><span class="arrow">→</span><div class="node" id="n2">/marketbuild</div><span class="arrow">→</span><div class="node" id="n3">/marketregister</div></div>
+    <div style="display:flex;align-items:center"><div class="tag" style="position:static;width:230px;font-size:24px">PRICE</div><div class="node" id="n4">/primaryorderquote</div><div style="width:980px"></div></div>
+    <div style="display:flex;align-items:center"><div class="tag" style="position:static;width:230px;font-size:24px">TRADE</div><div class="node" id="n5">/primaryorderbuild</div><span class="arrow">→</span><div class="node" id="n6">sign · own key</div><span class="arrow">→</span><div class="node" id="n7">/primaryordersubmit</div><span class="arrow">→</span><div class="node" id="n8">/primaryorderverify</div></div>
+  </div></div>
+
+  <!-- P markets resolved -->
+  <div class="sc" id="sP">
+    <div class="frame" id="pF" style="left:110px;top:120px;width:1700px;height:640px"><img class="shot" id="pImg" src="assets/light/markets.png"></div>
+    <div id="pchips" style="position:absolute;bottom:150px;left:0;right:0;display:flex;gap:26px;justify-content:center">
+      <div class="chip pc"><span class="acc">●</span> Each model signs with its own key</div>
+      <div class="chip pc"><span class="acc">●</span> Settled by Panta vs official FPL data</div>
+      <div class="chip pc"><span class="acc">●</span> Every position, fully transparent</div>
+    </div>
+  </div>
+
+  <!-- Q X roadmap -->
+  <div class="sc" id="sQ"><div class="kin D" id="kQ"></div></div>
+  <div class="sc" id="sQ2">
+    <div class="tag" id="qTag" style="top:90px;left:0;right:0;text-align:center;font-size:30px">Roadmap · next gameweek</div>
+    <div style="display:flex;align-items:center;gap:70px">
+      <div class="qcard" id="xr" style="position:relative;width:700px;opacity:0"><div class="qhead"><div class="logo" style="width:84px;height:84px;border-radius:50%;background:#0e1512;color:#fff;font-size:44px;font-weight:700">𝕏</div><div><div class="qname">You</div><div class="qhandle">replying to @overline · GW7</div></div></div><div class="qtext" style="font-size:44px">“Haaland 8+ — <span class="red">NO</span>. Quiet away from home.”</div></div>
+      <div class="D acc" id="xArrow" style="font-size:140px;opacity:0">→</div>
+      <div class="qcard" id="xp" style="position:relative;width:640px;opacity:0"><div class="tag" style="position:static;font-size:24px">YOUR POSITION · <img class="pm" src="assets/panta_ink.png"> PANTA</div><div class="D" style="font-size:96px;margin-top:20px">Haaland 8+ <span class="red">NO</span></div><div style="display:flex;justify-content:space-between;margin-top:26px;font-size:30px;font-weight:600"><span>$3.00 staked</span><span class="acc2"><span class="live"></span>live on Panta</span></div></div>
+    </div>
+    <div class="D" id="xMoney" style="position:absolute;bottom:150px;left:0;right:0;text-align:center;font-size:96px;opacity:0">Then: bet straight from 𝕏 — with <span class="acc">X Money</span></div>
+  </div>
+
+  <!-- R montage -->
+  <div class="sc" id="sR">
+    <div class="tag" id="rTag" style="top:80px;left:140px;font-size:28px">Gameweek 6 of 38 · this is just the start</div>
+    <div class="kin D" id="kR" style="position:absolute;left:140px;top:220px;text-align:left"></div>
+    <div id="rstage">
+      <div id="rModels" style="top:390px;left:40px;display:grid;grid-template-columns:repeat(3,130px);gap:30px">
+        <div class="logo">__LOGO_claude-color__</div><div class="logo">__LOGO_openai__</div><div class="logo">__LOGO_gemini-color__</div><div class="logo">__LOGO_grok__</div><div class="logo">__LOGO_deepseek-color__</div><div class="logo D acc" style="font-size:64px">+</div>
+      </div>
+      <div id="rPlayers" style="bottom:0;left:0;width:820px;height:760px">
+        <img class="cut" src="assets/players/saka.png" style="height:500px;left:0">
+        <img class="cut" src="assets/players/pedro.png" style="height:700px;left:430px">
+        <img class="cut" src="assets/players/haaland.png" style="height:600px;left:180px">
+      </div>
+      <img id="rHelmet" src="assets/players/helmet.png" style="top:300px;left:140px;width:560px">
+    </div>
+  </div>
+  <div class="sc" id="sS"><div class="kin D" id="kS"></div></div>
+
+  <!-- end card -->
+  <div class="sc" id="sZ"><div id="endbg"></div><div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:34px">
+    <svg viewBox="0 0 46 46" width="200" height="200" fill="none"><circle id="zring" cx="23" cy="23" r="18" stroke="#0e1512" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="#0e1512"/></svg>
+    <div class="D" style="font-size:220px;letter-spacing:.06em">OVERLINE</div>
+    <div style="font-size:46px;font-weight:600">Every call, on the record.</div>
+    <div style="font-size:34px;margin-top:30px;opacity:.9">fpl-y1ck.vercel.app</div>
+    <div style="display:flex;align-items:center;gap:22px;font-size:34px;letter-spacing:.3em;font-weight:700;margin-top:10px">BUILT ON <img src="assets/panta_ink.png" style="height:84px"> PANTA</div>
+  </div></div>
+</div>
+<div id="bug"><svg viewBox="0 0 46 46" width="44" height="44" fill="none"><circle cx="23" cy="23" r="18" stroke="var(--acc)" stroke-width="4" stroke-dasharray="10 6.2"/><circle cx="23" cy="23" r="5.5" fill="var(--acc)"/></svg><span class="D">OVERLINE</span><span class="D" style="font-size:26px;color:var(--mut)">×</span><img src="assets/panta_ink.png" style="height:40px"><span class="D">PANTA</span></div>
+<div id="cap"></div>
+<div id="vig"></div><div id="grain"></div>
+<script>
+const CUES = __CUES__;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+const W = (id, frag) => { const c = C[id]; const i = c.text.indexOf(frag); if (i < 0) console.log('MISSING', id, frag); return c.start + c.dur * (Math.max(0, i) / c.text.length); };
+const tl = gsap.timeline({ paused: true });
+const SW = [], CL = [];
+const $ = q => document.querySelector(q);
+function show(sel, a, b, fin = .35, fout = .35) {
+  tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: fin, ease: 'power2.out' }, a);
+  if (b != null) tl.to(sel, { opacity: 0, duration: fout, ease: 'power2.in' }, b - fout);
+}
+function kinetic(el, lines, opts = {}) {
+  el.innerHTML = ''; el.style.fontSize = (opts.size || 150) + 'px';
+  lines.forEach(([txt, t]) => {
+    const line = document.createElement('span'); line.className = 'line';
+    let accOn = false;
+    txt.split(' ').forEach((w, k) => {
+      const s = document.createElement('span'); s.className = 'w';
+      let a = accOn; if (w.startsWith('*')) { a = true; accOn = true; w = w.slice(1); }
+      if (w.endsWith('*')) { accOn = false; w = w.slice(0, -1); }
+      if (a) s.classList.add('acc');
+      s.textContent = w; line.appendChild(s);
+      tl.fromTo(s, { opacity: 0, y: 60, scale: 1.25, filter: 'blur(12px)' }, { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: .32, ease: 'power3.out' }, t + k * (opts.stagger || .16));
+    });
+    el.appendChild(line);
+  });
+}
+function cam(frameSel, imgSel, rect, t, dur, ease = 'power2.inOut', set = false) {
+  const f = $(frameSel); const fw = f.offsetWidth, fh = f.offsetHeight;
+  const s = Math.min(fw / rect[2], fh / rect[3]);
+  const x = -(rect[0] + rect[2] / 2) * s + fw / 2, y = -(rect[1] + rect[3] / 2) * s + fh / 2;
+  if (set) tl.set(imgSel, { x, y, scale: s }, t); else tl.to(imgSel, { x, y, scale: s, duration: dur, ease }, t);
+  return { s, x, y };
+}
+function hl(hlSel, rect, cs, t, t2) {
+  const pad = 14;
+  tl.set(hlSel, { left: rect[0] * cs.s + cs.x - pad, top: rect[1] * cs.s + cs.y - pad, width: rect[2] * cs.s + pad * 2, height: rect[3] * cs.s + pad * 2 }, t);
+  tl.fromTo(hlSel, { opacity: 0, scale: 1.08 }, { opacity: 1, scale: 1, duration: .3 }, t);
+  if (t2) tl.to(hlSel, { opacity: 0, duration: .25 }, t2);
+}
+function countUp(sel, to, t, d) { const o = { v: 0 }; tl.to(o, { v: to, duration: d, ease: 'power2.out', onUpdate: () => $(sel).textContent = Math.round(o.v) }, t); }
+const humans = ['Veeekthorr','Bigkelceey','stillgawu','CalmlyUnique','Rand_Rnc','BasmerW3','ABDULLEGEND111','AmiliaD_','GenixJNR','JoyBsol','Mustyweb3_','_Rio_Blake'];
+const HQ = HUMANS_Q;
+
+tl.to('#bug', { opacity: 1, duration: .5 }, S('i2'));
+tl.to('#bug', { opacity: 0, duration: .3 }, S('e1') - .3);
+
+// ---------- A: hook over the collage ----------
+show('#sA', 0, S('h5'), .8, .3);
+tl.fromTo('#hookbg', { scale: 1.12, x: -30 }, { scale: 1.0, x: 30, duration: S('h5'), ease: 'none' }, 0);
+tl.fromTo('#hookshade', { opacity: .55 }, { opacity: 1, duration: 1.2 }, S('h2') - .4);
+kinetic($('#kA'), [['Every weekend,', S('h1')], ['millions play', W('h1', 'millions')], ['*Fantasy* Premier League.', W('h1', 'Fantasy')]], { size: 140 });
+tl.to('#kA', { opacity: 0, duration: .25 }, S('h2') - .25);
+kinetic($('#kA2'), [['And everyone', S('h2')], ['has an *opinion.*', W('h2', 'has')]], { size: 180 });
+show('#sA3', S('h5') - .1, S('i1') - .2, .2, .3);
+kinetic($('#kA3'), [['Opinions are *free.*', S('h5')]], { size: 190 });
+tl.to('#kA3', { opacity: 0, duration: .2 }, S('h6') - .2);
+kinetic($('#kA4'), [['So what happens', S('h6')], ['when you put', W('h6', 'when')], ['*a price* on them?', W('h6', 'price') - .1]], { size: 150, stagger: .1 });
+tl.to('#kA4', { scale: 4, opacity: 0, duration: .5, ease: 'power3.in' }, S('i1') - .5);
+
+// ---------- B: logo ----------
+show('#sB', S('i1') - .15, S('i2'));
+tl.fromTo('#lring', { rotation: -200, transformOrigin: '50% 50%', scale: .2, opacity: 0 }, { rotation: -14, scale: 1, opacity: 1, duration: 1.1, ease: 'power4.out' }, S('i1') - .1);
+tl.fromTo('#ldot', { scale: 0, transformOrigin: '50% 50%' }, { scale: 1, duration: .5, ease: 'back.out(3)' }, S('i1') + .3);
+tl.fromTo('#lword', { opacity: 0, letterSpacing: '.4em' }, { opacity: 1, letterSpacing: '.06em', duration: .9, ease: 'power3.out' }, S('i1') + .2);
+tl.fromTo('#lsub', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .5 }, W('i1', 'An open'));
+tl.to('#lring', { rotation: 60, duration: 3, ease: 'none' }, S('i1') + 1.1);
+
+// ---------- C: launch week, three players ----------
+show('#sC', S('i2') - .2, S('i3'));
+tl.fromTo('#cGW', { scale: 1.15, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: 'power2.out' }, S('i2') - .2);
+tl.fromTo('#cTag', { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: .4 }, S('i2'));
+const pT = W('i2', 'three');
+['#pS', '#pH', '#pP'].forEach((p, i) => {
+  tl.fromTo(p + ' .cut', { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: .7, ease: 'power3.out' }, pT + i * .35);
+  tl.fromTo(p + ' .glow', { opacity: 0, scale: .6 }, { opacity: .55, scale: 1, duration: .9 }, pT + i * .35);
+  tl.fromTo(p + ' .pchip', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: .4, ease: 'back.out(2)' }, pT + i * .35 + .35);
+  tl.to(p + ' .cut', { y: -14, duration: 4, ease: 'none' }, pT + i * .35 + .7);
+});
+tl.fromTo('#cLive', { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: .35, ease: 'back.out(2)' }, W('i2', 'live on Panta'));
+
+// ---------- D: models ----------
+show('#sD', S('i3') - .2, S('i4'));
+tl.fromTo('#dPre', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: .35 }, S('i3'));
+tl.fromTo('#dTitle', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45, ease: 'power3.out' }, W('i3', 'five'));
+tl.fromTo('#mrow .mcard', { opacity: 0, y: 80, scale: .85 }, { opacity: 1, y: 0, scale: 1, duration: .45, ease: 'back.out(2)', stagger: .18 }, W('i3', 'frontier'));
+tl.to('#sD .wal', { opacity: 1, duration: .3, stagger: .08 }, W('i3', 'own wallet'));
+tl.fromTo('#samePrice', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, W('i3', 'same live'));
+
+// ---------- E: Claude's call ----------
+show('#sE', S('i4') - .25, S('f1'));
+cam('#eF', '#eImg', [200, 700, 2480, 1110], S('i4') - .25, 0, 'none', true);
+const eZ = cam('#eF', '#eImg', [250, 1000, 1880, 300], S('i4') + .2, 1.0);
+hl('#eHl1', [1087, 1140, 248, 36], eZ, W('i4', 'probability') + .2);
+hl('#eHl2', [274, 1192, 1792, 37], eZ, W('i4', 'reason'));
+
+// ---------- F: the fans ----------
+const grid = $('#grid');
+humans.forEach((h, i) => {
+  const d = document.createElement('div'); d.className = 'gcard';
+  d.innerHTML = `<img class="av" src="assets/av/${h}.jpg"><div><div class="h">@${h}</div><div class="q">${HQ[h]}</div></div><span class="pill yes">YES</span>`;
+  grid.appendChild(d);
+  tl.fromTo(d, { opacity: 0, y: 40, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .35, ease: 'back.out(2)' }, S('f1') + .3 + i * .2);
+});
+show('#sF', S('f1') - .2, S('f4'));
+tl.fromTo('#fCount', { opacity: 0 }, { opacity: 1, duration: .3 }, S('f2'));
+tl.to('#fCount', { opacity: 0, duration: .15 }, W('f2', 'Twelve') - .15);
+SW.push(['#fCount', W('f2', 'Twelve') - .1, '12 calls, word for word', '47 replies']);
+tl.to('#fCount', { opacity: 1, duration: .15 }, W('f2', 'Twelve'));
+tl.to('#grid .pill', { scale: 1.35, duration: .15, yoyo: true, repeat: 1, stagger: .03 }, S('f3') - .1);
+tl.fromTo('#fBig', { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: .4, ease: 'power3.out' }, W('f3', 'said'));
+
+// ---------- G: the free stake, on Panta ----------
+show('#sG', S('f4') - .2, S('r1') - .3);
+cam('#gF', '#gImg', [200, 650, 2480, 1300], S('f4') - .2, 0, 'none', true);
+cam('#gF', '#gImg', [240, 1250, 1500, 420], W('f4', 'free') - .3, 1.0);
+const gZ = cam('#gF', '#gImg', [1240, 1250, 1500, 420], W('f4', 'placed') - .3, 1.0);
+hl('#gHl', [2235, 1445, 150, 85], gZ, W('f4', 'placed') + .8);
+tl.fromTo('#gChip', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, W('f4', 'on Panta'));
+
+// ---------- K: full time ----------
+show('#sK', S('r1') - .1, S('r2') - .1, .1, .2);
+tl.fromTo('#ftText', { scale: 1.6, opacity: 0, filter: 'blur(20px)' }, { scale: 1, opacity: 1, filter: 'blur(0px)', duration: .5, ease: 'power4.out' }, S('r1') - .1);
+
+// ---------- L: results ----------
+show('#sL', S('r2') - .15, S('r4') - .1, .2, .25);
+tl.fromTo('#L1', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .4 }, S('r2') - .15);
+tl.fromTo('#L1 .cut', { x: 80, opacity: 0 }, { x: 0, opacity: 1, duration: .7, ease: 'power3.out' }, S('r2') - .1);
+countUp('#L1n', 2, W('r2', 'Two'), .5);
+tl.fromTo('#L1s', { opacity: 0, scale: 2.5 }, { opacity: 1, scale: 1, duration: .25, ease: 'power4.in' }, W('r2', 'line') + .3);
+tl.to('#L1 .cut', { filter: 'grayscale(.9) opacity(.55)', duration: .4 }, W('r2', 'line') + .3);
+tl.fromTo('#L2', { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: .4 }, S('r3') - .15);
+tl.fromTo('#L2 .cut', { x: 80, opacity: 0 }, { x: 0, opacity: 1, duration: .7, ease: 'power3.out' }, S('r3') - .1);
+countUp('#L2n', 6, W('r3', 'scored'), 1.4);
+tl.fromTo('#L2note', { opacity: 0 }, { opacity: 1, duration: .3 }, W('r3', 'scored'));
+tl.fromTo('#L2s', { opacity: 0, scale: 2.5 }, { opacity: 1, scale: 1, duration: .25, ease: 'power4.in' }, W('r3', 'line') + .3);
+tl.to('#L2 .cut', { filter: 'grayscale(.9) opacity(.55)', duration: .4 }, W('r3', 'line') + .3);
+tl.fromTo('#Lsrc', { opacity: 0 }, { opacity: 1, duration: .4 }, S('r2') + .4);
+
+// ---------- M: misses ----------
+const mg = $('#mgrid');
+humans.forEach(h => { const d = document.createElement('div'); d.style.cssText = 'position:relative;width:200px;height:200px'; d.innerHTML = `<img class="av mi" src="assets/av/${h}.jpg" style="width:200px;height:200px"><div class="mx D red" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:220px;opacity:0">×</div>`; mg.appendChild(d); });
+show('#sM', S('r4') - .15, S('r5'), .15);
+tl.fromTo('#mgrid .mi', { filter: 'grayscale(0)' }, { filter: 'grayscale(1) opacity(.45)', duration: .2, stagger: .05 }, S('r4'));
+tl.fromTo('#mgrid .mx', { opacity: 0, scale: 1.8 }, { opacity: 1, scale: 1, duration: .18, stagger: .05 }, S('r4'));
+tl.fromTo('#mBig', { opacity: 0, scale: 1.2 }, { opacity: 1, scale: 1, duration: .35, ease: 'power3.out' }, W('r4', 'Twelve misses'));
+
+// ---------- N: Pedro, then the board ----------
+show('#sN', S('r5') - .2, S('t1'));
+cam('#nF', '#nImg', [200, 620, 2480, 1300], S('r5') - .2, 0, 'none', true);
+tl.set('#nF', { filter: 'blur(8px) opacity(.5)' }, S('r5') - .2);
+tl.fromTo('#pedro', { opacity: 0, scale: .92 }, { opacity: 1, scale: 1, duration: .45, ease: 'power3.out' }, W('r5', 'They missed') - .3);
+tl.fromTo('#pedro .cut', { x: 80, opacity: 0 }, { x: 0, opacity: 1, duration: .7 }, W('r5', 'They missed') - .2);
+countUp('#Pn', 12, W('r5', 'twelve'), .8);
+tl.fromTo('#Ps', { opacity: 0, scale: 2.5 }, { opacity: 1, scale: 1, duration: .25, ease: 'power4.in' }, W('r5', 'Bournemouth'));
+tl.to('#pedro', { opacity: 0, y: -40, duration: .35 }, W('r5', 'But on') - .1);
+tl.to('#nF', { filter: 'blur(0px) brightness(1)', duration: .4 }, W('r5', 'But on') - .1);
+const nZ = cam('#nF', '#nImg', [240, 760, 2420, 1120], W('r5', 'But on'), .8);
+hl('#nHl1', [250, 805, 2380, 330], nZ, W('r5', 'Claude, Gemini'));
+hl('#nHl2', [250, 1250, 2380, 680], nZ, W('r5', 'all finished') + .6);
+
+// ---------- O: API ----------
+show('#sO', S('t1') - .2, S('t2'));
+[['#n1', 'Creating'], ['#n2', 'Creating'], ['#n3', 'Creating'], ['#n4', 'Quoting'], ['#n5', 'Building'], ['#n6', 'signing'], ['#n7', 'submitting'], ['#n8', 'verifying']].forEach(([n, w], i) =>
+  CL.push([n, W('t1', w) + (i < 3 ? i * .25 : 0)]));
+tl.fromTo('#sO .node', { opacity: .4 }, { opacity: 1, duration: .3, stagger: .05 }, S('t1'));
+
+// ---------- P: settlement ----------
+show('#sP', S('t2') - .2, S('v1'));
+cam('#pF', '#pImg', [180, 180, 2520, 1200], S('t2') - .2, 0, 'none', true);
+cam('#pF', '#pImg', [180, 280, 2520, 950], S('t2') - .19, 6, 'none');
+[['own key'], ['Panta settles'], ['Every position']].forEach(([w], i) => tl.fromTo(`#pchips .pc:nth-child(${i + 1})`, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .35 }, W('t2', w) - .1));
+
+// ---------- Q: X ----------
+show('#sQ', S('v1') - .15, S('v2') - .1, .2, .25);
+kinetic($('#kQ'), [['Research first.', S('v1')], ['The audience is', W('v1', 'But')], ['already on *𝕏.*', W('v1', 'already')]], { size: 150 });
+show('#sQ2', S('v2') - .15, S('v4'));
+tl.fromTo('#xr', { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: .45 }, S('v2'));
+tl.fromTo('#xArrow', { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: .3 }, W('v2', 'becomes'));
+tl.fromTo('#xp', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: .45 }, W('v2', 'becomes') + .3);
+tl.to('#qTag', { opacity: 0, duration: .2 }, S('v3') - .3);
+SW.push(['#qTag', S('v3') - .1, 'Roadmap · the vision', 'Roadmap · next gameweek']);
+tl.to('#qTag', { opacity: 1, duration: .2 }, S('v3') - .1);
+tl.fromTo('#xMoney', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45 }, S('v3'));
+
+// ---------- R: montage ----------
+show('#sR', S('v4') - .15, S('e1') - .1, .2, .3);
+tl.fromTo('#rTag', { opacity: 0 }, { opacity: 1, duration: .4 }, S('v4'));
+kinetic($('#kR'), [['Every gameweek.', S('v4')], ['More models.', W('v4', 'More models')], ['More players.', W('v4', 'More players')], ['More leagues.', W('v4', 'More leagues')], ['*Every call,*', W('v4', 'Every call')], ['*on the record.*', W('v4', 'on the record')]], { size: 112, stagger: .1 });
+const rm = W('v4', 'More models'), rp = W('v4', 'More players'), rl = W('v4', 'More leagues'), re = W('v4', 'Every call');
+tl.fromTo('#rModels', { opacity: 0, scale: .8 }, { opacity: 1, scale: 1, duration: .35, ease: 'back.out(2)' }, rm);
+tl.to('#rModels', { opacity: 0, duration: .2 }, rp - .1);
+tl.fromTo('#rPlayers', { opacity: 0, y: 80 }, { opacity: 1, y: 0, duration: .4, ease: 'power3.out' }, rp);
+tl.to('#rPlayers', { opacity: 0, duration: .2 }, rl - .1);
+tl.fromTo('#rHelmet', { opacity: 0, x: 300, rotation: 25 }, { opacity: 1, x: 0, rotation: -6, duration: .55, ease: 'power3.out' }, rl);
+tl.to('#rHelmet', { opacity: 0, duration: .3 }, re + .4);
+
+// ---------- S ----------
+show('#sS', S('e1') - .1, S('e2') - .05, .2, .3);
+kinetic($('#kS'), [['Opinions are free.', S('e1')], ['*Conviction has a price.*', W('e1', 'Conviction')]], { size: 150, stagger: .12 });
+
+// ---------- Z: end card ----------
+show('#sZ', S('e2') - .1, null, .5);
+tl.fromTo('#endbg', { rotation: 0 }, { rotation: 140, duration: CUES.total - S('e2') + 1, ease: 'none' }, S('e2') - .1);
+tl.fromTo('#zring', { rotation: -120, transformOrigin: '50% 50%' }, { rotation: -14, duration: 1.2, ease: 'power3.out' }, S('e2'));
+tl.to('#stage', { opacity: 0, duration: .8 }, CUES.total - .8);
+
+// ---------- sweeps between acts + colour fields ----------
+tl.set('#wipe', { xPercent: -130, skewX: -12 }, 0);
+function wipe(t, col) { tl.set('#wipe', { background: col || 'var(--acc)' }, t - .5); tl.fromTo('#wipe', { xPercent: -130 }, { xPercent: 130, duration: 1.0, ease: 'power2.inOut' }, t - .5); }
+wipe(S('i1') - .15); wipe(S('r1') - .1, '#0e1512'); wipe(S('v1') - .15); wipe(S('e2') - .1, 'linear-gradient(90deg,#00d68f,#7fd4ff,#c9b6ff)');
+tl.fromTo('#mesh .b1', { x: -120, y: -60 }, { x: 160, y: 80, duration: CUES.total, ease: 'sine.inOut' }, 0);
+tl.fromTo('#mesh .b2', { x: 100, y: 40 }, { x: -140, y: -90, duration: CUES.total, ease: 'sine.inOut' }, 0);
+tl.fromTo('#mesh .b3', { x: 0, y: 120 }, { x: 120, y: -60, duration: CUES.total, ease: 'sine.inOut' }, 0);
+tl.fromTo('#mesh .b4', { x: 60, y: -40 }, { x: -100, y: 100, duration: CUES.total, ease: 'sine.inOut' }, 0);
+tl.fromTo('#mesh', { opacity: 0 }, { opacity: 1, duration: .6 }, S('h5') - .3);
+
+// ---------- captions ----------
+const NOCAP = new Set(['h1', 'h2', 'h5', 'h6', 'i2', 'i3', 'f3', 'r1', 'r2', 'r3', 'r4', 'v1', 'v4', 'e1', 'e2']);
+const cap = $('#cap'); const chunks = [];
+CUES.cues.forEach(c => {
+  if (NOCAP.has(c.id)) return;
+  let cur = []; const flush = () => { if (cur.length) chunks.push({ cid: c.id, words: cur }); cur = []; };
+  c.text.split(' ').forEach(w => { cur.push(w); if (/[.?!,]$/.test(w) && cur.length >= 3 || cur.length >= 7) flush(); });
+  flush();
+});
+const byCue = {}; chunks.forEach(k => (byCue[k.cid] = byCue[k.cid] || []).push(k));
+Object.entries(byCue).forEach(([cid, ks]) => {
+  const c = C[cid]; const total = ks.reduce((a, k) => a + k.words.join(' ').length + 1, 0); let acc = 0;
+  ks.forEach(k => { const L = k.words.join(' ').length + 1; k.t0 = c.start + c.dur * acc / total; acc += L; k.t1 = c.start + c.dur * acc / total; });
+});
+window.seek = t => {
+  tl.seek(t, false);
+  SW.forEach(([sel, at, a, b]) => { const h = t >= at ? a : b; const el = $(sel); if (el.innerHTML !== h) el.innerHTML = h; });
+  CL.forEach(([sel, at]) => $(sel).classList.toggle('on', t >= at));
+  const k = chunks.find(k => t >= k.t0 - .05 && t < k.t1 + .25);
+  const key = k ? k.t0 : -1;
+  if (cap.dataset.k != key) { cap.dataset.k = key; cap.innerHTML = k ? k.words.map(w => `<span>${w}</span>`).join('') : ''; }
+};
+window.TOTAL = CUES.total;
+Promise.all([document.fonts.ready, ...[...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))]).then(() => { window.READY = true; });
+</script>
+</body></html>
