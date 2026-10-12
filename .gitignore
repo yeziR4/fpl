@@ -22,3 +22,4 @@ data/cache/*
 .panta_smoke_key*
 .env
 .env.local
+docs/demo-video/out/
