@@ -24,8 +24,15 @@ Open https://yezir4.github.io/fpl/.
 Verify the page loads without a browser error page.
 
 ## Hero section
-Verify a headline mentioning Fantasy Premier League or a prediction
-market is visible.
+Verify the text "Premier League" is visible somewhere in the hero
+section (headline, eyebrow label, or supporting copy) -- deliberately
+not pinned to the exact headline wording, which is stylized ("Call the
+gameweek before it happens.") and has already changed once since this
+test was written. Requiring literal "Fantasy Premier League" or
+"prediction market" text in the headline itself is what broke this
+check for real on 2026-09-07 (run 68: Kane CLI's own auto-triage
+correctly root-caused it as the page having genuinely different
+copy, not a flake -- see .testmuai/evidence from that run).
 Verify a "Create Wallet" button is visible in the header.
 
 ## Markets grid
