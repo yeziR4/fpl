@@ -1,0 +1,504 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{--bg:#050807;--card:#0C1311;--card2:#101a17;--line:#1B2623;--mint:#26FAB0;--mintd:rgba(38,250,176,.14);--red:#FF4D6A;--tx:#ECF4F1;--mut:#7C8B87;--dim:#3D4A46}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',monospace}
+em{font-style:normal;color:var(--mint)}
+.w{display:inline-block;white-space:pre}
+#grid{position:absolute;inset:-80px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:80px 80px;opacity:.45;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 50%,#000 20%,transparent 80%)}
+#glow{position:absolute;width:1400px;height:1400px;left:260px;top:-300px;border-radius:50%;background:radial-gradient(circle,rgba(38,250,176,.16),transparent 62%)}
+#grain{position:absolute;inset:0;pointer-events:none;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.6))}
+/* HUD */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:40}
+#hud .tl{position:absolute;left:64px;top:40px;display:flex;align-items:center;gap:14px;font:600 20px 'IBM Plex Mono';letter-spacing:.16em}
+#hud .tl img{height:30px}
+#hud .tc{position:absolute;left:50%;top:44px;transform:translateX(-50%);font:500 16px 'IBM Plex Mono';letter-spacing:.3em;color:var(--mut)}
+#hud .tr{position:absolute;right:64px;top:36px;display:flex;align-items:center;gap:10px;font:600 15px 'IBM Plex Mono';letter-spacing:.14em;padding:9px 16px;border:1px solid rgba(38,250,176,.35);border-radius:999px;color:var(--mint);background:rgba(38,250,176,.06)}
+.live{width:9px;height:9px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint)}
+#src{position:absolute;left:64px;bottom:44px;display:flex;align-items:center;gap:10px;font:600 14px 'IBM Plex Mono';letter-spacing:.18em;color:var(--mut)}
+#srcd{width:8px;height:8px;border-radius:50%;background:var(--mut)}
+#prog{position:absolute;right:64px;bottom:50px;width:220px;height:3px;background:var(--line)}
+#progf{height:100%;width:100%;background:var(--mint);transform-origin:0 50%;transform:scaleX(0)}
+.corner{position:absolute;width:26px;height:26px;border-color:rgba(38,250,176,.5);border-style:solid}
+#cap{position:absolute;left:50%;bottom:92px;transform:translateX(-50%);max-width:1480px;text-align:center;font:500 33px/1.3 'IBM Plex Sans';padding:10px 24px;border-radius:10px;background:rgba(0,0,0,.62);color:#fff;z-index:45;white-space:nowrap}
+#cap:empty{display:none}
+/* wipe */
+#wipe{position:absolute;top:-10%;left:-25%;width:150%;height:120%;transform:skewX(-22deg);z-index:50;pointer-events:none}
+#wipe .a{position:absolute;inset:0;background:var(--mint)}
+#wipe .b{position:absolute;top:0;bottom:0;left:-7%;width:5%;background:var(--mint);opacity:.55}
+#wipe .c{position:absolute;top:0;bottom:0;right:-4%;width:2%;background:var(--mint);opacity:.8}
+#wipe img{position:absolute;left:50%;top:50%;height:260px;transform:translate(-50%,-50%) skewX(22deg)}
+.sc{position:absolute;inset:0;opacity:0}
+.ttl{position:absolute;left:0;right:0;top:150px;text-align:center;font:600 19px 'IBM Plex Mono';letter-spacing:.3em;color:var(--mint)}
+.xcard{background:var(--card);border:1px solid var(--line);border-radius:26px;box-shadow:0 40px 120px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.02) inset}
+.av{width:72px;height:72px;border-radius:50%;flex:none}
+.anon{background:linear-gradient(135deg,#2a3633,#151d1b)}
+.bar{height:16px;border-radius:8px;background:#26312e;display:inline-block}
+/* s1 */
+.mini{position:absolute;width:420px;padding:20px 22px;display:flex;gap:14px;border-radius:18px;background:var(--card);border:1px solid var(--line);font-size:22px;color:#b9c6c2}
+.mini .av{width:42px;height:42px}
+#h1t{position:absolute;left:0;right:0;top:400px;text-align:center;font:700 112px/1.05 'IBM Plex Sans';letter-spacing:-.035em}
+.post{position:absolute;left:50%;width:960px;padding:30px 34px;display:flex;gap:22px}
+.post .t{font-size:38px;line-height:1.3;font-weight:500;margin-top:12px}
+#pA{top:260px;margin-left:-520px}#pB{top:470px;margin-left:-400px}
+#cost{position:absolute;left:0;right:0;top:690px;text-align:center}
+#cost .lbl{font:600 18px 'IBM Plex Mono';letter-spacing:.3em;color:var(--mut);margin-bottom:22px}
+.chips{display:flex;justify-content:center;gap:24px}
+.ch{font:700 44px 'IBM Plex Mono';letter-spacing:.04em;padding:18px 34px;border:2px solid #3a4743;border-radius:14px;color:#d5dfdb;background:#0b1110}
+.ch.red{border-color:var(--red);color:var(--red);background:rgba(255,77,106,.08)}
+/* s2 */
+#bolt{position:absolute;left:250px;top:250px;height:540px;filter:drop-shadow(0 0 60px rgba(38,250,176,.55))}
+#brand{position:absolute;left:820px;top:330px}
+#brand .k{font:600 20px 'IBM Plex Mono';letter-spacing:.34em;color:var(--mut)}
+#brand .nm{font:700 168px/1 'IBM Plex Sans';letter-spacing:-.045em;margin:18px 0 26px}
+#brand .nm b{color:var(--mint);font-weight:700}
+#brand .sub{font:500 44px 'IBM Plex Sans';color:#cfdbd7}
+.pill{display:inline-flex;align-items:center;gap:14px;margin-top:34px;padding:12px 24px 12px 12px;border-radius:999px;border:1px solid rgba(38,250,176,.4);background:rgba(38,250,176,.07);font:600 30px 'IBM Plex Mono';color:var(--mint)}
+.pill img{width:50px;height:50px;border-radius:50%}
+/* s3 */
+#compose{position:absolute;left:340px;top:250px;width:1240px;padding:36px 40px 26px;display:flex;gap:26px}
+#ctext{font:500 56px/1.25 'IBM Plex Sans';min-height:72px;letter-spacing:-.01em}
+.at{color:var(--mint)}
+.cur{color:var(--mint);font-weight:300}
+#xbar{display:flex;justify-content:space-between;align-items:center;margin-top:30px;padding-top:20px;border-top:1px solid var(--line)}
+#xbar .ic{display:flex;gap:22px}#xbar .ic i{width:28px;height:28px;border-radius:7px;border:2px solid rgba(38,250,176,.45)}
+#postbtn{font:700 26px 'IBM Plex Sans';padding:12px 34px;border-radius:999px;background:var(--mint);color:#04110c}
+#parse{position:absolute;left:340px;top:640px;width:1240px;display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.pc{padding:22px 26px;border-radius:18px;border:1px solid var(--line);background:var(--card)}
+.pc .l{font:600 16px 'IBM Plex Mono';letter-spacing:.24em;color:var(--mut)}
+.pc .v{font:700 36px 'IBM Plex Mono';white-space:nowrap;margin-top:12px;color:var(--dim);transition:none}
+.pc.on{border-color:rgba(38,250,176,.6);background:linear-gradient(180deg,rgba(38,250,176,.12),rgba(38,250,176,.02))}
+/* s4 */
+#rcard{position:absolute;left:210px;top:240px;width:1500px;padding:40px 48px 34px}
+#rcard .hd{display:flex;align-items:center;gap:20px}
+#rcard .nm{font:700 34px 'IBM Plex Sans'}#rcard .hn{font:400 28px 'IBM Plex Sans';color:var(--mut)}
+#rcard .xl{margin-left:auto;width:40px;height:40px;fill:#e7e9ea}
+#rcard .rep{font-size:26px;color:var(--mut);margin:22px 0 8px}
+#rcard .txt{font:500 45px/1.5 'IBM Plex Sans';letter-spacing:-.005em}
+.hl{border-radius:8px;padding:0 4px;margin:0 -4px;background-image:linear-gradient(rgba(38,250,176,.22),rgba(38,250,176,.22));background-repeat:no-repeat;background-size:0% 100%}
+#rcard .meta{font-size:26px;color:var(--mut);margin-top:24px;padding-top:22px;border-top:1px solid var(--line)}
+#stamp{position:absolute;right:70px;top:-30px;font:700 22px 'IBM Plex Mono';letter-spacing:.24em;color:#04110c;background:var(--mint);padding:10px 18px;border-radius:8px;transform:rotate(4deg)}
+.srcl{position:absolute;left:0;right:0;text-align:center;font:500 20px 'IBM Plex Mono';color:var(--mut);letter-spacing:.04em}
+/* s5 */
+#lat{position:absolute;left:210px;top:250px;width:1500px}
+.row{margin-bottom:70px}
+.row .hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px}
+.row .l{font:600 22px 'IBM Plex Mono';letter-spacing:.2em;color:var(--mut)}
+.row .v{font:700 96px 'IBM Plex Mono';letter-spacing:-.03em}
+.track{height:26px;border-radius:6px;background:#121b18;position:relative;overflow:visible}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,#1c8f68,var(--mint));box-shadow:0 0 26px rgba(38,250,176,.5)}
+#f1{width:1500px;transform-origin:0 50%;transform:scaleX(0)}
+#f2{width:9px;transform-origin:0 50%;transform:scaleX(0)}
+#call{position:absolute;left:26px;top:-14px;display:flex;align-items:center;gap:14px;font:600 22px 'IBM Plex Mono';color:var(--mint);white-space:nowrap}
+#call:before{content:'';width:70px;height:2px;background:var(--mint)}
+/* s6 */
+#acct{position:absolute;left:150px;top:260px}
+#acct .l{font:600 20px 'IBM Plex Mono';letter-spacing:.26em;color:var(--mut)}
+#bal{font:700 176px/1 'IBM Plex Mono';letter-spacing:-.05em;margin:24px 0 30px}
+#acct .sp{font:500 24px 'IBM Plex Mono';color:#a9b6b2;line-height:1.7}
+#mk{position:absolute;left:1080px;top:230px;width:700px}
+#tiles{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.tile{display:flex;align-items:center;gap:18px;padding:22px;border-radius:18px;border:1px solid var(--line);background:var(--card)}
+.tile .co{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font:700 22px 'IBM Plex Mono';color:#fff}
+.tile .s{font:700 30px 'IBM Plex Mono'}.tile .n{font-size:20px;color:var(--mut)}
+#side{display:grid;grid-template-columns:1fr 1fr;margin-top:26px;border-radius:16px;overflow:hidden;border:1px solid var(--line);position:relative}
+#side div{padding:20px;text-align:center;font:700 28px 'IBM Plex Mono';letter-spacing:.12em;position:relative;z-index:1}
+#sidek{position:absolute;top:0;bottom:0;left:0;width:50%;background:var(--mint);z-index:0}
+#lev{margin-top:30px}
+#lev .hd{display:flex;justify-content:space-between;font:600 18px 'IBM Plex Mono';letter-spacing:.2em;color:var(--mut)}
+#levt{height:12px;border-radius:6px;background:#16211e;margin:22px 0 14px;position:relative}
+#levf{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:6px;background:var(--mint);transform-origin:0 50%}
+#levk{position:absolute;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(38,250,176,.3)}
+#levs{display:flex;justify-content:space-between;font:600 22px 'IBM Plex Mono';color:#a9b6b2}
+#levv{color:var(--mint);font:700 26px 'IBM Plex Mono'}
+/* s7 */
+#cmdh{position:absolute;left:0;right:0;top:230px;text-align:center;font:600 34px 'IBM Plex Mono';color:var(--mut)}
+#cmdh span{color:var(--mint)}
+#cmds{position:absolute;left:200px;right:200px;top:330px;display:flex;flex-wrap:wrap;justify-content:center;gap:22px}
+.cm{font:600 34px 'IBM Plex Mono';padding:20px 30px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#c3cfcb}
+.cm.hot{border-color:var(--mint);color:#04110c;background:var(--mint);box-shadow:0 0 40px rgba(38,250,176,.35)}
+.cm.was{border-color:rgba(38,250,176,.55);color:var(--mint);background:rgba(38,250,176,.07)}
+/* s8 */
+.pan{position:absolute;top:240px;width:780px}
+.pan .h{font:600 19px 'IBM Plex Mono';letter-spacing:.28em;color:var(--mint);margin-bottom:26px}
+.rl{padding:24px 26px;border-radius:18px;border:1px solid var(--line);background:var(--card);margin-bottom:22px}
+.rl .c{font:600 30px 'IBM Plex Mono'}.rl .who{font:500 20px 'IBM Plex Mono';color:var(--mut);margin-bottom:10px;letter-spacing:.06em}
+.rl .r{margin-top:14px;font:700 22px 'IBM Plex Mono';letter-spacing:.12em}
+.ok{color:var(--mint)}.no{color:var(--red)}
+#det{position:absolute;left:0;right:0;top:790px;text-align:center;font:600 19px 'IBM Plex Mono';letter-spacing:.24em;color:var(--mut)}
+/* s9 */
+#pipe{position:absolute;left:0;right:0;top:0;height:1080px;transform-origin:50% 0}
+.nd{position:absolute;top:400px;width:214px;height:200px;padding:22px 18px;border-radius:20px;border:1px solid var(--line);background:var(--card);text-align:center}
+.nd .i{font:700 18px 'IBM Plex Mono';color:var(--dim);letter-spacing:.2em}
+.nd .t{font:700 26px/1.15 'IBM Plex Sans';margin-top:18px}
+.nd .s{font:500 17px/1.35 'IBM Plex Mono';color:var(--mut);margin-top:12px}
+.nd.on{border-color:var(--mint);background:linear-gradient(180deg,rgba(38,250,176,.16),rgba(38,250,176,.03));box-shadow:0 0 40px rgba(38,250,176,.18)}
+.nd.on .i{color:var(--mint)}
+.lk{position:absolute;top:499px;height:2px;width:40px;background:var(--dim)}
+#pkt{position:absolute;top:490px;left:0;width:20px;height:20px;border-radius:50%;background:var(--mint);box-shadow:0 0 24px 6px rgba(38,250,176,.7);margin-left:-10px;opacity:0}
+#zone{position:absolute;left:105px;top:330px;font:600 16px 'IBM Plex Mono';letter-spacing:.24em;color:var(--mut)}
+.gd{position:absolute;top:560px;width:520px;height:330px;padding:30px;border-radius:20px;border:1px solid var(--line);background:var(--card)}
+.gd .h{font:600 17px 'IBM Plex Mono';letter-spacing:.24em;color:var(--mut)}
+.gd .a{font:700 36px/1.2 'IBM Plex Mono';margin-top:28px}
+.gd .ar{font:700 34px 'IBM Plex Mono';color:var(--dim);margin:14px 0}
+#term{position:absolute;left:1260px;top:560px;width:540px;height:330px;border-radius:20px;border:1px solid rgba(38,250,176,.35);background:#060b09;padding:24px 26px;font:500 19px/1.5 'IBM Plex Mono';color:#a9d9c6;overflow:hidden}
+#term .p{color:var(--mut)}
+/* s10 */
+#foot{position:absolute;left:50%;top:470px;transform:translateX(-50%);white-space:nowrap;font:600 40px 'IBM Plex Mono';padding:22px 34px;border-radius:16px;border:1px solid rgba(38,250,176,.5);background:var(--card)}
+#foot .k{display:block;font:600 16px 'IBM Plex Mono';letter-spacing:.28em;color:var(--mut);margin-bottom:10px}
+#brw{position:absolute;left:290px;top:250px;width:1340px;border-radius:18px;overflow:hidden;border:1px solid #26302d;box-shadow:0 50px 140px rgba(0,0,0,.7)}
+#brw .b{height:46px;background:#111816;display:flex;align-items:center;gap:10px;padding:0 18px}
+#brw .b i{width:13px;height:13px;border-radius:50%;background:#2c3734}
+#brw .u{margin-left:20px;font:500 18px 'IBM Plex Mono';color:#a9b6b2;background:#0a0f0e;padding:6px 18px;border-radius:8px}
+#vp{height:623px;overflow:hidden;position:relative}
+#appimg{position:absolute;left:0;top:0;width:1340px;transform-origin:0 0}
+#notes{position:absolute;left:0;right:0;top:140px;display:flex;justify-content:center;gap:18px}
+.nt{font:600 22px 'IBM Plex Mono';padding:12px 22px;border-radius:10px;background:rgba(5,8,7,.85);border:1px solid var(--line);color:#d5dfdb}
+.nt.m{color:#04110c;background:var(--mint);border-color:var(--mint)}
+#cursor{position:absolute;width:34px;height:34px;opacity:0;z-index:5}
+/* s11 */
+#s11{background:radial-gradient(ellipse 60% 55% at 50% 42%,rgba(38,250,176,.14),transparent 70%)}
+#eb{position:absolute;left:50%;top:150px;height:230px;transform:translateX(-50%);filter:drop-shadow(0 0 50px rgba(38,250,176,.5))}
+#en{position:absolute;left:0;right:0;top:400px;text-align:center;font:700 120px/1 'IBM Plex Sans';letter-spacing:-.045em}
+#en b{color:var(--mint)}
+#el{position:absolute;left:0;right:0;top:550px;text-align:center;font:700 58px 'IBM Plex Sans';letter-spacing:-.02em}
+#ep{position:absolute;left:50%;top:660px;transform:translateX(-50%);margin:0}
+#ed{position:absolute;left:0;right:0;bottom:170px;text-align:center;font:500 18px 'IBM Plex Mono';letter-spacing:.08em;color:var(--mut)}
+</style></head><body>
+<div id="world">
+<div id="grid"></div><div id="glow"></div>
+
+<div class="sc" id="s1">
+  <div id="chat"></div>
+  <div id="h1t">Trading ideas start<br>in <em>conversations.</em></div>
+  <div class="post xcard" id="pA"><div class="av anon"></div><div><span class="bar" style="width:170px"></span> <span class="bar" style="width:110px;opacity:.5"></span><div class="t">BTC is breaking out. Long from here.</div></div></div>
+  <div class="post xcard" id="pB"><div class="av anon" style="background:linear-gradient(135deg,#33302a,#1b1915)"></div><div><span class="bar" style="width:140px"></span> <span class="bar" style="width:90px;opacity:.5"></span><div class="t">Fakeout. I'd short this all day.</div></div></div>
+  <div id="cost"><div class="lbl">TO ACTUALLY TEST IT, YOU NEED</div><div class="chips"><div class="ch" id="c1">A WALLET</div><div class="ch" id="c2">A DEPOSIT</div><div class="ch red" id="c3">REAL RISK</div></div></div>
+</div>
+
+<div class="sc" id="s2">
+  <img id="bolt" src="logo_mint.png">
+  <div id="brand"><div class="k">AN X BOT FOR PAPER TRADING</div><div class="nm" id="bn">Strike<b>AGent</b></div>
+  <div class="sub" id="bs">Test the idea right where it happens: <em>on X.</em></div>
+  <div class="pill" id="bp"><img src="bot.jpg">@StrikeAGentt</div></div>
+</div>
+
+<div class="sc" id="s3">
+  <div class="ttl">STEP 1 · MENTION THE BOT</div>
+  <div class="xcard" id="compose"><div class="av anon"></div><div style="flex:1"><div id="ctext"><span class="cur">|</span></div>
+  <div id="xbar"><div class="ic"><i></i><i></i><i></i><i></i></div><div id="postbtn">Post</div></div></div></div>
+  <div id="parse">
+    <div class="pc" id="pc0"><div class="l">ACTION</div><div class="v" id="pv0">—</div></div>
+    <div class="pc" id="pc1"><div class="l">MARKET</div><div class="v" id="pv1">—</div></div>
+    <div class="pc" id="pc2"><div class="l">VIRTUAL MARGIN</div><div class="v" id="pv2">—</div></div>
+    <div class="pc" id="pc3"><div class="l">LEVERAGE</div><div class="v" id="pv3">—</div></div>
+  </div>
+</div>
+
+<div class="sc" id="s4">
+  <div class="ttl" style="top:140px">THE REPLY FROM OUR FIRST LIVE TEST</div>
+  <div class="xcard" id="rcard">
+    <div id="stamp">REAL POST</div>
+    <div class="hd"><img src="bot.jpg" class="av"><div><div class="nm">StrikeAGent</div><div class="hn">@StrikeAGentt</div></div>
+    <svg class="xl" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></div>
+    <div class="rep">Replying to <span class="at">@MatchDayfotbal</span></div>
+    <div class="txt"><span class="at">@MatchDayfotbal</span> <span class="hl" id="hP">PAPER P1</span>: <span class="hl" id="hL">LONG BTC-USD</span> | <span class="hl" id="hM">margin $100.00</span> | <span class="hl" id="hX">2x ($200.00 exposure)</span> | <span class="hl" id="hE">simulated entry $81,697.8285</span> | fee $0.10. <span class="hl" id="hS">Strike mark.</span> <span class="hl" id="hN">No real order.</span></div>
+    <div class="meta">13:36 UTC · Oct 23, 2026</div>
+  </div>
+  <div class="srcl" style="top:860px">Text verbatim from x.com/StrikeAGentt/status/2113625563189412037</div>
+</div>
+
+<div class="sc" id="s5">
+  <div class="ttl">FIRST LIVE TEST · ONE MEASUREMENT</div>
+  <div id="lat">
+    <div class="row"><div class="hd"><div class="l">POSTED ON X → OUR SERVER RECEIVED IT</div><div class="v" id="n1">0.000 s</div></div><div class="track"><div class="fill" id="f1"></div></div></div>
+    <div class="row"><div class="hd"><div class="l">RECEIVED → PAPER POSITION OPENED</div><div class="v" id="n2" style="color:var(--mint)">0 ms</div></div><div class="track"><div class="fill" id="f2"></div><div id="call">39 ms, drawn to scale</div></div></div>
+  </div>
+  <div class="srcl" style="top:780px">A single measurement from one live test, not an average. Delivery time includes X's webhook.</div>
+</div>
+
+<div class="sc" id="s6">
+  <div id="acct"><div class="l">EVERY X ACCOUNT GETS</div><div id="bal">$0</div><div class="l" style="color:var(--mint)">VIRTUAL BALANCE · PAPER ONLY</div>
+  <div class="sp" style="margin-top:44px">margin $1 – $10,000<br>up to 5 open positions</div></div>
+  <div id="mk">
+    <div id="tiles">
+      <div class="tile" id="t0"><div class="co" style="background:#F7931A">B</div><div><div class="s">BTC-USD</div><div class="n">Bitcoin</div></div></div>
+      <div class="tile" id="t1"><div class="co" style="background:#627EEA">E</div><div><div class="s">ETH-USD</div><div class="n">Ethereum</div></div></div>
+      <div class="tile" id="t2"><div class="co" style="background:linear-gradient(135deg,#9945FF,#14F195)">S</div><div><div class="s">SOL-USD</div><div class="n">Solana</div></div></div>
+      <div class="tile" id="t3"><div class="co" style="background:#0033AD">A</div><div><div class="s">ADA-USD</div><div class="n">Cardano</div></div></div>
+    </div>
+    <div id="side"><span id="sidek"></span><div id="sl" style="color:#04110c">LONG</div><div id="ss">SHORT</div></div>
+    <div id="lev"><div class="hd"><span>LEVERAGE</span><span id="levv">1×</span></div><div id="levt"><div id="levf"></div><div id="levk"></div></div>
+    <div id="levs"><span>1×</span><span>2×</span><span>3×</span><span>4×</span><span>5×</span></div></div>
+  </div>
+</div>
+
+<div class="sc" id="s7">
+  <div class="ttl">ONE MENTION. ONE COMMAND.</div>
+  <div id="cmdh"><span>@StrikeAGentt</span> + any of these</div>
+  <div id="cmds">
+    <div class="cm">paper long BTC $100 2x</div><div class="cm">paper short ETH $50 3x</div><div class="cm" id="k0">portfolio</div>
+    <div class="cm">positions</div><div class="cm">balance</div><div class="cm" id="k1">price</div><div class="cm" id="k2">close P1</div>
+    <div class="cm">markets</div><div class="cm" id="k3">history</div><div class="cm" id="k4">stats</div><div class="cm">help</div>
+  </div>
+</div>
+
+<div class="sc" id="s8">
+  <div class="pan" style="left:150px" id="pl"><div class="h">STRICT, EXACT COMMANDS</div>
+    <div class="rl" id="r1"><div class="c">paper long BTC $100 2x</div><div class="r ok" id="r1r">✓ EXACT MATCH · ONE PAPER TRADE</div></div>
+    <div class="rl" id="r2"><div class="c" style="color:#a9b6b2">long btc i guess? like 100</div><div class="r no" id="r2r">✕ NOT A COMMAND · NO TRADE</div></div>
+  </div>
+  <div class="pan" style="left:990px" id="pr"><div class="h">ONLY YOU CLOSE YOUR POSITIONS</div>
+    <div class="rl" id="r3"><div class="who">FROM YOU</div><div class="c">close P1</div><div class="r ok" id="r3r">✓ CLOSES YOUR P1</div></div>
+    <div class="rl" id="r4"><div class="who">FROM ANY OTHER ACCOUNT</div><div class="c">close P1</div><div class="r no" id="r4r">✕ ONLY ITS OWN LEDGER · YOUR P1 UNTOUCHED</div></div>
+  </div>
+  <div id="det">DETERMINISTIC PARSER · NO AI GUESSING WHAT YOU MEANT</div>
+</div>
+
+<div class="sc" id="s9">
+  <div id="pipe">
+    <div class="ttl">UNDER THE HOOD</div>
+    <div id="nodes"></div><div id="pkt"></div>
+  </div>
+  <div class="gd" style="left:140px" id="g1"><div class="h">GUARD 01</div><div class="a">STALE MARK</div><div class="ar">↓</div><div class="a no">TRADE REJECTED</div></div>
+  <div class="gd" style="left:700px" id="g2"><div class="h">GUARD 02</div><div class="a">SAME EVENT ×2</div><div class="ar">↓</div><div class="a ok">ONE TRADE</div></div>
+  <div id="term"><div class="p">$ curl strikeagent-paper.fly.dev/health</div><div id="tj"></div></div>
+</div>
+
+<div class="sc" id="s10">
+  <div id="brw"><div class="b"><i></i><i></i><i></i><div class="u">app.strikefinance.org</div></div><div id="vp"><img id="appimg" src="app_crop.jpg"></div></div>
+  <div id="foot"><span class="k">EVERY RECEIPT ENDS WITH</span>Trade on Strike: <span class="at">https://app.strikefinance.org</span></div>
+  <div id="notes"><div class="nt m" id="nt1">STRIKE'S OWN APP</div><div class="nt" id="nt2">StrikeAGent never connects a wallet or places orders</div></div>
+</div>
+
+<div class="sc" id="s11">
+  <img id="eb" src="logo_mint.png">
+  <div id="en">Strike<b>AGent</b></div>
+  <div id="el"><span id="el1">Practice on X.</span> <em id="el2">Trade on Strike.</em></div>
+  <div class="pill" id="ep"><img src="bot.jpg">@StrikeAGentt</div>
+  <div id="ed">Independent hackathon project · paper trading on live Strike mark prices · not affiliated with or endorsed by Strike Finance or X</div>
+</div>
+</div>
+
+<div id="hud">
+  <div class="tl"><img src="logo_mint.png">STRIKEAGENT</div>
+  <div class="tc" id="sec">01 — THE IDEA</div>
+  <div class="tr"><span class="live"></span>PAPER MODE · LIVE STRIKE MARKS</div>
+  <div id="src"><span id="srcd"></span><span id="srct">ILLUSTRATION</span></div>
+  <div id="prog"><div id="progf"></div></div>
+</div>
+<div id="cap"></div>
+<div id="wipe"><div class="b"></div><div class="a"></div><div class="c"></div><img src="logo_ink.png"></div>
+<div id="vig"></div><div id="grain"></div>
+
+<script>
+const CUES = /*CUES*/;
+const T = 82;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+function P(id, ph, off = 0) { const c = C[id], i = c.text.indexOf(ph); if (i < 0) throw new Error('phrase: ' + ph); return c.start + c.dur * i / c.text.length + off; }
+const tl = gsap.timeline({ paused: true }); const $ = q => document.querySelector(q);
+const SW = []; // [selector, time, html]
+const sw = (sel, at, html) => SW.push([sel, at, html]);
+const SFX = []; const sfx = (k, t, g = 1) => SFX.push([k, +t.toFixed(3), g]);
+
+function words(sel, t, st = .08) { const el = $(sel); el.innerHTML = el.innerHTML.replace(/(<[^>]+>)|([^\s<]+)/g, (m, tag) => tag ? tag : `<span class="w">${m}</span>`);
+  tl.fromTo(sel + ' .w', { opacity: 0, y: 70, filter: 'blur(12px)' }, { opacity: 1, y: 0, filter: 'blur(0px)', duration: .45, stagger: st, ease: 'power3.out' }, t); }
+function pop(sel, t, y = 70) { tl.fromTo(sel, { opacity: 0, y, scale: .96, filter: 'blur(8px)' }, { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)', duration: .5, ease: 'expo.out' }, t); }
+function slam(sel, t) { tl.fromTo(sel, { opacity: 0, scale: 1.5, filter: 'blur(10px)' }, { opacity: 1, scale: 1, filter: 'blur(0px)', duration: .32, ease: 'power4.out' }, t); }
+function count(sel, from, to, t, d, fmt) { const o = { v: from }; tl.fromTo(o, { v: from }, { v: to, duration: d, ease: 'power3.out', immediateRender: false, onUpdate: () => $(sel).textContent = fmt(o.v) }, t); }
+function type(sel, html, t, d) { const plain = html.replace(/<[^>]+>/g, ''); const o = { n: 0 };
+  tl.fromTo(o, { n: 0 }, { n: plain.length, duration: d, ease: 'none', immediateRender: false, onUpdate: () => { let n = Math.round(o.n), out = '', c = 0, inTag = false;
+    for (const ch of html) { if (ch === '<') inTag = true; if (inTag) { out += ch; if (ch === '>') inTag = false; continue; } if (c < n) { out += ch; c++; } }
+    $(sel).innerHTML = out + '<span class="cur">|</span>'; } }, t);
+  for (let k = 0; k < plain.length; k += 2) sfx('click', t + d * k / plain.length, .5); }
+// scene switching: hard cut at time (hidden behind wipes)
+const scenes = [];
+function scene(sel, a, b) { tl.set(sel, { opacity: 1 }, a); if (b != null) tl.set(sel, { opacity: 0 }, b); }
+function wipe(t) { tl.fromTo('#wipe', { xPercent: -120 }, { xPercent: 120, duration: .62, ease: 'power3.inOut', immediateRender: false }, t); sfx('whoosh', t - .05, 1); return t + .31; }
+function push(out, inn, t) { tl.to(out, { opacity: 0, x: -140, filter: 'blur(14px)', duration: .3, ease: 'power2.in' }, t); tl.fromTo(inn, { opacity: 0, x: 140, filter: 'blur(14px)' }, { opacity: 1, x: 0, filter: 'blur(0px)', duration: .4, ease: 'power3.out' }, t + .25); sfx('swish', t, .8); }
+function hud(t, sec, src, real) { sw('#sec', t, sec); sw('#srct', t, src); tl.set('#srcd', { background: real ? '#26FAB0' : '#7C8B87', boxShadow: real ? '0 0 10px #26FAB0' : 'none' }, t); }
+tl.set('#wipe', { xPercent: -120 }, 0);
+
+// ambient
+tl.fromTo('#glow', { x: -300, y: 0 }, { x: 400, y: 200, duration: T, ease: 'sine.inOut' }, 0);
+tl.fromTo('#grid', { y: 0 }, { y: 80 * 6, duration: T, ease: 'none' }, 0);
+tl.fromTo('#progf', { scaleX: 0 }, { scaleX: 1, duration: T, ease: 'none' }, 0);
+tl.fromTo('#hud', { opacity: 0 }, { opacity: 1, duration: .6 }, .1);
+
+// ===== S1 hook
+hud(0, '01 — THE IDEA', 'ILLUSTRATION', false);
+scene('#s1', 0);
+const MINI = [['ETH looks heavy into the weekend', 120, 190], ['who is shorting this?', 1400, 160], ['SOL breakout incoming??', 90, 760], ['ADA quietly green again', 1420, 740], ['BTC 2x long. thoughts?', 760, 120], ['this is the top, calling it', 700, 860]];
+$('#chat').innerHTML = MINI.map(([t, x, y], i) => `<div class="mini" id="m${i}" style="left:${x}px;top:${y}px"><div class="av anon"></div><div><span class="bar" style="width:${90 + i * 13}px;height:12px"></span><div style="margin-top:8px">${t}</div></div></div>`).join('');
+MINI.forEach((m, i) => { tl.fromTo('#m' + i, { opacity: 0, y: 40 }, { opacity: .5, y: 0, duration: .6, ease: 'power2.out' }, .1 + i * .22); tl.to('#m' + i, { y: -120 - i * 15, duration: 5, ease: 'none' }, .1 + i * .22); sfx('pop', .1 + i * .22, .35); });
+words('#h1t', S('h1') - .15, .09);
+tl.to('#h1t', { opacity: 0, y: -60, filter: 'blur(10px)', duration: .35 }, S('h2') - .25);
+tl.to('#chat', { opacity: 0, duration: .4 }, S('h2') - .25);
+pop('#pA', P('h2', 'Someone posts')); sfx('pop', P('h2', 'Someone posts'));
+pop('#pB', P('h2', 'Someone argues')); sfx('pop', P('h2', 'Someone argues'));
+tl.to('#pA,#pB', { y: -110, scale: .86, opacity: .55, duration: .5, ease: 'power3.inOut' }, P('h2', 'But testing') - .1);
+tl.fromTo('#cost .lbl', { opacity: 0 }, { opacity: 1, duration: .3 }, P('h2', 'But testing'));
+[['#c1', 'a wallet'], ['#c2', 'a deposit'], ['#c3', 'real risk']].forEach(([s, ph], i) => { slam(s, P('h2', ph, -.05)); sfx(i === 2 ? 'err' : 'hit', P('h2', ph, -.05), .8); });
+tl.to('#c3', { x: 6, duration: .04, yoyo: true, repeat: 7 }, P('h2', 'real risk', .25));
+
+// ===== S2 brand
+let m = wipe(S('h3') - .35);
+tl.set('#s1', { opacity: 0 }, m); scene('#s2', m);
+tl.fromTo('#bolt', { opacity: 0, scale: .5, rotation: -12 }, { opacity: 1, scale: 1, rotation: 0, duration: .7, ease: 'expo.out' }, m);
+tl.fromTo('#bolt', { filter: 'drop-shadow(0 0 0px rgba(38,250,176,0)) brightness(3)' }, { filter: 'drop-shadow(0 0 60px rgba(38,250,176,.55)) brightness(1)', duration: .9 }, m);
+sfx('impact', m, 1);
+tl.fromTo('#brand .k', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .4 }, m + .15);
+tl.fromTo('#bn', { opacity: 0, x: -60, clipPath: 'inset(0 100% 0 0)' }, { opacity: 1, x: 0, clipPath: 'inset(0 0% 0 0)', duration: .6, ease: 'power4.out' }, m + .2);
+words('#bs', P('h3', 'Test the idea') - .1, .06);
+pop('#bp', P('h3', 'on X') - .1, 30); sfx('blip', P('h3', 'on X'), .6);
+tl.to('#bolt', { y: -20, duration: 3.5, ease: 'sine.inOut' }, m);
+
+// ===== S3 command
+m = wipe(S('i1') - .35);
+hud(m, '02 — MENTION', 'ILLUSTRATION', false);
+tl.set('#s2', { opacity: 0 }, m); scene('#s3', m);
+pop('#compose', m + .05); tl.fromTo('#s3 .ttl', { opacity: 0 }, { opacity: 1, duration: .3 }, m + .1);
+[['#pc1', 'a market'], ['#pc2', 'a virtual margin'], ['#pc3', 'and leverage']].forEach(([s, ph]) => { pop(s, P('i1', ph, -.05), 40); sfx('blip', P('i1', ph), .5); });
+pop('#pc0', P('i1', 'Paper long', -.3), 40);
+type('#ctext', '<span class="at">@StrikeAGentt</span> paper long BTC $100 2x', m + .45, P('i1', 'Paper long') - m - .7);
+[['#pc0', '#pv0', 'Paper long', 'paper long'], ['#pc1', '#pv1', 'Bitcoin', 'BTC-USD'], ['#pc2', '#pv2', 'a hundred', '$100'], ['#pc3', '#pv3', 'two-x', '2×']].forEach(([c, v, ph, val]) => {
+  const t = P('i1', ph, .15); sw(v, 0, '—'); sw(v, t, val); tl.set(c, { attr: { class: 'pc on' } }, t); tl.fromTo(v, { color: '#26FAB0', scale: 1.2 }, { color: '#ECF4F1', scale: 1, duration: .4, transformOrigin: '0 50%' }, t); sfx('tick', t, .7); });
+tl.to('#postbtn', { scale: .9, duration: .08, yoyo: true, repeat: 1 }, E('i1') + .02); sfx('send', E('i1') + .02, .9);
+tl.to('#compose', { boxShadow: '0 0 0 2px #26FAB0, 0 0 80px rgba(38,250,176,.35)', duration: .2 }, E('i1') + .05);
+
+// ===== S4 receipt
+m = wipe(S('i2') - .35);
+hud(m, '03 — THE RECEIPT', 'REAL POST · OCT 23, 2026', true);
+tl.set('#s3', { opacity: 0 }, m); scene('#s4', m);
+pop('#rcard', m + .02, 90); sfx('kach', m + .15, 1);
+tl.fromTo('#s4 .ttl,#s4 .srcl', { opacity: 0 }, { opacity: 1, duration: .4 }, m + .2);
+slam('#stamp', P('i2', 'real receipt')); sfx('hit', P('i2', 'real receipt'), .7);
+tl.fromTo('#rcard', { scale: 1 }, { scale: 1.035, duration: 8, ease: 'none' }, m);
+[['#hP', 'Paper position one'], ['#hL', 'Long Bitcoin'], ['#hM', 'A hundred dollars'], ['#hX', 'at two-x'], ['#hE', 'entered at the live'], ['#hS', 'Strike mark'], ['#hN', 'And no real order']].forEach(([s, ph]) => {
+  const t = P('i2', ph, -.05); tl.to(s, { backgroundSize: '100% 100%', color: '#26FAB0', duration: .35, ease: 'power2.out' }, t); sfx('blip', t, .4); });
+
+// ===== S5 latency
+m = S('i3') - .3;
+push('#s4', '#s5', m); hud(m + .25, '04 — SPEED', 'REAL MEASUREMENT · ONE TEST', true);
+tl.set('#s4', { opacity: 0 }, m + .3);
+const r1 = P('i3', 'received the mention'), r1e = P('i3', 'after it was posted');
+tl.to('#f1', { scaleX: 1, duration: r1e - r1, ease: 'power2.inOut' }, r1);
+count('#n1', 0, 6.479, r1, r1e - r1, v => v.toFixed(3) + ' s');
+for (let k = 0; k < 10; k++) sfx('tick', r1 + (r1e - r1) * k / 10, .3);
+const r2 = P('i3', 'opened the position');
+tl.to('#f2', { scaleX: 1, duration: .25, ease: 'power2.out' }, r2);
+count('#n2', 0, 39, r2, .5, v => Math.round(v) + ' ms');
+tl.fromTo('#call', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .4 }, r2 + .3); sfx('hit', r2, .8);
+tl.fromTo('#s5 .srcl', { opacity: 0 }, { opacity: 1, duration: .4 }, r2 + .6);
+
+// ===== S6 account
+m = wipe(S('c1') - .35);
+hud(m, '05 — YOUR PAPER ACCOUNT', 'PRODUCT SPEC', false);
+tl.set('#s5', { opacity: 0 }, m); scene('#s6', m);
+tl.fromTo('#acct .l', { opacity: 0 }, { opacity: 1, duration: .3, stagger: .2 }, m);
+count('#bal', 0, 10000, m + .1, P('c1', 'Go long') - m - .5, v => '$' + Math.round(v).toLocaleString('en-US'));
+tl.fromTo('#acct .sp', { opacity: 0 }, { opacity: 1, duration: .4 }, P('c1', 'Go long') - .3);
+[['#t0', 'Bitcoin'], ['#t1', 'Ethereum'], ['#t2', 'Solana'], ['#t3', 'Cardano']].forEach(([s, ph]) => { pop(s, P('c1', ph, -.1), 40); sfx('pop', P('c1', ph, -.1), .6); });
+pop('#side', P('c1', 'Go long', -.2), 30);
+const tS = P('c1', 'or short'); tl.to('#sidek', { xPercent: 100, background: '#FF4D6A', duration: .3, ease: 'power3.inOut' }, tS);
+tl.to('#sl', { color: '#ECF4F1', duration: .2 }, tS); tl.to('#ss', { color: '#04110c', duration: .2 }, tS); sfx('tick', tS, .7);
+tl.to('#sidek', { xPercent: 0, background: '#26FAB0', duration: .3 }, tS + 1.6); tl.to('#sl', { color: '#04110c', duration: .2 }, tS + 1.6); tl.to('#ss', { color: '#ECF4F1', duration: .2 }, tS + 1.6);
+pop('#lev', P('c1', 'Bitcoin', -.1), 30);
+tl.set('#levf', { scaleX: 0 }, 0); tl.set('#levk', { left: '0%' }, 0);
+const tL = P('c1', 'up to five-x', -.2);
+tl.to('#levf', { scaleX: 1, duration: 1, ease: 'power2.inOut' }, tL); tl.to('#levk', { left: '100%', duration: 1, ease: 'power2.inOut' }, tL);
+['1×', '2×', '3×', '4×', '5×'].forEach((v, i) => { sw('#levv', tL + i * .22, v); if (i) sfx('tick', tL + i * .22, .5); });
+sw('#levv', 0, '1×');
+
+// ===== S7 commands
+m = S('c2') - .3;
+push('#s6', '#s7', m); hud(m + .25, '06 — COMMANDS', 'COMMAND SYNTAX', false);
+tl.set('#s6', { opacity: 0 }, m + .3);
+tl.fromTo('#cmds .cm', { opacity: 0, y: 30, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .35, stagger: .05, ease: 'back.out(2)' }, m + .3);
+[['#k0', 'portfolio'], ['#k1', 'a fresh price'], ['#k2', 'close a position'], ['#k3', 'history'], ['#k4', 'stats']].forEach(([s, ph], i, a) => {
+  const t = P('c2', ph, -.05); tl.set(s, { attr: { class: 'cm hot' } }, t); tl.fromTo(s, { scale: 1.12 }, { scale: 1, duration: .3 }, t); sfx('blip', t, .55);
+  const nx = i < a.length - 1 ? P('c2', a[i + 1][1], -.05) : E('c2') + .2; tl.set(s, { attr: { class: 'cm was' } }, nx); });
+
+// ===== S8 safety
+m = S('c3') - .3;
+push('#s7', '#s8', m); hud(m + .25, '07 — SAFE BY DESIGN', 'ILLUSTRATION', false);
+tl.set('#s7', { opacity: 0 }, m + .3);
+pop('#r1', m + .35, 40); tl.fromTo('#r1r', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .3 }, P('c3', 'strict and exact')); sfx('tick', P('c3', 'strict and exact'), .7);
+pop('#r2', P('c3', 'so a reply', -.3), 40); tl.fromTo('#r2r', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .3 }, P('c3', 'what you typed')); sfx('err', P('c3', 'what you typed'), .6);
+tl.fromTo('#pl .h,#pr .h', { opacity: 0 }, { opacity: 1, duration: .3 }, m + .3);
+pop('#r3', P('c3', 'And only you', -.2), 40); tl.fromTo('#r3r', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .3 }, P('c3', 'close your')); sfx('tick', P('c3', 'close your'), .7);
+pop('#r4', P('c3', 'close your', .3), 40); tl.fromTo('#r4r', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .3 }, P('c3', 'own positions')); sfx('err', P('c3', 'own positions'), .6);
+tl.fromTo('#det', { opacity: 0 }, { opacity: 1, duration: .4 }, P('c3', 'own positions', .2));
+
+// ===== S9 pipeline
+m = wipe(S('a1') - .35);
+hud(m, '08 — UNDER THE HOOD', 'ARCHITECTURE', false);
+tl.set('#s8', { opacity: 0 }, m); scene('#s9', m);
+const ND = [['01', 'X mention', '@StrikeAGentt …'], ['02', 'Signed webhook', 'signature verified'], ['03', 'Dedupe', 'each event once'], ['04', 'Durable queue', 'queued safely'], ['05', 'Strike mark', 'fresh mark price'], ['06', 'Paper ledger', 'fee 5 bps<br>slippage 5 bps'], ['07', 'Reply in thread', 'receipt on X']];
+const NX = i => 105 + i * 254;
+$('#nodes').innerHTML = ND.map(([i, t, s], k) => `<div class="nd" id="nd${k}" style="left:${NX(k)}px"><div class="i">${i}</div><div class="t">${t}</div><div class="s">${s}</div></div>` + (k < 6 ? `<div class="lk" id="lk${k}" style="left:${NX(k) + 214}px"></div>` : '')).join('');
+const NT = [P('a1', 'X sends'), P('a1', 'a signed webhook'), P('a1', 'drop duplicates'), P('a1', 'and queue it'), P('a2', 'a fresh Strike mark'), P('a2', 'apply simulated'), P('a2', 'reply in the thread')];
+tl.fromTo('#nodes .nd', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .4, stagger: .06, ease: 'power3.out' }, m + .05);
+tl.fromTo('#nodes .lk', { opacity: 0 }, { opacity: 1, duration: .3, stagger: .06 }, m + .2);
+tl.fromTo('#s9 .ttl', { opacity: 0 }, { opacity: 1, duration: .3 }, m + .1);
+tl.set('#pkt', { opacity: 1, left: NX(0) + 107 }, NT[0] - .05);
+NT.forEach((t, k) => { tl.set('#nd' + k, { attr: { class: 'nd on' } }, t); tl.fromTo('#nd' + k, { scale: 1.08 }, { scale: 1, duration: .35, ease: 'power2.out' }, t); sfx('blip', t, .5);
+  if (k) { tl.to('#pkt', { left: NX(k) + 107, duration: .35, ease: 'power2.inOut' }, t - .35); tl.to('#lk' + (k - 1), { background: '#26FAB0', duration: .2 }, t - .2); } });
+tl.to('#pkt', { opacity: 0, duration: .3 }, E('a2') + .1);
+// a3 guards
+const g = S('a3') - .2;
+tl.to('#pipe', { y: -170, scale: .82, duration: .6, ease: 'power3.inOut' }, g);
+pop('#g1', P('a3', 'Stale prices', -.1), 50); sfx('err', P('a3', 'are rejected'), .7);
+tl.fromTo('#g1 .no', { opacity: 0 }, { opacity: 1, duration: .25 }, P('a3', 'are rejected'));
+pop('#g2', P('a3', 'a duplicate', -.2), 50); sfx('tick', P('a3', 'a duplicate trade'), .7);
+tl.fromTo('#g2 .ok', { opacity: 0 }, { opacity: 1, duration: .25 }, P('a3', 'never creates'));
+pop('#term', g + .25, 50);
+hud(g + .25, '08 — UNDER THE HOOD', 'LIVE HEALTH CHECK · OCT 23, 2026', true);
+type('#tj', `{<br>&nbsp;"service": "Strike X Paper",<br>&nbsp;"mode": "<span class="at">paper</span>",<br>&nbsp;"replyMode": "live",<br>&nbsp;"xConfigured": true,<br>&nbsp;"freshMarkets": ["SOL-USD", "BTC-USD",<br>&nbsp;&nbsp;"ADA-USD", "ETH-USD"],<br>&nbsp;"priceError": null<br>}`, g + .6, 2.4);
+
+// ===== S10 Strike app
+m = wipe(S('b1') - .35);
+hud(m, '09 — TRADE ON STRIKE', "REAL STRIKE APP · CAPTURED OCT 23, 2026", true);
+tl.set('#s9', { opacity: 0 }, m); scene('#s10', m);
+tl.set('#brw', { opacity: 0 }, 0); tl.set('#notes .nt', { opacity: 0 }, 0);
+pop('#foot', m + .02, 50); sfx('pop', m + .1, .6);
+const tb = P('b1', "straight to Strike", -.3);
+tl.to('#foot', { top: 120, scale: .62, duration: .6, ease: 'power3.inOut' }, tb); sfx('send', tb + .1, .7);
+tl.fromTo('#brw', { opacity: 0, y: 160, scale: .94 }, { opacity: 1, y: 0, scale: 1, duration: .7, ease: 'expo.out' }, tb + .15);
+tl.fromTo('#appimg', { scale: 1, x: 0, y: 0 }, { scale: 1.55, x: -760, y: -170, duration: 2.2, ease: 'power2.inOut' }, P('b1', 'You decide', -.5));
+tl.to('#foot', { opacity: 0, duration: .3 }, P('b1', 'You decide', -.5));
+tl.fromTo('#nt1', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: .35 }, P('b1', 'You decide', -.4));
+tl.fromTo('#nt2', { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: .35 }, P('b1', 'you trade there', -.3));
+
+// ===== S11 end
+m = wipe(S('e1') - .35);
+hud(m, '', '', false); tl.set('#src', { opacity: 0 }, m);
+tl.set('#s10', { opacity: 0 }, m); scene('#s11', m);
+tl.fromTo('#eb', { opacity: 0, scale: .4, rotation: -14 }, { opacity: 1, scale: 1, rotation: 0, duration: .7, ease: 'expo.out' }, m); sfx('impact', m, 1);
+tl.fromTo('#en', { opacity: 0, y: 40, letterSpacing: '.05em' }, { opacity: 1, y: 0, letterSpacing: '-.045em', duration: .7, ease: 'power4.out' }, m + .1);
+tl.fromTo('#el1', { opacity: 0 }, { opacity: 1, duration: .35 }, P('e1', 'Practice') - .1);
+tl.fromTo('#el2', { opacity: 0 }, { opacity: 1, duration: .35 }, P('e1', 'Trade on') - .1); sfx('chime', P('e1', 'Trade on'), .8);
+tl.fromTo('#ep', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, P('e1', 'Trade on') + .4);
+tl.fromTo('#ed', { opacity: 0 }, { opacity: 1, duration: .5 }, E('e1') + .1);
+tl.to('#hud .tc,#hud .tr', { opacity: 0, duration: .3 }, m);
+tl.to('body', { opacity: 0, duration: .6 }, T - .6);
+
+// ===== captions (sentence chunks, proportional timing)
+const CAPS = [];
+CUES.cues.forEach(c => { const segs = []; c.text.split(/(?<=[.?!:])\s+/).forEach(s => { if (s.length <= 62) segs.push(s); else { const parts = s.split(/(?<=,)\s+/); let cur = '';
+  parts.forEach(p => { if ((cur + ' ' + p).trim().length > 62 && cur) { segs.push(cur); cur = p; } else cur = (cur + ' ' + p).trim(); }); if (cur) segs.push(cur); } });
+  let off = 0; segs.forEach((s, i) => { const i0 = c.text.indexOf(s, off); off = i0 + s.length; const a = c.start + c.dur * i0 / c.text.length;
+    const b = i < segs.length - 1 ? c.start + c.dur * c.text.indexOf(segs[i + 1], off) / c.text.length : c.start + c.dur + .15; CAPS.push([+a.toFixed(3), +b.toFixed(3), s]); }); });
+sw('#cap', 0, ''); CAPS.forEach(([a, b, s]) => { sw('#cap', a, s); sw('#cap', b, ''); });
+window.CAPS = CAPS; window.SFX = SFX;
+
+const BY = {}; SW.forEach(([s, at, h]) => (BY[s] = BY[s] || []).push([at, h])); Object.values(BY).forEach(l => l.sort((x, y) => x[0] - y[0]));
+window.seek = t => { tl.seek(t, false); for (const [s, l] of Object.entries(BY)) { let h = l[0][1]; for (const [at, v] of l) { if (t >= at) h = v; else break; } const el = $(s); if (el.innerHTML !== h) el.innerHTML = h; } };
+window.TOTAL = T;
+Promise.all([document.fonts.ready, ...[...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))]).then(() => { window.seek(0); window.READY = true; });
+</script></body></html>

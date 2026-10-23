@@ -1,0 +1,16 @@
+[
+["h1","Trading ideas start in conversations.",0.35],
+["h2","Someone posts a call. Someone argues back. But testing that idea means a wallet, a deposit, and real risk.",0.4],
+["h3","Strike Agent changes that. Test the idea right where it happens: on X.",0.6],
+["i1","Mention Strike Agent with a market, a virtual margin, and leverage. Paper long Bitcoin, a hundred dollars, two-x.",0.4],
+["i2","This is a real receipt from our first live test. Paper position one. Long Bitcoin. A hundred dollars of margin at two-x, entered at the live Strike mark price. And no real order.",0.4],
+["i3","In that test, our server received the mention six and a half seconds after it was posted, and opened the position thirty nine milliseconds later.",0.7],
+["c1","Every X account gets its own ten thousand dollar virtual account. Go long or short on Bitcoin, Ethereum, Solana or Cardano, at up to five-x.",0.35],
+["c2","Check your portfolio, pull a fresh price, close a position, and review your history and stats, all with simple commands.",0.35],
+["c3","Commands are strict and exact, so a reply only does what you typed. And only you can close your own positions.",0.7],
+["a1","Under the hood, X sends a signed webhook. We verify it, drop duplicates, and queue it safely.",0.3],
+["a2","Then we read a fresh Strike mark, apply simulated fees and slippage, update your paper ledger, and reply in the thread.",0.3],
+["a3","Stale prices are rejected, and a duplicate delivery never creates a duplicate trade.",0.7],
+["b1","And when you're ready for the real thing, every receipt links straight to Strike's own trading app. You decide, and you trade there.",0.8],
+["e1","Strike Agent. Practice on X. Trade on Strike.",2.4]
+]

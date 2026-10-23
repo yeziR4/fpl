@@ -1,0 +1,163 @@
+1
+00:00:00,700 --> 00:00:02,815
+Trading ideas start in conversations.
+
+2
+00:00:03,015 --> 00:00:04,255
+Someone posts a call.
+
+3
+00:00:04,255 --> 00:00:05,438
+Someone argues back.
+
+4
+00:00:05,438 --> 00:00:08,199
+But testing that idea means a wallet, a deposit,
+
+5
+00:00:08,199 --> 00:00:09,138
+and real risk.
+
+6
+00:00:09,388 --> 00:00:10,788
+Strike Agent changes that.
+
+7
+00:00:10,788 --> 00:00:12,758
+Test the idea right where it happens:
+
+8
+00:00:12,758 --> 00:00:13,167
+on X.
+
+9
+00:00:13,617 --> 00:00:16,348
+Mention Strike Agent with a market, a virtual margin,
+
+10
+00:00:16,348 --> 00:00:17,056
+and leverage.
+
+11
+00:00:17,056 --> 00:00:19,481
+Paper long Bitcoin, a hundred dollars, two-x.
+
+12
+00:00:19,730 --> 00:00:22,079
+This is a real receipt from our first live test.
+
+13
+00:00:22,079 --> 00:00:23,038
+Paper position one.
+
+14
+00:00:23,038 --> 00:00:23,709
+Long Bitcoin.
+
+15
+00:00:23,709 --> 00:00:25,531
+A hundred dollars of margin at two-x,
+
+16
+00:00:25,531 --> 00:00:27,400
+entered at the live Strike mark price.
+
+17
+00:00:27,400 --> 00:00:28,413
+And no real order.
+
+18
+00:00:28,663 --> 00:00:29,265
+In that test,
+
+19
+00:00:29,265 --> 00:00:32,532
+our server received the mention six and a half seconds after it was posted,
+
+20
+00:00:32,532 --> 00:00:35,047
+and opened the position thirty nine milliseconds later.
+
+21
+00:00:35,597 --> 00:00:39,231
+Every X account gets its own ten thousand dollar virtual account.
+
+22
+00:00:39,231 --> 00:00:42,424
+Go long or short on Bitcoin, Ethereum, Solana or Cardano,
+
+23
+00:00:42,424 --> 00:00:43,455
+at up to five-x.
+
+24
+00:00:43,655 --> 00:00:46,043
+Check your portfolio, pull a fresh price, close a position,
+
+25
+00:00:46,043 --> 00:00:48,581
+and review your history and stats, all with simple commands.
+
+26
+00:00:48,781 --> 00:00:50,215
+Commands are strict and exact,
+
+27
+00:00:50,215 --> 00:00:51,926
+so a reply only does what you typed.
+
+28
+00:00:51,926 --> 00:00:54,019
+And only you can close your own positions.
+
+29
+00:00:54,569 --> 00:00:56,618
+Under the hood, X sends a signed webhook.
+
+30
+00:00:56,618 --> 00:00:59,256
+We verify it, drop duplicates, and queue it safely.
+
+31
+00:00:59,406 --> 00:01:00,922
+Then we read a fresh Strike mark,
+
+32
+00:01:00,922 --> 00:01:03,643
+apply simulated fees and slippage, update your paper ledger,
+
+33
+00:01:03,643 --> 00:01:04,863
+and reply in the thread.
+
+34
+00:01:05,013 --> 00:01:06,315
+Stale prices are rejected,
+
+35
+00:01:06,315 --> 00:01:09,214
+and a duplicate delivery never creates a duplicate trade.
+
+36
+00:01:09,764 --> 00:01:11,400
+And when you're ready for the real thing,
+
+37
+00:01:11,400 --> 00:01:13,659
+every receipt links straight to Strike's own trading app.
+
+38
+00:01:13,659 --> 00:01:15,056
+You decide, and you trade there.
+
+39
+00:01:15,707 --> 00:01:16,580
+Strike Agent.
+
+40
+00:01:16,580 --> 00:01:17,515
+Practice on X.
+
+41
+00:01:17,515 --> 00:01:18,663
+Trade on Strike.

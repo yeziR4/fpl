@@ -1,0 +1,89 @@
+{
+ "total": 81.21,
+ "cues": [
+  {
+   "id": "h1",
+   "text": "Trading ideas start in conversations.",
+   "start": 0.7,
+   "dur": 1.965
+  },
+  {
+   "id": "h2",
+   "text": "Someone posts a call. Someone argues back. But testing that idea means a wallet, a deposit, and real risk.",
+   "start": 3.015,
+   "dur": 5.973
+  },
+  {
+   "id": "h3",
+   "text": "Strike Agent changes that. Test the idea right where it happens: on X.",
+   "start": 9.388,
+   "dur": 3.629
+  },
+  {
+   "id": "i1",
+   "text": "Mention Strike Agent with a market, a virtual margin, and leverage. Paper long Bitcoin, a hundred dollars, two-x.",
+   "start": 13.617,
+   "dur": 5.714
+  },
+  {
+   "id": "i2",
+   "text": "This is a real receipt from our first live test. Paper position one. Long Bitcoin. A hundred dollars of margin at two-x, entered at the live Strike mark price. And no real order.",
+   "start": 19.73,
+   "dur": 8.533
+  },
+  {
+   "id": "i3",
+   "text": "In that test, our server received the mention six and a half seconds after it was posted, and opened the position thirty nine milliseconds later.",
+   "start": 28.663,
+   "dur": 6.234
+  },
+  {
+   "id": "c1",
+   "text": "Every X account gets its own ten thousand dollar virtual account. Go long or short on Bitcoin, Ethereum, Solana or Cardano, at up to five-x.",
+   "start": 35.597,
+   "dur": 7.708
+  },
+  {
+   "id": "c2",
+   "text": "Check your portfolio, pull a fresh price, close a position, and review your history and stats, all with simple commands.",
+   "start": 43.655,
+   "dur": 4.776
+  },
+  {
+   "id": "c3",
+   "text": "Commands are strict and exact, so a reply only does what you typed. And only you can close your own positions.",
+   "start": 48.781,
+   "dur": 5.088
+  },
+  {
+   "id": "a1",
+   "text": "Under the hood, X sends a signed webhook. We verify it, drop duplicates, and queue it safely.",
+   "start": 54.569,
+   "dur": 4.537
+  },
+  {
+   "id": "a2",
+   "text": "Then we read a fresh Strike mark, apply simulated fees and slippage, update your paper ledger, and reply in the thread.",
+   "start": 59.406,
+   "dur": 5.307
+  },
+  {
+   "id": "a3",
+   "text": "Stale prices are rejected, and a duplicate delivery never creates a duplicate trade.",
+   "start": 65.013,
+   "dur": 4.051
+  },
+  {
+   "id": "b1",
+   "text": "And when you're ready for the real thing, every receipt links straight to Strike's own trading app. You decide, and you trade there.",
+   "start": 69.764,
+   "dur": 5.142
+  },
+  {
+   "id": "e1",
+   "text": "Strike Agent. Practice on X. Trade on Strike.",
+   "start": 75.707,
+   "dur": 2.806
+  }
+ ]
+}
