@@ -24,3 +24,4 @@ data/cache/*
 .env.local
 docs/demo-video/out/
 docs/strikeagent-video/out/
+docs/armoriq-intro/out/

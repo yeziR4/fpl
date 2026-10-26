@@ -1,0 +1,53 @@
+{
+ "total": 54.18,
+ "cues": [
+  {
+   "id": "v1",
+   "text": "Hi, I'm Yezir Hasan.",
+   "start": 0.7,
+   "dur": 1.441
+  },
+  {
+   "id": "v2",
+   "text": "I studied mass communication, and for more than three years I've been turning complicated crypto and AI products into stories people actually understand.",
+   "start": 3.041,
+   "dur": 5.891
+  },
+  {
+   "id": "v3",
+   "text": "This is my work. Hackathon demos, product explainers, launch videos and series. Every number checked, every claim true.",
+   "start": 9.532,
+   "dur": 5.93
+  },
+  {
+   "id": "v4",
+   "text": "Lately, almost everything I cover involves AI agents. Agents that hold wallets, read your posts, and act on your behalf.",
+   "start": 18.661,
+   "dur": 5.873
+  },
+  {
+   "id": "v5",
+   "text": "So when I built my own agent, Strike Agent, a paper trading bot on X, safety came first. Strict commands instead of guesswork, verified events, and only you can touch your own positions.",
+   "start": 25.135,
+   "dur": 9.004
+  },
+  {
+   "id": "v6",
+   "text": "That's why Armor IQ stood out to me. Every tool call an agent makes, planned, policy checked, and auditable. That's the layer builders in my community are missing.",
+   "start": 34.938,
+   "dur": 7.242
+  },
+  {
+   "id": "v7",
+   "text": "In my first ninety days, I'd explain Armor IQ in videos and threads, build an open source demo with it, and host a live session on securing your agent before you ship it.",
+   "start": 42.98,
+   "dur": 7.21
+  },
+  {
+   "id": "v8",
+   "text": "I'm Yezir Hasan. Let's make agents people can trust.",
+   "start": 50.99,
+   "dur": 2.492
+  }
+ ]
+}

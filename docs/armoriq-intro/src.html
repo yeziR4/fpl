@@ -1,0 +1,318 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@500&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{--cr:#FFF4E6;--ink:#15120F;--co:#FF5B3A;--bl:#3355FF;--li:#C6F43C;--vi:#9B6BFF;--pk:#FF86C8;--ye:#FFC83D;--te:#1FCFA8;--mu:#6E655C}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--cr);color:var(--ink);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased}
+.d{font-family:'Bricolage Grotesque',sans-serif}.m{font-family:'DM Mono',monospace}
+.w{display:inline-block;white-space:pre}
+#page{position:absolute;left:0;top:0;width:1920px;height:8640px}
+.sec{position:absolute;left:0;width:1920px;height:1080px;overflow:hidden}
+/* nav */
+#nav{position:absolute;left:40px;right:40px;top:28px;height:76px;border-radius:999px;background:rgba(255,255,255,.75);border:2px solid var(--ink);display:flex;align-items:center;padding:0 14px 0 30px;z-index:30;box-shadow:6px 6px 0 var(--ink)}
+#nav .lg{display:flex;align-items:center;gap:12px;font:800 28px 'Bricolage Grotesque'}
+#nav .lg i{width:30px;height:30px;border-radius:50%;background:conic-gradient(var(--co),var(--ye),var(--li),var(--te),var(--bl),var(--vi),var(--pk),var(--co))}
+#links{position:relative;display:flex;gap:8px;margin-left:auto;margin-right:28px}
+#links span{position:relative;z-index:1;font:500 21px 'DM Sans';padding:10px 20px}
+#np{position:absolute;top:0;height:100%;border-radius:999px;background:var(--li);border:2px solid var(--ink);z-index:0}
+#nav .bt{font:700 21px 'DM Sans';background:var(--ink);color:#fff;padding:14px 28px;border-radius:999px}
+#cap{position:absolute;left:50%;bottom:34px;transform:translateX(-50%);white-space:nowrap;font:500 30px 'DM Sans';padding:9px 22px;border-radius:12px;background:var(--ink);color:#fff;z-index:40}
+#cap:empty{display:none}
+#cur{position:absolute;left:0;top:0;width:44px;z-index:35;filter:drop-shadow(3px 4px 0 rgba(0,0,0,.25))}
+#scr{position:absolute;right:22px;top:140px;bottom:140px;width:6px;border-radius:3px;background:rgba(21,18,15,.12);z-index:30}
+#scrt{position:absolute;left:0;right:0;top:0;height:12.5%;border-radius:3px;background:var(--ink)}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55}
+.stk{position:absolute;font:700 30px 'DM Sans';padding:14px 28px;border-radius:999px;border:2px solid var(--ink);box-shadow:5px 5px 0 var(--ink);white-space:nowrap}
+.lab{font:500 18px 'DM Mono';letter-spacing:.18em;text-transform:uppercase}
+/* hero */
+#hk{position:absolute;left:120px;top:210px}
+#h1{position:absolute;left:112px;top:270px;font:800 200px/.92 'Bricolage Grotesque';letter-spacing:-.045em}
+#h1 .c{color:var(--co)}
+#hsub{position:absolute;left:120px;top:690px;font:500 36px/1.35 'DM Sans';max-width:900px;color:#3b342e}
+#ava{position:absolute;left:1290px;top:200px;width:500px;height:500px;border-radius:50%;background:conic-gradient(from 20deg,var(--co),var(--ye),var(--li),var(--te),var(--bl),var(--vi),var(--pk),var(--co));border:3px solid var(--ink);box-shadow:12px 12px 0 var(--ink);display:grid;place-items:center}
+#ava b{width:380px;height:380px;border-radius:50%;background:var(--cr);border:3px solid var(--ink);display:grid;place-items:center;font:800 170px 'Bricolage Grotesque';letter-spacing:-.05em}
+#mq{position:absolute;left:-40px;right:-40px;top:880px;height:96px;background:var(--ink);transform:rotate(-2deg);overflow:hidden;display:flex;align-items:center}
+#mqt{display:flex;gap:44px;white-space:nowrap;font:800 50px 'Bricolage Grotesque';color:#fff;letter-spacing:-.01em}
+#mqt i{display:inline-block;width:22px;height:22px;border-radius:50%;margin:0 -10px;align-self:center}
+/* about */
+.tile{position:absolute;border-radius:36px;border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:40px 44px;overflow:hidden}
+.tile .lab{margin-bottom:18px}
+#ta{left:120px;top:160px;width:820px;height:380px;background:var(--co);color:#fff}
+#ta .d{font-size:84px;font-weight:800;line-height:.98;letter-spacing:-.035em}
+#tb{left:970px;top:160px;width:390px;height:380px;background:var(--li)}
+#tb .n{font:800 210px/.9 'Bricolage Grotesque';letter-spacing:-.06em}
+#tb .t{font:700 28px/1.2 'DM Sans';margin-top:14px}
+#tc{left:1390px;top:160px;width:410px;height:380px;background:var(--bl);color:#fff}
+#tc .d{font-size:60px;font-weight:800;letter-spacing:-.03em;margin-bottom:20px}
+.pl{display:inline-block;font:700 19px 'DM Sans';padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.6);margin:0 6px 8px 0}
+#td{left:120px;top:575px;width:1680px;height:340px;background:#fff}
+#td .q{font:800 72px/1.08 'Bricolage Grotesque';letter-spacing:-.035em}
+.mk{background-image:linear-gradient(var(--ye),var(--ye));background-repeat:no-repeat;background-size:0% 42%;background-position:0 88%}
+.mk2{background-image:linear-gradient(var(--pk),var(--pk));background-repeat:no-repeat;background-size:0% 42%;background-position:0 88%}
+/* work */
+#wh{position:absolute;left:120px;top:150px;display:flex;align-items:flex-end;gap:30px}
+#wh .d{font:800 120px/1 'Bricolage Grotesque';letter-spacing:-.045em}
+#wh .ct{font:800 44px 'Bricolage Grotesque';background:var(--ye);border:2px solid var(--ink);border-radius:999px;padding:4px 22px;margin-bottom:14px}
+#fc{position:absolute;left:1240px;top:178px;transform:rotate(4deg);background:var(--te)}
+#track{position:absolute;left:120px;top:340px;display:flex;gap:40px;align-items:flex-start}
+.card{flex:none}
+.card .f{height:440px;border-radius:26px;border:3px solid var(--ink);overflow:hidden;background:#000;box-shadow:8px 8px 0 var(--ink)}
+.clip{width:100%;height:100%;background-repeat:no-repeat}
+.card .tt{font:800 32px 'Bricolage Grotesque';margin-top:24px;letter-spacing:-.02em;white-space:nowrap}
+.card .tg{display:inline-block;margin-top:8px;font:700 17px 'DM Sans';padding:6px 14px;border-radius:999px;border:2px solid var(--ink);white-space:nowrap}
+/* agents */
+#ag1{position:absolute;left:0;right:0;top:200px;text-align:center;font:800 96px/1.02 'Bricolage Grotesque';letter-spacing:-.045em}
+.big{position:absolute;font:800 92px 'Bricolage Grotesque';letter-spacing:-.04em;padding:22px 56px;border-radius:999px;border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);white-space:nowrap}
+/* case */
+#cl{position:absolute;left:120px;top:170px;width:820px}
+#cl .lab{display:inline-block;padding:8px 16px;border-radius:999px;background:var(--ink);color:var(--li)}
+#cl .d{font:800 92px/.98 'Bricolage Grotesque';letter-spacing:-.045em;margin-top:28px}
+.chk{display:flex;align-items:center;gap:22px;margin-top:22px;font:700 34px 'DM Sans'}
+.chk i{width:54px;height:54px;border-radius:50%;border:3px solid var(--ink);display:grid;place-items:center;flex:none;font-style:normal}
+#cf{position:absolute;left:1000px;top:250px;width:808px;border-radius:26px;border:3px solid var(--ink);overflow:hidden;box-shadow:12px 12px 0 var(--ink);background:#fff}
+#cf .b{height:52px;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:3px solid var(--ink);background:var(--ye)}
+#cf .b i{width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);background:#fff}
+#cf .b span{margin-left:14px;font:500 18px 'DM Mono'}
+#cfv{height:440px}
+#ctag{position:absolute;left:1560px;top:200px;transform:rotate(6deg);background:var(--pk)}
+/* armor */
+#ar1{position:absolute;left:120px;top:160px}
+#ar1 .d{font:800 110px/1 'Bricolage Grotesque';letter-spacing:-.045em;margin-top:20px}
+#ar2{position:absolute;left:120px;top:330px;font:500 40px 'DM Sans';color:#3b342e}
+.blk{position:absolute;top:420px;width:540px;height:340px;border-radius:36px;border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:38px 40px}
+.blk .n{font:500 20px 'DM Mono';letter-spacing:.18em}
+.blk .t{font:800 64px/1 'Bricolage Grotesque';letter-spacing:-.04em;margin-top:120px}
+.blk svg{position:absolute;right:36px;top:34px;width:84px;height:84px}
+#ar3{position:absolute;left:0;right:0;top:830px;text-align:center;font:800 54px 'Bricolage Grotesque';letter-spacing:-.03em}
+/* plan */
+#pl1{position:absolute;left:120px;top:160px;font:800 120px/1 'Bricolage Grotesque';letter-spacing:-.045em}
+#pl1 span{color:var(--vi)}
+#pline{position:absolute;left:120px;top:385px;width:1680px;height:8px;border-radius:4px;background:rgba(21,18,15,.12)}
+#plf{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:4px;background:var(--ink);transform-origin:0 50%;transform:scaleX(0)}
+.pc{position:absolute;top:440px;width:540px;height:440px;border-radius:36px;border:3px solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:38px 40px;background:#fff}
+.pc .n{display:inline-block;font:500 19px 'DM Mono';letter-spacing:.14em;padding:8px 16px;border-radius:999px;border:2px solid var(--ink)}
+.pc .t{font:800 80px 'Bricolage Grotesque';letter-spacing:-.04em;margin:34px 0 18px}
+.pc .x{font:500 30px/1.35 'DM Sans';color:#3b342e}
+.dot{position:absolute;top:376px;width:26px;height:26px;border-radius:50%;border:3px solid var(--ink);background:var(--cr)}
+/* contact */
+#s7{background:var(--ink);color:#fff}
+#ck{position:absolute;left:120px;top:190px;color:var(--li)}
+#cn{position:absolute;left:104px;top:250px;font:800 250px/.9 'Bricolage Grotesque';letter-spacing:-.055em;white-space:nowrap}
+#cn .a{color:var(--co)}#cn .b{color:var(--li)}
+#ct{position:absolute;left:120px;top:560px;font:800 72px 'Bricolage Grotesque';letter-spacing:-.035em}
+#cb{position:absolute;left:120px;top:720px;display:flex;gap:20px}
+#cb div{font:700 28px 'DM Sans';padding:18px 32px;border-radius:999px;border:2px solid #fff}
+#cb .p{background:var(--li);color:var(--ink);border-color:var(--li)}
+</style></head><body>
+<div id="page">
+
+<section class="sec" id="s0" style="top:0">
+  <div class="blob" style="width:700px;height:700px;left:1100px;top:60px;background:var(--pk)"></div>
+  <div class="blob" style="width:600px;height:600px;left:-150px;top:500px;background:var(--li)"></div>
+  <div class="blob" style="width:500px;height:500px;left:700px;top:-200px;background:var(--ye)"></div>
+  <div class="lab" id="hk">Portfolio · Ambassador application 2026</div>
+  <div id="h1" class="d">Hi, I'm<br><span class="c">Yezir</span> Hasan.</div>
+  <div id="hsub">Storyteller for crypto &amp; AI products. I make the complicated stuff click.</div>
+  <div id="ava"><b>YH</b></div>
+  <div class="stk" id="k1" style="left:1160px;top:180px;background:var(--ye);transform:rotate(-8deg)">Content creator</div>
+  <div class="stk" id="k2" style="left:1640px;top:400px;background:var(--li);transform:rotate(7deg)">Builder</div>
+  <div class="stk" id="k3" style="left:1200px;top:660px;background:var(--pk);transform:rotate(4deg)">Storyteller</div>
+  <div class="stk" id="k4" style="left:1600px;top:690px;background:var(--te);transform:rotate(-6deg)">Crypto × AI</div>
+  <div id="mq"><div id="mqt"></div></div>
+</section>
+
+<section class="sec" id="s1" style="top:1080px">
+  <div class="tile" id="ta"><div class="lab">Education</div><div class="d">Degree in<br>Mass Communication</div></div>
+  <div class="tile" id="tb"><div class="n d" id="yrs">3+</div><div class="t">years making crypto &amp; AI content</div></div>
+  <div class="tile" id="tc"><div class="lab">What I cover</div><div class="d">Crypto × AI</div>
+    <span class="pl">Agent wallets</span><span class="pl">Perps</span><span class="pl">Prediction markets</span><span class="pl">Tokenized stocks</span><span class="pl">NFTs</span></div>
+  <div class="tile" id="td"><div class="lab" style="color:var(--mu)">What I do</div><div class="q">I turn <span class="mk" id="mk1">complicated crypto &amp; AI products</span> into stories people <span class="mk2" id="mk2">actually understand.</span></div></div>
+</section>
+
+<section class="sec" id="s2" style="top:2160px">
+  <div id="wh"><div class="d">Selected work</div><div class="ct">08</div></div>
+  <div class="stk" id="fc">✓ Every number checked</div>
+  <div id="track"></div>
+</section>
+
+<section class="sec" id="s3" style="top:3240px">
+  <div class="blob" style="width:800px;height:600px;left:560px;top:300px;background:var(--vi);opacity:.35"></div>
+  <div id="ag1" class="d">Almost everything I cover<br>now involves <span style="color:var(--bl)">AI agents.</span></div>
+  <div class="big" id="b1" style="left:150px;top:520px;background:var(--ye);transform:rotate(-4deg)">hold wallets</div>
+  <div class="big" id="b2" style="left:820px;top:610px;background:var(--pk);transform:rotate(3deg)">read your posts</div>
+  <div class="big" id="b3" style="left:420px;top:780px;background:var(--te);transform:rotate(-2deg)">act on your behalf</div>
+</section>
+
+<section class="sec" id="s4" style="top:4320px">
+  <div id="cl"><div class="lab">Case study · StrikeAGent</div><div class="d">I built my own agent. Safety came first.</div>
+    <div style="font:500 30px 'DM Sans';color:#3b342e;margin:22px 0 18px">A paper-trading bot on X, using live Strike mark prices.</div>
+    <div class="chk" id="q1"><i style="background:var(--li)">✓</i>Strict commands, not guesswork</div>
+    <div class="chk" id="q2"><i style="background:var(--ye)">✓</i>Verified events only</div>
+    <div class="chk" id="q3"><i style="background:var(--pk)">✓</i>Only you touch your positions</div></div>
+  <div id="cf"><div class="b"><i></i><i></i><i></i><span>strikeagent · hackathon demo</span></div><div id="cfv"><div class="clip" data-s="sp/c1.jpg" data-w="782" data-h="440"></div></div></div>
+  <div class="stk" id="ctag">Shipped ✓</div>
+</section>
+
+<section class="sec" id="s5" style="top:5400px">
+  <div id="ar1"><div class="lab">Why ArmorIQ</div><div class="d">It stood out to me.</div></div>
+  <div id="ar2">Every tool call an agent makes is…</div>
+  <div class="blk" id="x1" style="left:120px;background:var(--vi);color:#fff"><div class="n">01</div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><div class="t">Planned</div></div>
+  <div class="blk" id="x2" style="left:690px;background:var(--li)"><div class="n">02</div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#15120F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><div class="t">Policy-<br>checked</div></div>
+  <div class="blk" id="x3" style="left:1260px;background:var(--co);color:#fff"><div class="n">03</div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg><div class="t">Auditable</div></div>
+  <div id="ar3">The layer builders in my community are <span style="color:var(--co)">missing.</span></div>
+</section>
+
+<section class="sec" id="s6" style="top:6480px">
+  <div id="pl1">My first <span>90 days</span></div>
+  <div id="pline"><div id="plf"></div></div>
+  <div class="dot" id="d1" style="left:200px"></div><div class="dot" id="d2" style="left:770px"></div><div class="dot" id="d3" style="left:1340px"></div>
+  <div class="pc" id="p1" style="left:120px;background:var(--ye)"><div class="n">DAYS 1–30</div><div class="t">Explain</div><div class="x">Videos and threads that make ArmorIQ click for builders.</div></div>
+  <div class="pc" id="p2" style="left:690px;background:var(--te)"><div class="n">DAYS 31–60</div><div class="t">Build</div><div class="x">An open-source demo that runs an agent through ArmorIQ.</div></div>
+  <div class="pc" id="p3" style="left:1260px;background:var(--pk)"><div class="n">DAYS 61–90</div><div class="t">Host</div><div class="x">A live session: secure your agent before you ship it.</div></div>
+</section>
+
+<section class="sec" id="s7" style="top:7560px">
+  <div class="blob" style="width:800px;height:700px;left:1200px;top:100px;background:var(--vi);opacity:.5"></div>
+  <div class="blob" style="width:600px;height:500px;left:-100px;top:600px;background:var(--co);opacity:.35"></div>
+  <div class="lab" id="ck">Let's work together</div>
+  <div id="cn" class="d"><span class="a">Yezir</span> <span class="b">Hasan</span></div>
+  <div id="ct">Let's make agents people can trust.</div>
+  <div id="cb"><div class="p">ArmorIQ Ambassador application</div><div>Mass Communication</div><div>3+ years · crypto &amp; AI</div></div>
+</section>
+</div>
+
+<div id="nav"><div class="lg"><i></i>yezir.hasan</div>
+  <div id="links"><div id="np"></div><span>About</span><span>Work</span><span>Agents</span><span>Case study</span><span>ArmorIQ</span><span>Plan</span><span>Contact</span></div>
+  <div class="bt">Let's talk</div></div>
+<div id="scr"><div id="scrt"></div></div>
+<svg id="cur" viewBox="0 0 24 24"><path d="M4 2l16 9.5-7 1.6 4.2 7.4-2.8 1.5-4.2-7.4L5 19z" fill="#15120F" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+<div id="cap"></div>
+
+<script>
+document.fonts.ready.then(() => {
+const CUES = /*CUES*/;
+const T = 57;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+function P(id, ph, off = 0) { const c = C[id], i = c.text.indexOf(ph); if (i < 0) throw new Error('phrase: ' + ph); return c.start + c.dur * i / c.text.length + off; }
+const tl = gsap.timeline({ paused: true }); const $ = q => document.querySelector(q);
+const SW = []; const sw = (s, at, h) => SW.push([s, at, h]);
+const SFX = []; const sfx = (k, t, g = 1) => SFX.push([k, +t.toFixed(3), g]);
+function words(sel, t, st = .07) { const el = $(sel); el.innerHTML = el.innerHTML.replace(/(<[^>]+>)|([^\s<]+)/g, (m, tag) => tag ? tag : `<span class="w">${m}</span>`);
+  tl.fromTo(sel + ' .w', { opacity: 0, y: 80, rotation: 4 }, { opacity: 1, y: 0, rotation: 0, duration: .5, stagger: st, ease: 'back.out(1.6)' }, t); }
+function pop(sel, t, y = 60) { tl.fromTo(sel, { opacity: 0, y, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .55, ease: 'back.out(1.7)' }, t); sfx('pop', t, .5); }
+function stick(sel, t) { tl.fromTo(sel, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: .5, ease: 'back.out(2.6)' }, t); sfx('pop', t, .7); }
+function slam(sel, t) { tl.fromTo(sel, { opacity: 0, scale: 1.6 }, { opacity: 1, scale: 1, duration: .38, ease: 'power4.out' }, t); sfx('hit', t, .7); }
+const NAVX = []; // computed after layout
+function go(i, t, d = 1.0) { tl.to('#page', { y: -i * 1080, duration: d, ease: 'power3.inOut' }, t); tl.to('#scrt', { top: (i * 12.5) + '%', duration: d, ease: 'power3.inOut' }, t); sfx('whoosh', t, .7);
+  if (i > 0) tl.to('#np', { x: NAVX[i - 1][0], width: NAVX[i - 1][1], opacity: 1, duration: .6, ease: 'power3.inOut' }, t + .1); }
+function cur(x, y, t, d = .7) { tl.to('#cur', { x, y, duration: d, ease: 'power2.inOut' }, t); }
+function click(t) { tl.to('#cur', { scale: .8, duration: .08, yoyo: true, repeat: 1, transformOrigin: '20% 10%' }, t); sfx('tick', t, .8); }
+
+// marquee + work track built before measuring
+const MQ = ['DEMOS', 'EXPLAINERS', 'LAUNCH VIDEOS', 'SERIES', 'HACKATHONS', 'THREADS', 'BUILDS'], MC = ['#FF5B3A', '#C6F43C', '#FFC83D', '#FF86C8', '#1FCFA8', '#9B6BFF', '#3355FF'];
+$('#mqt').innerHTML = [0, 1, 2].map(() => MQ.map((w, i) => `<span>${w}</span><i style="background:${MC[i]}"></i>`).join('')).join('');
+const WORK = [['Overline', 'Hackathon demo · Panta', 'c0', 782, '#C6F43C'], ['StrikeAGent', 'Hackathon demo', 'c1', 782, '#1FCFA8'], ['Finance District', 'Agent Wallet explainer', 'c2', 782, '#FFC83D'],
+  ['STRATO', 'New → Trade It series', 'c3', 248, '#FF86C8'], ['Finance District', 'Spending limits', 'c4', 440, '#9B6BFF'], ['RWAPerp', 'Launch hype ad', 'c5', 248, '#FF5B3A'],
+  ['Autumn', 'NFT mint scout', 'c6', 352, '#3355FF'], ['Tweet-to-pay', 'Concept · Finance District', 'c7', 248, '#C6F43C']];
+$('#track').innerHTML = WORK.map(([t, g, c, w, col], i) => `<div class="card" id="w${i}" style="width:${w}px"><div class="f"><div class="clip" data-s="sp/${c}.jpg" data-w="${w}" data-h="440"></div></div><div class="tt">${t}</div><div class="tg" style="background:${col};color:${col === '#3355FF' || col === '#9B6BFF' || col === '#FF5B3A' ? '#fff' : '#15120F'}">${g}</div></div>`).join('');
+const CLIPS = [...document.querySelectorAll('.clip')].map(el => { const w = +el.dataset.w, h = +el.dataset.h; el.style.backgroundImage = `url(${el.dataset.s})`; el.style.backgroundSize = `${w * 6}px ${h * 5}px`; return [el, w, h]; });
+[...document.querySelectorAll('#links span')].forEach(s => NAVX.push([s.offsetLeft, s.offsetWidth]));
+tl.set('#np', { x: NAVX[0][0], width: NAVX[0][1], opacity: 0 }, 0);
+
+// ambient
+tl.fromTo('#mqt', { x: 0 }, { x: -1400, duration: T, ease: 'none' }, 0);
+gsap.utils.toArray('.blob').forEach((b, i) => tl.fromTo(b, { x: 0, y: 0 }, { x: (i % 2 ? 1 : -1) * 120, y: (i % 3 - 1) * 90, duration: T, ease: 'sine.inOut' }, 0));
+tl.set('#cur', { x: 1500, y: 1150 }, 0);
+
+// S0 hero
+tl.fromTo('#nav', { y: -140 }, { y: 0, duration: .7, ease: 'expo.out' }, .05);
+tl.fromTo('#hk', { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .4 }, .2);
+words('#h1', S('v1') - .1, .09);
+tl.fromTo('#ava', { scale: 0, rotation: -90 }, { scale: 1, rotation: 0, duration: .8, ease: 'back.out(1.6)' }, .3); sfx('pop', .3, .6);
+tl.to('#ava', { rotation: 30, duration: 3, ease: 'none' }, 1.1); tl.to('#ava b', { rotation: -30, duration: 3, ease: 'none' }, 1.1);
+['#k1', '#k2', '#k3', '#k4'].forEach((s, i) => stick(s, .9 + i * .25));
+tl.fromTo('#hsub', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .5 }, 1.6);
+tl.fromTo('#mq', { yPercent: 160 }, { yPercent: 0, duration: .6, ease: 'power3.out' }, .5);
+cur(1480, 520, .6, 1); cur(1700, 440, 1.7, .5);
+
+// S1 about
+go(1, S('v2') - .55);
+pop('#ta', P('v2', 'I studied') - .05); pop('#tb', P('v2', 'for more than three')); pop('#tc', P('v2', 'crypto and AI'));
+tl.fromTo('#yrs', { scale: .4, rotation: -12 }, { scale: 1, rotation: 0, duration: .6, ease: 'back.out(3)', transformOrigin: '0 80%' }, P('v2', 'for more than three') + .1);
+pop('#td', P('v2', 'into stories', -.6));
+tl.to('#mk1', { backgroundSize: '100% 42%', duration: .5 }, P('v2', 'complicated')); tl.to('#mk2', { backgroundSize: '100% 42%', duration: .5 }, P('v2', 'actually understand'));
+cur(700, 760, P('v2', 'complicated'), .9);
+
+// S2 work
+go(2, S('v3') - .5);
+words('#wh .d', S('v3') - .1, .1); stick('#wh .ct', S('v3') + .5);
+tl.fromTo('#track .card', { opacity: 0, y: 120, rotation: 3 }, { opacity: 1, y: 0, rotation: 0, duration: .6, stagger: .08, ease: 'back.out(1.4)' }, S('v3') + .1);
+const tw = WORK.reduce((a, w) => a + w[3], 0) + 40 * 7, tx = -(tw + 240 - 1920);
+tl.to('#track', { x: tx, duration: (S('v4') - .7) - (S('v3') + 1.2), ease: 'power1.inOut' }, S('v3') + 1.2);
+stick('#fc', P('v3', 'Every number'));
+// cursor hover on cards as they pass
+[[1, 11.3], [2, 12.9], [4, 14.7], [6, 16.4]].forEach(([i, t]) => { tl.to('#w' + i + ' .f', { y: -14, boxShadow: '14px 22px 0 #15120F', duration: .3 }, t); tl.to('#w' + i + ' .f', { y: 0, boxShadow: '8px 8px 0 #15120F', duration: .3 }, t + 1.2); });
+cur(820, 620, 10.8, .8); cur(1100, 560, 12.5, .6); cur(900, 640, 14.3, .6); cur(1250, 600, 16, .6);
+
+// S3 agents
+go(3, S('v4') - .6);
+words('#ag1', S('v4') - .1, .06);
+slam('#b1', P('v4', 'hold wallets')); slam('#b2', P('v4', 'read your posts')); slam('#b3', P('v4', 'act on your'));
+cur(1500, 900, S('v4'), 1);
+
+// S4 case study
+go(4, S('v5') - .6);
+tl.fromTo('#cl .lab', { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .4 }, S('v5') - .1);
+words('#cl .d', S('v5'), .06);
+tl.fromTo('#cl > div:nth-child(3)', { opacity: 0 }, { opacity: 1, duration: .4 }, P('v5', 'a paper trading'));
+tl.fromTo('#cf', { opacity: 0, x: 200, rotation: 6 }, { opacity: 1, x: 0, rotation: 0, duration: .7, ease: 'back.out(1.3)' }, P('v5', 'Strike Agent', -.3)); sfx('whoosh', P('v5', 'Strike Agent', -.3), .5);
+stick('#ctag', P('v5', 'safety came first'));
+[['#q1', 'Strict commands'], ['#q2', 'verified events'], ['#q3', 'and only you']].forEach(([s, ph]) => { tl.fromTo(s, { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: .45, ease: 'back.out(2)' }, P('v5', ph, -.1)); tl.fromTo(s + ' i', { scale: 0 }, { scale: 1, duration: .4, ease: 'back.out(3)' }, P('v5', ph)); sfx('tick', P('v5', ph), .8); });
+cur(560, 860, P('v5', 'Strict'), .8); cur(560, 940, P('v5', 'and only you'), .5);
+
+// S5 ArmorIQ
+go(5, S('v6') - .6);
+tl.fromTo('#ar1 .lab', { opacity: 0 }, { opacity: 1, duration: .3 }, S('v6') - .1); words('#ar1 .d', S('v6'), .08);
+tl.fromTo('#ar2', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: .4 }, P('v6', 'Every tool call'));
+[['#x1', 'planned'], ['#x2', 'policy checked'], ['#x3', 'auditable']].forEach(([s, ph]) => { pop(s, P('v6', ph, -.15), 120); tl.fromTo(s + ' svg', { rotation: -30, scale: 0 }, { rotation: 0, scale: 1, duration: .5, ease: 'back.out(2.5)' }, P('v6', ph)); });
+words('#ar3', P('v6', "That's the layer", -.1), .05);
+cur(1500, 640, P('v6', 'auditable'), .7);
+
+// S6 plan
+go(6, S('v7') - .6);
+words('#pl1', S('v7') - .1, .1);
+const p1 = P('v7', 'explain Armor'), p2 = P('v7', 'build an open'), p3 = P('v7', 'and host');
+tl.to('#plf', { scaleX: .2, duration: .5 }, p1); tl.to('#plf', { scaleX: .55, duration: .5 }, p2); tl.to('#plf', { scaleX: 1, duration: 1.4, ease: 'power1.inOut' }, p3);
+[['#p1', '#d1', p1], ['#p2', '#d2', p2], ['#p3', '#d3', p3]].forEach(([c, d, t]) => { pop(c, t - .15, 100); tl.to(d, { background: '#15120F', scale: 1.3, duration: .3 }, t); });
+cur(1530, 760, p3 + .2, .8);
+
+// S7 contact
+go(7, S('v8') - .6);
+tl.to('#nav', { background: 'rgba(255,255,255,.95)', duration: .3 }, S('v8') - .3);
+tl.fromTo('#ck', { opacity: 0 }, { opacity: 1, duration: .3 }, S('v8') - .1);
+tl.fromTo('#cn span', { yPercent: 110, opacity: 0 }, { yPercent: 0, opacity: 1, duration: .7, stagger: .12, ease: 'expo.out' }, S('v8') - .05);
+words('#ct', P('v8', "Let's make"), .06);
+tl.fromTo('#cb div', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45, stagger: .1, ease: 'back.out(2)' }, E('v8') - .2); sfx('chime', P('v8', "Let's make"), .8);
+cur(420, 760, E('v8') + .2, .8); click(E('v8') + 1.1); tl.to('#cb .p', { scale: .95, duration: .08, yoyo: true, repeat: 1 }, E('v8') + 1.1);
+
+// captions
+const CAPS = [];
+CUES.cues.forEach(c => { const segs = []; c.text.split(/(?<=[.?!])\s+/).forEach(s => { if (s.length <= 64) segs.push(s); else { let cur = ''; s.split(/(?<=,)\s+/).forEach(p => { if ((cur + ' ' + p).trim().length > 64 && cur) { segs.push(cur); cur = p; } else cur = (cur + ' ' + p).trim(); }); if (cur) segs.push(cur); } });
+  for (let k = 0; k < segs.length; k++) if (segs[k].length > 64) { const ws = segs[k].split(' '), h = Math.ceil(ws.length / 2); segs.splice(k, 1, ws.slice(0, h).join(' '), ws.slice(h).join(' ')); k--; }
+  let off = 0; segs.forEach((s, i) => { const i0 = c.text.indexOf(s, off); off = i0 + s.length; const a = c.start + c.dur * i0 / c.text.length;
+    const b = i < segs.length - 1 ? c.start + c.dur * c.text.indexOf(segs[i + 1], off) / c.text.length : c.start + c.dur + .15; CAPS.push([+a.toFixed(3), +b.toFixed(3), s.replace(/Armor IQ/g, 'ArmorIQ').replace(/Strike Agent/g, 'StrikeAGent')]); }); });
+sw('#cap', 0, ''); CAPS.forEach(([a, b, s]) => { sw('#cap', a, s); sw('#cap', b, ''); });
+window.CAPS = CAPS; window.SFX = SFX;
+const BY = {}; SW.forEach(([s, at, h]) => (BY[s] = BY[s] || []).push([at, h])); Object.values(BY).forEach(l => l.sort((x, y) => x[0] - y[0]));
+window.seek = t => { tl.seek(t, false); for (const [s, l] of Object.entries(BY)) { let h = l[0][1]; for (const [at, v] of l) { if (t >= at) h = v; else break; } const el = $(s); if (el.innerHTML !== h) el.innerHTML = h; }
+  const f = Math.floor(t * 15) % 30; CLIPS.forEach(([el, w, h]) => el.style.backgroundPosition = `${-(f % 6) * w}px ${-Math.floor(f / 6) * h}px`); };
+window.TOTAL = T;
+const pre = [...new Set(CLIPS.map(c => c[0].dataset.s))].map(s => new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = s; }));
+Promise.all(pre).then(() => { window.seek(0); window.READY = true; });
+});
+</script></body></html>

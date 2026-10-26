@@ -1,0 +1,99 @@
+1
+00:00:00,700 --> 00:00:02,291
+Hi, I'm Yezir Hasan.
+
+2
+00:00:03,041 --> 00:00:04,196
+I studied mass communication,
+
+3
+00:00:04,196 --> 00:00:06,506
+and for more than three years I've been turning complicated
+
+4
+00:00:06,506 --> 00:00:09,082
+crypto and AI products into stories people actually understand.
+
+5
+00:00:09,532 --> 00:00:10,379
+This is my work.
+
+6
+00:00:10,379 --> 00:00:13,519
+Hackathon demos, product explainers, launch videos and series.
+
+7
+00:00:13,519 --> 00:00:15,612
+Every number checked, every claim true.
+
+8
+00:00:18,661 --> 00:00:21,304
+Lately, almost everything I cover involves AI agents.
+
+9
+00:00:21,304 --> 00:00:23,408
+Agents that hold wallets, read your posts,
+
+10
+00:00:23,408 --> 00:00:24,684
+and act on your behalf.
+
+11
+00:00:25,135 --> 00:00:27,265
+So when I built my own agent, StrikeAGent,
+
+12
+00:00:27,265 --> 00:00:29,443
+a paper trading bot on X, safety came first.
+
+13
+00:00:29,443 --> 00:00:32,106
+Strict commands instead of guesswork, verified events,
+
+14
+00:00:32,106 --> 00:00:34,289
+and only you can touch your own positions.
+
+15
+00:00:34,938 --> 00:00:36,582
+That's why ArmorIQ stood out to me.
+
+16
+00:00:36,582 --> 00:00:39,114
+Every tool call an agent makes, planned, policy checked,
+
+17
+00:00:39,114 --> 00:00:39,781
+and auditable.
+
+18
+00:00:39,781 --> 00:00:42,330
+That's the layer builders in my community are missing.
+
+19
+00:00:42,980 --> 00:00:44,040
+In my first ninety days,
+
+20
+00:00:44,040 --> 00:00:45,906
+I'd explain ArmorIQ in videos and threads,
+
+21
+00:00:45,906 --> 00:00:47,391
+build an open source demo with it,
+
+22
+00:00:47,391 --> 00:00:48,918
+and host a live session on securing
+
+23
+00:00:48,918 --> 00:00:50,340
+your agent before you ship it.
+
+24
+00:00:50,990 --> 00:00:51,805
+I'm Yezir Hasan.
+
+25
+00:00:51,805 --> 00:00:53,632
+Let's make agents people can trust.
