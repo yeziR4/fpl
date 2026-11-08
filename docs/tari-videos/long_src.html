@@ -1,0 +1,280 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{--bg:#171024;--pn:#302044;--st:#b692ef;--iv:#fff8eb;--mi:#b5f4d8;--mu:#c5b6d7;--rd:#ff8a8a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--iv);font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased}
+.m{font-family:'JetBrains Mono',monospace}
+.w{display:inline-block;white-space:pre}
+em{font-style:normal;color:var(--mi)}
+#bgg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 70% 30%,rgba(182,146,239,.16),transparent 70%),radial-gradient(ellipse 50% 50% at 10% 90%,rgba(181,244,216,.07),transparent 70%)}
+.L{position:absolute;inset:0;opacity:0}
+.lab{font:600 20px 'JetBrains Mono';letter-spacing:.18em;color:var(--mu);text-transform:uppercase}
+.tag{position:absolute;font:600 17px 'JetBrains Mono';letter-spacing:.08em;padding:7px 14px;border-radius:999px;background:rgba(23,16,36,.85);border:1.5px solid var(--st);color:var(--mu);z-index:5}
+.tag.real{border-color:var(--mi);color:var(--mi)}
+.h{font-weight:800;letter-spacing:-.03em;line-height:1.02}
+.card{position:absolute;border-radius:32px;background:var(--pn);border:3px solid var(--st)}
+.sec{position:absolute;left:120px;top:90px;display:flex;align-items:center;gap:18px}
+.sec b{width:58px;height:58px;border-radius:16px;background:var(--mi);color:var(--bg);display:grid;place-items:center;font:800 32px 'Plus Jakarta Sans'}
+.sec span{font:800 44px 'Plus Jakarta Sans';letter-spacing:.02em}
+.fr{position:absolute;border-radius:20px;overflow:hidden;border:2px solid #4a3866;background:#0f0a18;box-shadow:0 40px 100px rgba(0,0,0,.5)}
+.fr .bb{height:40px;background:#211833;display:flex;align-items:center;gap:8px;padding:0 16px}
+.fr .bb i{width:11px;height:11px;border-radius:50%;background:#4a3866}
+.fr .bb span{margin-left:12px;font:500 15px 'JetBrains Mono';color:var(--mu)}
+.fr .vp{position:absolute;left:0;right:0;top:40px;bottom:0;overflow:hidden}
+.fr .vp img{position:absolute;left:0;top:0;transform-origin:0 0}
+#cap{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);max-width:1560px;text-align:center;white-space:nowrap;font:600 32px 'Plus Jakarta Sans';padding:9px 22px;border-radius:12px;background:rgba(10,6,18,.86);color:var(--iv);z-index:60}
+#cap:empty{display:none}
+#ind{position:absolute;right:56px;top:40px;z-index:55;display:flex;align-items:center;gap:12px;font:600 16px 'JetBrains Mono';letter-spacing:.1em;color:var(--mu)}
+#ind img{height:22px;opacity:.9}
+/* L1 */
+#apw{position:absolute;left:50%;top:330px;transform:translateX(-50%);width:760px;height:420px;border-radius:40px;background:linear-gradient(160deg,#3a2754,#241834);border:2px solid #4a3866;box-shadow:0 50px 120px rgba(0,0,0,.5);padding:44px 50px}
+#apw .r{height:22px;border-radius:11px;background:#4a3866;margin-bottom:18px}
+#apb{position:absolute;left:50px;right:50px;bottom:50px;height:104px;border-radius:26px;background:var(--mi);color:var(--bg);display:grid;place-items:center;font:800 46px 'Plus Jakarta Sans';letter-spacing:.06em}
+#cur{position:absolute;width:46px;z-index:6;filter:drop-shadow(2px 4px 4px rgba(0,0,0,.5))}
+#q1{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:76px}
+/* L2 */
+#t2{position:absolute;left:120px;top:140px;font-size:100px}
+.c3{top:440px;width:530px;height:380px;padding:44px 40px}
+.c3 .n{font:800 40px 'JetBrains Mono';color:var(--mi)}
+.c3 .k{font:800 58px 'Plus Jakarta Sans';margin-top:26px;letter-spacing:-.01em}
+.c3 .q{font:500 30px/1.3 'Plus Jakarta Sans';color:var(--mu);margin-top:16px}
+/* L3 */
+#fl{position:absolute;left:120px;top:250px;width:1000px}
+.fld{display:flex;align-items:center;gap:22px;padding:20px 0;border-bottom:2px solid #3b2a52;font:700 44px 'Plus Jakarta Sans'}
+.fld i{width:46px;height:46px;border-radius:50%;border:3px solid var(--st);display:grid;place-items:center;font-style:normal;font-size:24px;color:var(--bg)}
+.fld small{margin-left:auto;font:500 24px 'JetBrains Mono';color:var(--mu)}
+#rq{position:absolute;right:120px;top:270px;width:560px;height:560px;border-radius:40px;background:var(--pn);border:3px solid var(--st);padding:40px}
+/* L5 */
+#lg{position:absolute;left:120px;top:150px;font-size:78px;width:1680px}
+.mm{top:430px;width:780px;height:330px;padding:40px}
+.mm .k{font:600 22px 'JetBrains Mono';letter-spacing:.14em;color:var(--mu)}
+.mm .v{font:800 48px/1.15 'Plus Jakarta Sans';margin-top:22px}
+#dec{position:absolute;left:50%;top:830px;transform:translateX(-50%);font:800 40px 'Plus Jakarta Sans';padding:18px 60px;border-radius:999px;border:3px solid var(--rd);color:var(--rd)}
+/* docs */
+.dq{position:absolute;left:120px;top:880px;width:1680px;font:600 34px 'Plus Jakarta Sans';color:var(--iv)}
+/* L7 q */
+#aq{position:absolute;left:50%;top:400px;transform:translateX(-50%);width:1300px;padding:50px 60px;border-radius:36px;background:var(--pn);border:3px solid var(--mi);text-align:center}
+#aq .k{font:600 22px 'JetBrains Mono';letter-spacing:.16em;color:var(--mi)}
+#aq .v{font:800 66px/1.12 'Plus Jakarta Sans';margin-top:20px}
+.clip{position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover}
+/* L9 */
+.uc{top:330px;width:530px;height:500px;padding:40px}
+.uc .n{font:800 56px 'Plus Jakarta Sans'}
+.uc .c{display:inline-block;font:600 24px 'JetBrains Mono';color:var(--mi);background:rgba(181,244,216,.1);padding:8px 14px;border-radius:10px;margin-top:18px}
+.uc .d{font:500 32px/1.35 'Plus Jakarta Sans';color:var(--mu);margin-top:26px}
+.uc .df{position:absolute;right:30px;top:34px;font:700 18px 'JetBrains Mono';color:var(--bg);background:var(--mi);padding:6px 12px;border-radius:8px}
+/* L10 */
+#hdr{position:absolute;left:220px;top:300px;width:700px;border-radius:30px;background:var(--pn);border:3px solid var(--st);padding:36px 40px}
+#hdr .k{font:600 22px 'JetBrains Mono';letter-spacing:.14em;color:var(--mu)}
+.hr{display:flex;justify-content:space-between;font:600 30px 'JetBrains Mono';padding:16px 0;border-bottom:2px solid #3b2a52;color:var(--mu)}
+.hr.on{color:var(--mi)}
+.rd{position:absolute;left:1150px;width:560px;height:150px;border-radius:26px;background:var(--pn);border:3px solid #4a3866;display:flex;align-items:center;gap:26px;padding:0 34px;font:700 38px 'Plus Jakarta Sans'}
+.rd i{width:76px;height:76px;border-radius:20px;background:#4a3866;display:grid;place-items:center;font-style:normal;font-size:40px}
+.rd small{display:block;font:500 22px 'JetBrains Mono';color:var(--mi);margin-top:6px}
+/* L11 */
+#ne{position:absolute;left:0;right:0;top:140px;text-align:center;font-size:120px}
+#code{position:absolute;left:220px;top:420px;width:700px;height:340px;border-radius:28px;background:#0f0a18;border:3px solid var(--st);padding:34px;font:600 26px/1.7 'JetBrains Mono';color:var(--mu)}
+#dial{position:absolute;left:1060px;top:420px;width:640px;height:340px;border-radius:28px;background:var(--pn);border:3px solid #4a3866;padding:34px}
+.kn{width:150px;height:150px;border-radius:50%;border:10px solid #4a3866;border-top-color:var(--mi);position:absolute;right:50px;top:110px}
+/* L12 */
+.sc3{top:300px;width:530px;height:560px;padding:36px}
+.sc3 .k{font:600 20px 'JetBrains Mono';letter-spacing:.14em;color:var(--mu)}
+.sr{display:flex;align-items:center;gap:16px;font:700 30px 'Plus Jakarta Sans';padding:18px 0;border-bottom:2px solid #3b2a52}
+.sr i{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:22px;color:var(--bg);flex:none}
+.ok{background:var(--mi)}.no{background:var(--rd)}.qq{background:#e9c46a}
+/* L13 */
+#ck{position:absolute;left:220px;top:230px;width:1480px}
+.ckr{display:flex;align-items:center;gap:34px;padding:34px 0;border-bottom:3px solid #3b2a52;font:800 80px 'Plus Jakarta Sans';letter-spacing:-.02em}
+.ckr b{width:96px;height:96px;border-radius:26px;background:var(--mi);color:var(--bg);display:grid;place-items:center;font-size:52px}
+/* end */
+#edim{position:absolute;inset:0;background:linear-gradient(0deg,rgba(23,16,36,.96) 30%,rgba(23,16,36,.55))}
+#et{position:absolute;left:120px;top:180px;font-size:96px;width:1500px}
+#es{position:absolute;left:120px;top:520px;font:500 30px/1.6 'JetBrains Mono';color:var(--mu)}
+#es b{color:var(--mi);font-weight:600}
+#el{position:absolute;left:120px;top:780px;display:flex;align-items:center;gap:24px;font:600 24px 'JetBrains Mono';letter-spacing:.06em;color:var(--mu)}
+#el img{height:44px}
+</style></head><body>
+<div id="bgg"></div>
+
+<div class="L" id="S1"><div id="q1" class="h">What exactly are you <em>agreeing to?</em></div>
+  <div id="apw"><div class="r" style="width:60%"></div><div class="r" style="width:85%"></div><div class="r" style="width:40%"></div><div id="apb">APPROVE</div></div>
+  <svg id="cur" viewBox="0 0 24 24"><path d="M4 2l16 9.5-7 1.6 4.2 7.4-2.8 1.5-4.2-7.4L5 19z" fill="#fff8eb" stroke="#171024" stroke-width="1.2"/></svg>
+  <div class="tag" style="left:120px;top:960px">ILLUSTRATION · NOT A WALLET SCREENSHOT</div></div>
+
+<div class="L" id="S2"><div id="t2" class="h">Before you <em>approve.</em></div>
+  <div class="card c3" id="k1" style="left:120px"><div class="n">01</div><div class="k">ACTION</div><div class="q">What am I authorizing?</div></div>
+  <div class="card c3" id="k2" style="left:695px"><div class="n">02</div><div class="k">AUTHORITY</div><div class="q">Who has power inside the app?</div></div>
+  <div class="card c3" id="k3" style="left:1270px"><div class="n">03</div><div class="k">UPGRADES</div><div class="q">Can its code change later?</div></div></div>
+
+<div class="L" id="S3"><div class="sec"><b>1</b><span>ACTION</span></div>
+  <div id="fl"></div>
+  <div class="tag" style="left:120px;top:960px">READ THE REQUEST YOU ACTUALLY RECEIVED</div></div>
+
+<div class="L" id="S4"><div class="sec"><b>1</b><span>A REAL REQUEST</span></div>
+  <div class="fr" id="uf" style="left:120px;top:180px;width:1680px;height:860px"><div class="bb"><i></i><i></i><i></i><span>Tari Universe · Send Tari</span></div><div class="vp"><img id="ui" src="fr/send/f001.jpg"></div></div>
+  <div class="tag real" style="left:150px;top:220px" id="rt">REAL FOOTAGE · TARI UNIVERSE v1.6.20</div>
+  <div class="tag real" id="co1" style="left:1240px;top:430px">✓ ADDRESS CHECK PASSES</div>
+  <div class="tag" id="co2" style="left:1240px;top:560px;border-color:#ff8a8a;color:#ff8a8a">AVAILABLE BALANCE 0 XTM · AMOUNT INVALID</div></div>
+
+<div class="L" id="S5"><div id="lg" class="h">A familiar logo is <em>not an explanation.</em></div>
+  <div class="card mm" id="m1" style="left:120px"><div class="k">WHAT YOU EXPECTED</div><div class="v">Try a test app<br>on a testnet</div></div>
+  <div class="card mm" id="m2" style="left:1020px;border-color:#ff8a8a"><div class="k" style="color:#ff8a8a">WHAT THE REQUEST SAYS</div><div class="v">A different network,<br>an unexpected operation</div></div>
+  <div id="dec">Decline</div>
+  <div class="tag" style="left:120px;top:960px">HYPOTHETICAL EXAMPLE</div></div>
+
+<div class="L" id="S6"><div class="sec"><b>2</b><span>AUTHORITY</span></div>
+  <div class="fr" style="left:120px;top:190px;width:1680px;height:660px"><div class="bb"><i></i><i></i><i></i><span>ootle.tari.com · Authorization and Access</span></div><div class="vp"><img id="d6" src="docs/d_access.png"></div></div>
+  <div class="tag real" style="left:150px;top:220px">SOURCE · TARI OOTLE DOCS</div>
+  <div class="dq" id="dq6"></div></div>
+
+<div class="L" id="S7a"><div class="sec"><b>2</b><span>AUTHORITY</span></div>
+  <div class="fr" style="left:120px;top:190px;width:1680px;height:660px"><div class="bb"><i></i><i></i><i></i><span>ootle.tari.com · Authorization and Access</span></div><div class="vp"><img id="d7" src="docs/d_owner.png"></div></div>
+  <div class="tag real" style="left:150px;top:220px">SOURCE · TARI OOTLE DOCS</div>
+  <div class="dq">"the component owner may always call any method"</div></div>
+<div class="L" id="S7b"><img class="clip" id="pc" src="a/permission-illustration.png"><div class="tag" style="left:120px;top:110px">CONCEPTUAL ILLUSTRATION</div>
+  <div id="aq"><div class="k">ASK THE PROJECT</div><div class="v">What can an administrator do,<br>that you <em>can't?</em></div></div></div>
+
+<div class="L" id="S8"><div class="sec"><b>3</b><span>UPGRADES</span></div>
+  <div class="fr" style="left:120px;top:190px;width:1680px;height:660px"><div class="bb"><i></i><i></i><i></i><span>ootle.tari.com · Authorization and Access</span></div><div class="vp"><img id="d8" src="docs/d_fixed.png"></div></div>
+  <div class="tag real" style="left:150px;top:220px">SOURCE · TARI OOTLE DOCS</div>
+  <div class="dq">The upgrade rule is <em>fixed at creation.</em> It can't be changed afterwards.</div></div>
+
+<div class="L" id="S9"><div class="sec"><b>3</b><span>WHO CAN CHANGE THE CODE?</span></div>
+  <div class="card uc" id="u1" style="left:120px"><div class="df">DEFAULT</div><div class="n">Locked</div><div class="c">UpdateRule::Locked</div><div class="d">Nobody can migrate it. The code never changes.</div></div>
+  <div class="card uc" id="u2" style="left:695px"><div class="n">Owner</div><div class="c">UpdateRule::Owner</div><div class="d">Whoever satisfies the owner rule can upgrade it.</div></div>
+  <div class="card uc" id="u3" style="left:1270px"><div class="n">Access rule</div><div class="c">UpdateRule::AccessRule</div><div class="d">Upgrade power goes to someone else, like a multisig or DAO badge.</div></div>
+  <div class="tag" style="left:120px;top:900px">FROM TARI'S OOTLE DOCUMENTATION</div></div>
+
+<div class="L" id="S10"><div class="sec"><b>3</b><span>YOU CAN CHECK IT</span></div>
+  <div id="hdr"><div class="k">COMPONENT HEADER</div><div class="hr"><span>template</span><span>…</span></div><div class="hr"><span>owner_rule</span><span>…</span></div><div class="hr on" id="hrU"><span>upgrade_rule</span><span>Locked</span></div></div>
+  <div class="rd" id="rw" style="top:320px"><i>👛</i><div>Wallet<small>can show it</small></div></div>
+  <div class="rd" id="rx" style="top:510px"><i>🔎</i><div>Explorer<small>can show it</small></div></div>
+  <svg style="position:absolute;inset:0" width="1920" height="1080"><path id="ln1" d="M920 560 C 1020 560, 1040 395, 1150 395" stroke="#b5f4d8" stroke-width="4" fill="none" stroke-dasharray="10 10"/><path id="ln2" d="M920 560 C 1020 560, 1040 585, 1150 585" stroke="#b5f4d8" stroke-width="4" fill="none" stroke-dasharray="10 10"/></svg>
+  <div class="tag" style="left:120px;top:900px">CONCEPTUAL DIAGRAM · BASED ON TARI'S DOCS</div></div>
+
+<div class="L" id="S11"><div id="ne" class="h">Locked <em>≠</em> audited.</div>
+  <div id="code"><span style="color:#b5f4d8">// code</span><br>UpdateRule::Locked<br><span style="color:#fff8eb">✓ can't be replaced</span><br><span style="color:#ff8a8a">✕ can still have bugs</span></div>
+  <div id="dial"><div style="font:600 22px JetBrains Mono;letter-spacing:.14em;color:#c5b6d7">CONFIGURATION</div><div style="font:800 44px Plus Jakarta Sans;margin-top:20px;width:340px;line-height:1.15">Owner-controlled settings can still change</div><div class="kn" id="kn"></div></div>
+  <div class="dq" style="top:820px;text-align:center;left:0;width:1920px">Tari's docs: <em>"A locked component pins its code, not its behaviour."</em></div></div>
+
+<div class="L" id="S12"><div class="sec"><b>✦</b><span>THREE SEPARATE CHECKS</span></div>
+  <div class="card sc3" id="x1" style="left:120px"><div class="k">APP A</div><div class="sr"><i class="ok">✓</i>Request matches</div><div class="sr"><i class="no">!</i>Powerful admins</div><div class="sr"><i class="ok">✓</i>Locked code</div></div>
+  <div class="card sc3" id="x2" style="left:695px"><div class="k">APP B</div><div class="sr"><i class="ok">✓</i>Request matches</div><div class="sr"><i class="ok">✓</i>Limited admins</div><div class="sr"><i class="no">!</i>Locked, but buggy</div></div>
+  <div class="card sc3" id="x3" style="left:1270px"><div class="k">APP C</div><div class="sr"><i class="qq">?</i>Polished interface</div><div class="sr"><i class="qq">?</i>No answers</div><div class="sr"><i class="qq">?</i>No answers</div></div>
+  <div class="tag" style="left:120px;top:900px">HYPOTHETICAL EXAMPLES</div></div>
+
+<div class="L" id="S13"><div id="ck"><div class="ckr" id="c1"><b>1</b>What action?</div><div class="ckr" id="c2"><b>2</b>Whose authority?</div><div class="ckr" id="c3"><b>3</b>What can change?</div></div></div>
+
+<div class="L" id="S14"><img class="clip" id="ec" src="a/ootle-cover.png"><div id="edim"></div>
+  <div id="et" class="h">Make every approval a decision <em>you understand.</em></div>
+  <div id="es">SOURCES<br><b>ootle.tari.com/guides/authorization-and-access</b><br><b>ootle.tari.com/concepts/state-and-execution</b><br>Not a security audit of any application.</div>
+  <div id="el"><img src="a/tari_logo.png">INDEPENDENT EXPLAINER · NOT AFFILIATED WITH TARI</div></div>
+
+<div id="ind"><img src="a/tari_logo.png">INDEPENDENT EXPLAINER</div>
+<div id="cap"></div>
+<script>
+const CUES = /*CUES*/;
+const T = 210;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+function P(id, ph, off = 0) { const c = C[id], i = c.text.indexOf(ph); if (i < 0) throw new Error('phrase: ' + ph); return c.start + c.dur * i / c.text.length + off; }
+document.fonts.ready.then(() => {
+const tl = gsap.timeline({ paused: true }); const $ = q => document.querySelector(q);
+const SW = []; const sw = (s, at, h) => SW.push([s, at, h]);
+const SFX = []; const sfx = (k, t, g = 1) => SFX.push([k, +t.toFixed(3), g]);
+function words(sel, t, st = .06) { const el = $(sel); el.innerHTML = el.innerHTML.replace(/(<[^>]+>)|([^\s<]+)/g, (m, tag) => tag ? tag : `<span class="w">${m}</span>`);
+  tl.fromTo(sel + ' .w', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .5, stagger: st, ease: 'power3.out' }, t); }
+function pop(sel, t, y = 50) { tl.fromTo(sel, { opacity: 0, y }, { opacity: 1, y: 0, duration: .6, ease: 'power3.out' }, t); sfx('pop', t, .3); }
+function show(sel, a, b) { tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: .5, immediateRender: false }, a); sfx('whoosh', a, .25); if (b != null) tl.to(sel, { opacity: 0, duration: .45 }, b - .45); }
+function rect(dsf, vw, vh, x, y, w) { const s = vw / w; return { scale: s / dsf, x: -x * s, y: -y * s }; }
+function docZoom(img, t, d) { tl.fromTo(img, rect(1.5, 1680, 620, 300, 120, 1400), { ...rect(1.5, 1680, 620, 470, 300, 980), duration: d, ease: 'power2.inOut' }, t); }
+const nx = id => { const i = CUES.cues.findIndex(c => c.id === id); return i < CUES.cues.length - 1 ? CUES.cues[i + 1].start : T; };
+
+// S1
+show('#S1', 0, nx('L1') - .1);
+tl.fromTo('#apw', { opacity: 0, y: 60, scale: .95 }, { opacity: 1, y: 0, scale: 1, duration: .8, ease: 'expo.out' }, .4);
+tl.fromTo('#cur', { left: 1500, top: 900 }, { left: 1010, top: 660, duration: 2.2, ease: 'power2.inOut' }, 1.4);
+tl.to('#apb', { scale: 1.04, duration: .4, yoyo: true, repeat: 3 }, 3.6);
+words('#q1', P('L1', 'But what'), .07);
+// S2
+show('#S2', S('L2') - .3, nx('L2') - .1);
+words('#t2', S('L2'), .08);
+[['#k1', 'What action'], ['#k2', 'Who has'], ['#k3', 'And can']].forEach(([k, ph]) => pop(k, P('L2', ph, -.1)));
+// S3
+show('#S3', S('L3') - .3, nx('L3') - .1);
+const FL = [['Network', 'Which network', 'testnet or mainnet?'], ['Test or real funds?', 'Is this a test', ''], ['Destination', 'destination', 'who receives it'], ['Operation', 'the operation', 'what it actually does'], ['Amount', 'the amount', 'how much'], ['Fee', 'the fee', 'what it costs']];
+$('#fl').innerHTML = FL.map(([n, , s], i) => `<div class="fld" id="fd${i}"><i>✓</i>${n}<small>${s}</small></div>`).join('');
+FL.forEach(([, ph], i) => { pop('#fd' + i, P('L3', ph, -.1), 20); tl.to(`#fd${i} i`, { background: '#b5f4d8', borderColor: '#b5f4d8', duration: .3 }, P('L3', ph, .4)); });
+// S4 real footage
+show('#S4', S('L4') - .3, nx('L4') - .1);
+const U0 = S('L4') - 1.4; window.U0 = U0;
+tl.fromTo('#ui', { scale: 1680 / 1920, x: 0, y: 0 }, { scale: 1.55, x: -760, y: -300, duration: 3, ease: 'power2.inOut' }, U0 + 2.5);
+tl.fromTo('#co1', { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: .4 }, P('L4', 'The address check')); sfx('tick', P('L4', 'The address check'), .6);
+tl.fromTo('#co2', { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: .4 }, P('L4', 'flags the amount')); sfx('tick', P('L4', 'flags the amount'), .6);
+tl.set('#co1,#co2', { left: 1340 }, 0); tl.set('#co1', { top: 300 }, 0); tl.set('#co2', { top: 360 }, 0);
+// S5
+show('#S5', S('L5') - .3, nx('L5') - .1);
+words('#lg', P('L5', 'A familiar'), .06);
+pop('#m1', S('L5') + .4); pop('#m2', S('L5') + 1.0);
+tl.fromTo('#dec', { opacity: 0, scale: 1.3 }, { opacity: 1, scale: 1, duration: .4, ease: 'back.out(2)' }, P('L5', 'declining')); sfx('hit', P('L5', 'declining'), .4);
+tl.set('#lg', { opacity: 1 }, 0);
+// S6 docs access
+show('#S6', S('L6') - .3, nx('L6') - .1);
+docZoom('#d6', S('L6') + .3, 3);
+sw('#dq6', 0, '"you can specify access rules for each of its methods"');
+tl.set('#d6', { attr: { src: 'docs/d_deny.png' } }, P('L6', 'And by default'));
+docZoom('#d6', P('L6', 'And by default'), 2.5);
+sw('#dq6', P('L6', 'And by default'), 'Methods without a rule: <em>"only the owner may call them"</em>');
+// S7
+show('#S7a', S('L7') - .3, P('L7', 'So a public') + .1); docZoom('#d7', S('L7') + .2, 3);
+show('#S7b', P('L7', 'So a public') - .2, nx('L7') - .1);
+pop('#aq', P('L7', 'Ask the project'), 40);
+// S8
+show('#S8', S('L8') - .3, nx('L8') - .1); docZoom('#d8', S('L8') + .2, 3);
+// S9
+show('#S9', S('L9') - .3, nx('L9') - .1);
+[['#u1', 'Locked'], ['#u2', 'Owner means'], ['#u3', 'And an access']].forEach(([u, ph]) => { pop(u, P('L9', ph, -.2)); tl.to(u, { borderColor: '#b5f4d8', boxShadow: '0 0 0 6px rgba(181,244,216,.15)', duration: .3 }, P('L9', ph)); });
+tl.to('#u1', { borderColor: '#b692ef', boxShadow: 'none', duration: .3 }, P('L9', 'Owner means')); tl.to('#u2', { borderColor: '#b692ef', boxShadow: 'none', duration: .3 }, P('L9', 'And an access'));
+// S10
+show('#S10', S('L10') - .3, nx('L10') - .1);
+pop('#hdr', S('L10') + .1); tl.fromTo('#hrU', { backgroundColor: 'rgba(181,244,216,0)' }, { backgroundColor: 'rgba(181,244,216,.12)', duration: .4 }, P('L10', 'header'));
+tl.fromTo('#ln1,#ln2', { opacity: 0 }, { opacity: 1, duration: .4 }, P('L10', 'So wallets'));
+pop('#rw', P('L10', 'So wallets'), 20); pop('#rx', P('L10', 'explorers'), 20);
+// S11
+show('#S11', S('L11') - .3, nx('L11') - .1);
+words('#ne', S('L11'), .1); pop('#code', P('L11', 'It fixes'), 30); pop('#dial', P('L11', 'and settings'), 30);
+tl.to('#kn', { rotation: 140, duration: 1.6, ease: 'power2.inOut' }, P('L11', 'and settings') + .4);
+tl.fromTo('#S11 .dq', { opacity: 0 }, { opacity: 1, duration: .5 }, P('L11', 'It fixes') + .8);
+// S12
+show('#S12', S('L12') - .3, nx('L12') - .1);
+pop('#x1', P('L12', 'A request')); pop('#x2', P('L12', 'An app can')); pop('#x3', P('L12', 'A polished'));
+// S13
+show('#S13', S('L13') - .3, nx('L13') - .1);
+[['#c1', 'what action'], ['#c2', 'whose authority'], ['#c3', 'and what can']].forEach(([c, ph]) => { tl.fromTo(c, { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: .5, ease: 'power3.out' }, P('L13', ph, -.1)); sfx('tick', P('L13', ph), .5); });
+// S14
+show('#S14', S('L14') - .3);
+words('#et', S('L14') + .2, .06); tl.fromTo('#es', { opacity: 0 }, { opacity: 1, duration: .6 }, P('L14', 'Sources')); tl.fromTo('#el', { opacity: 0 }, { opacity: 1, duration: .6 }, P('L14', 'Sources') + .5);
+tl.fromTo('#ec', { scale: 1.08 }, { scale: 1, duration: 16, ease: 'none' }, S('L14') - .3);
+tl.to('#ind', { opacity: 0, duration: .4 }, S('L14') - .3);
+tl.to('body', { opacity: 0, duration: 1 }, T - 1);
+// captions
+const CAPS = [];
+CUES.cues.forEach(c => { const segs = []; c.text.split(/(?<=[.?!:])\s+/).forEach(s => { if (s.length <= 64) segs.push(s); else { let cur = ''; s.split(/(?<=,)\s+/).forEach(p => { if ((cur + ' ' + p).trim().length > 64 && cur) { segs.push(cur); cur = p; } else cur = (cur + ' ' + p).trim(); }); if (cur) segs.push(cur); } });
+  for (let k = 0; k < segs.length; k++) if (segs[k].length > 66) { const ws = segs[k].split(' '), h = Math.ceil(ws.length / 2); segs.splice(k, 1, ws.slice(0, h).join(' '), ws.slice(h).join(' ')); k--; }
+  let off = 0; segs.forEach((s, i) => { const i0 = c.text.indexOf(s, off); off = i0 + s.length; const a = c.start + c.dur * i0 / c.text.length;
+    const b = i < segs.length - 1 ? c.start + c.dur * c.text.indexOf(segs[i + 1], off) / c.text.length : c.start + c.dur + .15; CAPS.push([+a.toFixed(3), +b.toFixed(3), s.replace('X T M', 'XTM')]); }); });
+sw('#cap', 0, ''); CAPS.forEach(([a, b, s]) => { sw('#cap', a, s); sw('#cap', b, ''); });
+window.CAPS = CAPS; window.SFX = SFX;
+const BY = {}; SW.forEach(([s, at, h]) => (BY[s] = BY[s] || []).push([at, h])); Object.values(BY).forEach(l => l.sort((x, y) => x[0] - y[0]));
+const ui = $('#ui'); let uk = -1; const pcl = $('#pc'), ecl = $('#ec'); let pk = -1, ek = -1;
+window.seek = async t => { tl.seek(t, false); for (const [s, l] of Object.entries(BY)) { let h = l[0][1]; for (const [at, v] of l) { if (t >= at) h = v; else break; } const el = $(s); if (el.innerHTML !== h) el.innerHTML = h; }
+  const ps = []; const k = Math.max(1, Math.min(394, Math.floor((t - U0) * 24) + 1)); if (k !== uk) { uk = k; ui.src = `fr/send/f${String(k).padStart(3, '0')}.jpg`; ps.push(ui.decode().catch(() => { })); }
+  if (window.ANIM) { const a = window.ANIM; const k2 = Math.max(1, Math.min(a.p, Math.floor((t - (P('L7', 'So a public') - .2)) * 24) + 1)); if (k2 !== pk) { pk = k2; pcl.src = `fr/perm/f${String(k2).padStart(3, '0')}.jpg`; ps.push(pcl.decode().catch(() => { })); }
+    const k3 = Math.max(1, Math.min(a.c, Math.floor((t - (S('L14') - .3)) * 24) + 1)); if (k3 !== ek) { ek = k3; ecl.src = `fr/cover/f${String(k3).padStart(3, '0')}.jpg`; ps.push(ecl.decode().catch(() => { })); } }
+  await Promise.all(ps); };
+window.TOTAL = T;
+Promise.all([...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(async () => { await window.seek(0); window.READY = true; });
+});
+</script></body></html>

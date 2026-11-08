@@ -1,0 +1,59 @@
+{
+ "total": 58.71,
+ "cues": [
+  {
+   "id": "S1",
+   "text": "You checked an app's code. Could that code change later?",
+   "start": 0.6,
+   "dur": 4.49
+  },
+  {
+   "id": "S2",
+   "text": "On Tari Ootle, every component gets an upgrade rule when it's created. And that rule can't be changed afterwards.",
+   "start": 5.49,
+   "dur": 8.01
+  },
+  {
+   "id": "S3",
+   "text": "Locked, the default, means nobody can upgrade its code.",
+   "start": 14.0,
+   "dur": 4.01
+  },
+  {
+   "id": "S4",
+   "text": "Owner means the component's owner can approve an upgrade.",
+   "start": 18.41,
+   "dur": 4.01
+  },
+  {
+   "id": "S5",
+   "text": "And an access rule hands that power to someone else, like a multisig.",
+   "start": 22.82,
+   "dur": 5.53
+  },
+  {
+   "id": "S6",
+   "text": "So before using an app, ask: can this component be upgraded, and who can approve it?",
+   "start": 28.75,
+   "dur": 7.01
+  },
+  {
+   "id": "S7",
+   "text": "One more thing. Locked code is not a safety certificate. Bugs can remain, and owner-controlled settings can still change its behavior.",
+   "start": 36.36,
+   "dur": 9.01
+  },
+  {
+   "id": "S8",
+   "text": "The real question isn't just, is it on-chain? It's: what can change, and who controls that change?",
+   "start": 45.87,
+   "dur": 7.53
+  },
+  {
+   "id": "S9",
+   "text": "Independent explainer. Tari's documentation is linked below.",
+   "start": 53.8,
+   "dur": 3.01
+  }
+ ]
+}

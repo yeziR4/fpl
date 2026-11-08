@@ -1,0 +1,98 @@
+{
+ "L": [
+  [
+   "L1",
+   "A wallet asks you to approve something. You recognize the project name. The button looks familiar. But what exactly are you agreeing to?"
+  ],
+  [
+   "L2",
+   "Before you use an app on Tari, ask three questions. What action am I authorizing? Who has power inside the application? And can its code change later?"
+  ],
+  [
+   "L3",
+   "First, the action. Read the request you actually received. Which network is it on? Is this a test, or real funds? Check the destination, the operation, the amount, and the fee."
+  ],
+  [
+   "L4",
+   "Here's a real send screen in Tari Universe. The address check passes, but the app flags the amount in red, because this wallet holds no X T M yet. That's the habit: read every field, and if anything doesn't match what you intended, stop."
+  ],
+  [
+   "L5",
+   "If the interface doesn't explain something important, pause. A familiar logo is not an explanation. And you don't have to diagnose the whole app before declining a request you don't understand."
+  ],
+  [
+   "L6",
+   "Second, authority. On Tari's Ootle, a component can set an access rule for each of its methods. A rule can limit an action to a particular key or credential. And by default, any method without a rule is denied to everyone except the owner."
+  ],
+  [
+   "L7",
+   "Ownership is set separately, and the owner can always call any method. So a public button tells you only part of the story. Ask the project: what can an administrator do, that an ordinary user can't? Look for a clear answer, with evidence."
+  ],
+  [
+   "L8",
+   "Third, upgrades. When an Ootle component is created, it gets an upgrade rule. And that rule can never be changed afterwards."
+  ],
+  [
+   "L9",
+   "Locked, the default, means nobody can migrate the component. Its code never changes. Owner means whoever satisfies the owner rule can upgrade it. And an access rule can hand upgrade power to someone else, like a multisig, or a DAO badge."
+  ],
+  [
+   "L10",
+   "The upgrade rule is part of the component's header. So wallets and explorers can show you whether the code can change, and who controls it."
+  ],
+  [
+   "L11",
+   "But locked code is not a safety certificate. It fixes the code, not the behavior. Bugs can remain, and settings controlled by an owner can still change what it does."
+  ],
+  [
+   "L12",
+   "These are three separate checks. A request can match what you intended, while the app still has powerful administrators. An app can have locked code, and still contain mistakes. A polished interface answers none of these questions on its own."
+  ],
+  [
+   "L13",
+   "So before you approve: what action, whose authority, and what can change? If the wallet or the documentation can't answer, treat that as missing information, not reassurance."
+  ],
+  [
+   "L14",
+   "This is an independent explainer based on Tari's published documentation. It's not a security audit of any application. Sources are linked below. Learn with test funds, and make every approval a decision you understand."
+  ]
+ ],
+ "S": [
+  [
+   "S1",
+   "You checked an app's code. Could that code change later?"
+  ],
+  [
+   "S2",
+   "On Tari Ootle, every component gets an upgrade rule when it's created. And that rule can't be changed afterwards."
+  ],
+  [
+   "S3",
+   "Locked, the default, means nobody can upgrade its code."
+  ],
+  [
+   "S4",
+   "Owner means the component's owner can approve an upgrade."
+  ],
+  [
+   "S5",
+   "And an access rule hands that power to someone else, like a multisig."
+  ],
+  [
+   "S6",
+   "So before using an app, ask: can this component be upgraded, and who can approve it?"
+  ],
+  [
+   "S7",
+   "One more thing. Locked code is not a safety certificate. Bugs can remain, and owner-controlled settings can still change its behavior."
+  ],
+  [
+   "S8",
+   "The real question isn't just, is it on-chain? It's: what can change, and who controls that change?"
+  ],
+  [
+   "S9",
+   "Independent explainer. Tari's documentation is linked below."
+  ]
+ ]
+}

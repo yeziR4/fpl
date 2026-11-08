@@ -1,0 +1,259 @@
+1
+00:00:01,200 --> 00:00:04,003
+A wallet asks you to approve something.
+
+2
+00:00:04,003 --> 00:00:06,245
+You recognize the project name.
+
+3
+00:00:06,245 --> 00:00:08,137
+The button looks familiar.
+
+4
+00:00:08,137 --> 00:00:10,880
+But what exactly are you agreeing to?
+
+5
+00:00:11,730 --> 00:00:15,727
+Before you use an app on Tari, ask three questions.
+
+6
+00:00:15,727 --> 00:00:18,033
+What action am I authorizing?
+
+7
+00:00:18,033 --> 00:00:20,954
+Who has power inside the application?
+
+8
+00:00:20,954 --> 00:00:23,410
+And can its code change later?
+
+9
+00:00:24,260 --> 00:00:25,721
+First, the action.
+
+10
+00:00:25,721 --> 00:00:28,796
+Read the request you actually received.
+
+11
+00:00:28,796 --> 00:00:30,641
+Which network is it on?
+
+12
+00:00:30,641 --> 00:00:33,024
+Is this a test, or real funds?
+
+13
+00:00:33,024 --> 00:00:37,940
+Check the destination, the operation, the amount, and the fee.
+
+14
+00:00:38,590 --> 00:00:41,934
+Here's a real send screen in Tari Universe.
+
+15
+00:00:41,934 --> 00:00:46,721
+The address check passes, but the app flags the amount in red,
+
+16
+00:00:46,721 --> 00:00:49,761
+because this wallet holds no XTM yet.
+
+17
+00:00:49,761 --> 00:00:51,129
+That's the habit:
+
+18
+00:00:51,129 --> 00:00:52,496
+read every field,
+
+19
+00:00:52,496 --> 00:00:56,750
+and if anything doesn't match what you intended, stop.
+
+20
+00:00:57,500 --> 00:01:01,448
+If the interface doesn't explain something important, pause.
+
+21
+00:01:01,448 --> 00:01:03,972
+A familiar logo is not an explanation.
+
+22
+00:01:03,972 --> 00:01:06,625
+And you don't have to diagnose the whole
+
+23
+00:01:06,625 --> 00:01:10,140
+app before declining a request you don't understand.
+
+24
+00:01:11,190 --> 00:01:12,622
+Second, authority.
+
+25
+00:01:12,622 --> 00:01:13,903
+On Tari's Ootle,
+
+26
+00:01:13,903 --> 00:01:18,424
+a component can set an access rule for each of its methods.
+
+27
+00:01:18,424 --> 00:01:23,096
+A rule can limit an action to a particular key or credential.
+
+28
+00:01:23,096 --> 00:01:24,302
+And by default,
+
+29
+00:01:24,302 --> 00:01:29,350
+any method without a rule is denied to everyone except the owner.
+
+30
+00:01:30,000 --> 00:01:32,127
+Ownership is set separately,
+
+31
+00:01:32,127 --> 00:01:35,208
+and the owner can always call any method.
+
+32
+00:01:35,208 --> 00:01:39,095
+So a public button tells you only part of the story.
+
+33
+00:01:39,095 --> 00:01:40,342
+Ask the project:
+
+34
+00:01:40,342 --> 00:01:44,669
+what can an administrator do, that an ordinary user can't?
+
+35
+00:01:44,669 --> 00:01:47,680
+Look for a clear answer, with evidence.
+
+36
+00:01:48,730 --> 00:01:49,965
+Third, upgrades.
+
+37
+00:01:49,965 --> 00:01:54,398
+When an Ootle component is created, it gets an upgrade rule.
+
+38
+00:01:54,398 --> 00:01:57,890
+And that rule can never be changed afterwards.
+
+39
+00:01:58,540 --> 00:02:02,918
+Locked, the default, means nobody can migrate the component.
+
+40
+00:02:02,918 --> 00:02:04,641
+Its code never changes.
+
+41
+00:02:04,641 --> 00:02:09,019
+Owner means whoever satisfies the owner rule can upgrade it.
+
+42
+00:02:09,019 --> 00:02:13,253
+And an access rule can hand upgrade power to someone else,
+
+43
+00:02:13,253 --> 00:02:15,700
+like a multisig, or a DAO badge.
+
+44
+00:02:16,350 --> 00:02:20,095
+The upgrade rule is part of the component's header.
+
+45
+00:02:20,095 --> 00:02:24,920
+So wallets and explorers can show you whether the code can change,
+
+46
+00:02:24,920 --> 00:02:26,510
+and who controls it.
+
+47
+00:02:27,260 --> 00:02:30,666
+But locked code is not a safety certificate.
+
+48
+00:02:30,666 --> 00:02:33,467
+It fixes the code, not the behavior.
+
+49
+00:02:33,467 --> 00:02:34,754
+Bugs can remain,
+
+50
+00:02:34,754 --> 00:02:39,900
+and settings controlled by an owner can still change what it does.
+
+51
+00:02:40,750 --> 00:02:42,999
+These are three separate checks.
+
+52
+00:02:42,999 --> 00:02:45,656
+A request can match what you intended,
+
+53
+00:02:45,656 --> 00:02:48,995
+while the app still has powerful administrators.
+
+54
+00:02:48,995 --> 00:02:52,879
+An app can have locked code, and still contain mistakes.
+
+55
+00:02:52,879 --> 00:02:57,390
+A polished interface answers none of these questions on its own.
+
+56
+00:02:58,241 --> 00:02:59,765
+So before you approve:
+
+57
+00:02:59,765 --> 00:03:03,145
+what action, whose authority, and what can change?
+
+58
+00:03:03,145 --> 00:03:06,392
+If the wallet or the documentation can't answer,
+
+59
+00:03:06,392 --> 00:03:09,921
+treat that as missing information, not reassurance.
+
+60
+00:03:10,771 --> 00:03:12,882
+This is an independent explainer
+
+61
+00:03:12,882 --> 00:03:15,505
+based on Tari's published documentation.
+
+62
+00:03:15,505 --> 00:03:18,448
+It's not a security audit of any application.
+
+63
+00:03:18,448 --> 00:03:20,111
+Sources are linked below.
+
+64
+00:03:20,111 --> 00:03:21,582
+Learn with test funds,
+
+65
+00:03:21,582 --> 00:03:24,931
+and make every approval a decision you understand.

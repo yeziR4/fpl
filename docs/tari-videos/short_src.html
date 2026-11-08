@@ -1,0 +1,106 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=block" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{--bg:#171024;--pn:#302044;--st:#b692ef;--iv:#fff8eb;--mi:#b5f4d8;--mu:#c5b6d7;--rd:#ff8a8a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg);color:var(--iv);font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased}
+.w{display:inline-block;white-space:pre}
+em{font-style:normal;color:var(--mi)}
+#bgg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 70% 20%,rgba(182,146,239,.2),transparent 70%),radial-gradient(ellipse 60% 40% at 20% 85%,rgba(181,244,216,.08),transparent 70%)}
+.L{position:absolute;inset:0;opacity:0}
+.h{font-weight:800;letter-spacing:-.03em;line-height:1.02}
+.tag{position:absolute;font:600 22px 'JetBrains Mono';letter-spacing:.08em;padding:8px 16px;border-radius:999px;background:rgba(23,16,36,.85);border:2px solid var(--st);color:var(--mu)}
+.tag.real{border-color:var(--mi);color:var(--mi)}
+#top{position:absolute;left:0;right:0;top:120px;display:flex;justify-content:center;align-items:center;gap:14px;font:600 22px 'JetBrains Mono';letter-spacing:.12em;color:var(--mu);z-index:50}
+#top img{height:30px}
+#cap{position:absolute;left:70px;right:70px;top:1330px;text-align:center;font:700 44px/1.25 'Plus Jakarta Sans';z-index:60}
+#cap span{background:rgba(10,6,18,.88);padding:6px 16px;border-radius:12px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+#cap:empty{display:none}
+#h1a,#h1b{position:absolute;left:80px;right:80px;top:560px;font-size:118px}
+.fr{position:absolute;left:60px;width:960px;border-radius:24px;overflow:hidden;border:2px solid #4a3866;background:#0f0a18}
+.fr .bb{height:44px;background:#211833;display:flex;align-items:center;gap:8px;padding:0 18px}
+.fr .bb i{width:12px;height:12px;border-radius:50%;background:#4a3866}
+.fr .bb span{margin-left:10px;font:500 18px 'JetBrains Mono';color:var(--mu)}
+.fr .vp{position:absolute;left:0;right:0;top:44px;bottom:0;overflow:hidden}
+.fr .vp img{position:absolute;left:0;top:0;transform-origin:0 0}
+#s2t{position:absolute;left:80px;right:80px;top:300px;font-size:76px}
+.uc{position:absolute;left:80px;right:80px;height:300px;border-radius:32px;background:var(--pn);border:3px solid var(--st);padding:34px 40px}
+.uc .n{font:800 64px 'Plus Jakarta Sans'}
+.uc .c{display:inline-block;font:600 26px 'JetBrains Mono';color:var(--mi);background:rgba(181,244,216,.1);padding:8px 14px;border-radius:10px;margin-top:14px}
+.uc .d{font:500 34px/1.3 'Plus Jakarta Sans';color:var(--mu);margin-top:16px}
+.uc .df{position:absolute;right:30px;top:34px;font:700 22px 'JetBrains Mono';color:var(--bg);background:var(--mi);padding:6px 12px;border-radius:8px}
+#q6{position:absolute;left:80px;right:80px;top:420px;padding:60px 50px;border-radius:40px;background:var(--pn);border:3px solid var(--mi)}
+#q6 .k{font:600 26px 'JetBrains Mono';letter-spacing:.14em;color:var(--mi)}
+#q6 .v{font:800 84px/1.08 'Plus Jakarta Sans';margin-top:24px}
+#ne{position:absolute;left:0;right:0;top:300px;text-align:center;font-size:130px}
+#code{position:absolute;left:80px;right:80px;top:640px;height:300px;border-radius:30px;background:#0f0a18;border:3px solid var(--st);padding:34px;font:600 34px/1.6 'JetBrains Mono';color:var(--mu)}
+#dial{position:absolute;left:80px;right:80px;top:980px;height:230px;border-radius:30px;background:var(--pn);border:3px solid #4a3866;padding:34px}
+.kn{width:140px;height:140px;border-radius:50%;border:10px solid #4a3866;border-top-color:var(--mi);position:absolute;right:46px;top:44px}
+#s8t{position:absolute;left:80px;right:80px;top:520px;font-size:110px}
+#s9{background:transparent}
+#e1{position:absolute;left:80px;right:80px;top:500px;font-size:84px}
+#e2{position:absolute;left:80px;right:80px;top:880px;font:500 30px/1.6 'JetBrains Mono';color:var(--mu)}
+#e2 b{color:var(--mi);font-weight:600}
+</style></head><body>
+<div id="bgg"></div>
+<div id="top"><img src="a/tari_logo.png">INDEPENDENT EXPLAINER</div>
+
+<div class="L" id="A"><div id="h1a" class="h">You checked<br>the code…</div><div id="h1b" class="h"><em>Can it<br>change?</em></div></div>
+<div class="L" id="B"><div id="s2t" class="h">On Tari Ootle, the upgrade rule is <em>fixed at creation.</em></div>
+  <div class="fr" style="top:640px;height:560px"><div class="bb"><i></i><i></i><i></i><span>ootle.tari.com</span></div><div class="vp"><img id="db" src="docs/d_fixed.png"></div></div>
+  <div class="tag real" style="left:80px;top:1220px">SOURCE · TARI OOTLE DOCS</div></div>
+<div class="L" id="C">
+  <div class="uc" id="u1" style="top:300px"><div class="df">DEFAULT</div><div class="n">Locked</div><div class="c">UpdateRule::Locked</div><div class="d">Nobody can upgrade its code.</div></div>
+  <div class="uc" id="u2" style="top:630px"><div class="n">Owner</div><div class="c">UpdateRule::Owner</div><div class="d">The owner can approve an upgrade.</div></div>
+  <div class="uc" id="u3" style="top:960px"><div class="n">Access rule</div><div class="c">UpdateRule::AccessRule</div><div class="d">Someone else holds that power, like a multisig.</div></div></div>
+<div class="L" id="D"><div id="q6"><div class="k">BEFORE YOU USE AN APP</div><div class="v">Can it be upgraded?<br><em>Who can approve it?</em></div></div></div>
+<div class="L" id="E"><div id="ne" class="h">Locked <em>≠</em><br>audited.</div>
+  <div id="code"><span style="color:#b5f4d8">// code</span><br>UpdateRule::Locked<br><span style="color:#fff8eb">✓ can't be replaced</span><br><span style="color:#ff8a8a">✕ can still have bugs</span></div>
+  <div id="dial"><div style="font:600 24px JetBrains Mono;letter-spacing:.14em;color:#c5b6d7">CONFIGURATION</div><div style="font:800 42px Plus Jakarta Sans;margin-top:16px;width:620px;line-height:1.15">Owner-controlled settings can still change</div><div class="kn" id="kn"></div></div></div>
+<div class="L" id="F"><div id="s8t" class="h">What can change,<br>and <em>who controls it?</em></div></div>
+<div class="L" id="G"><div id="e1" class="h">Read the rule <em>before you trust the app.</em></div>
+  <div id="e2">SOURCE<br><b>ootle.tari.com/guides/</b><br><b>authorization-and-access</b><br>Independent explainer.<br>Not affiliated with Tari.</div></div>
+<div id="cap"></div>
+<script>
+const CUES = /*CUES*/;
+const T = 59;
+const C = {}; CUES.cues.forEach(c => C[c.id] = c);
+const S = id => C[id].start, E = id => C[id].start + C[id].dur;
+function P(id, ph, off = 0) { const c = C[id], i = c.text.indexOf(ph); if (i < 0) throw new Error('phrase: ' + ph); return c.start + c.dur * i / c.text.length + off; }
+document.fonts.ready.then(() => {
+const tl = gsap.timeline({ paused: true }); const $ = q => document.querySelector(q);
+const SW = []; const sw = (s, at, h) => SW.push([s, at, h]);
+const SFX = []; const sfx = (k, t, g = 1) => SFX.push([k, +t.toFixed(3), g]);
+function words(sel, t, st = .06) { const el = $(sel); el.innerHTML = el.innerHTML.replace(/(<[^>]+>)|([^\s<]+)/g, (m, tag) => tag ? tag : `<span class="w">${m}</span>`);
+  tl.fromTo(sel + ' .w', { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: .45, stagger: st, ease: 'power3.out' }, t); }
+function pop(sel, t, y = 60) { tl.fromTo(sel, { opacity: 0, y }, { opacity: 1, y: 0, duration: .55, ease: 'back.out(1.5)' }, t); sfx('pop', t, .35); }
+function show(sel, a, b) { tl.fromTo(sel, { opacity: 0 }, { opacity: 1, duration: .35, immediateRender: false }, a); sfx('whoosh', a, .3); if (b != null) tl.to(sel, { opacity: 0, duration: .3 }, b - .3); }
+const nx = id => { const i = CUES.cues.findIndex(c => c.id === id); return i < CUES.cues.length - 1 ? CUES.cues[i + 1].start : T; };
+show('#A', 0, nx('S1') - .1);
+words('#h1a', .4, .1); tl.to('#h1a', { opacity: 0, y: -40, duration: .3 }, P('S1', 'Could')); tl.set('#h1b', { opacity: 0 }, 0); tl.set('#h1b', { opacity: 1 }, P('S1', 'Could')); words('#h1b', P('S1', 'Could'), .1); sfx('hit', P('S1', 'Could'), .5);
+show('#B', S('S2') - .3, nx('S2') - .1);
+words('#s2t', S('S2'), .06);
+tl.fromTo('#db', { scale: 960 / 1400 / 1.5, x: -300 * 960 / 1400, y: -150 * 960 / 1400 }, { scale: 960 / 780 / 1.5, x: -560 * 960 / 780, y: -290 * 960 / 780, duration: 5, ease: 'power2.inOut' }, S('S2') + .8);
+show('#C', S('S3') - .3, nx('S5') - .1);
+[['#u1', 'S3'], ['#u2', 'S4'], ['#u3', 'S5']].forEach(([u, s]) => { pop(u, S(s) - .1); tl.to(u, { borderColor: '#b5f4d8', duration: .3 }, S(s)); });
+tl.to('#u1', { borderColor: '#b692ef', duration: .3 }, S('S4')); tl.to('#u2', { borderColor: '#b692ef', duration: .3 }, S('S5'));
+show('#D', S('S6') - .3, nx('S6') - .1); pop('#q6', S('S6') + .1, 80);
+show('#E', S('S7') - .3, nx('S7') - .1); words('#ne', S('S7'), .1); pop('#code', P('S7', 'Bugs'), 40); pop('#dial', P('S7', 'and owner'), 40);
+tl.to('#kn', { rotation: 140, duration: 1.6, ease: 'power2.inOut' }, P('S7', 'and owner') + .4);
+show('#F', S('S8') - .3, nx('S8') - .1); words('#s8t', S('S8'), .08); tl.set('#s8t', { opacity: 1 }, 0);
+show('#G', S('S9') - .3); words('#e1', S('S9') - .2, .07); tl.fromTo('#e2', { opacity: 0 }, { opacity: 1, duration: .5 }, S('S9') + .6);
+tl.to('body', { opacity: 0, duration: .8 }, T - .8);
+const CAPS = [];
+CUES.cues.forEach(c => { const segs = []; c.text.split(/(?<=[.?!:])\s+/).forEach(s => { if (s.length <= 46) segs.push(s); else { let cur = ''; s.split(/(?<=,)\s+/).forEach(p => { if ((cur + ' ' + p).trim().length > 46 && cur) { segs.push(cur); cur = p; } else cur = (cur + ' ' + p).trim(); }); if (cur) segs.push(cur); } });
+  for (let k = 0; k < segs.length; k++) if (segs[k].length > 48) { const ws = segs[k].split(' '), h = Math.ceil(ws.length / 2); segs.splice(k, 1, ws.slice(0, h).join(' '), ws.slice(h).join(' ')); k--; }
+  let off = 0; segs.forEach((s, i) => { const i0 = c.text.indexOf(s, off); off = i0 + s.length; const a = c.start + c.dur * i0 / c.text.length;
+    const b = i < segs.length - 1 ? c.start + c.dur * c.text.indexOf(segs[i + 1], off) / c.text.length : c.start + c.dur + .15; CAPS.push([+a.toFixed(3), +b.toFixed(3), s]); }); });
+sw('#cap', 0, ''); CAPS.forEach(([a, b, s]) => { sw('#cap', a, `<span>${s}</span>`); sw('#cap', b, ''); });
+window.CAPS = CAPS; window.SFX = SFX;
+const BY = {}; SW.forEach(([s, at, h]) => (BY[s] = BY[s] || []).push([at, h])); Object.values(BY).forEach(l => l.sort((x, y) => x[0] - y[0]));
+window.seek = t => { tl.seek(t, false); for (const [s, l] of Object.entries(BY)) { let h = l[0][1]; for (const [at, v] of l) { if (t >= at) h = v; else break; } const el = $(s); if (el.innerHTML !== h) el.innerHTML = h; } };
+window.TOTAL = T;
+Promise.all([...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => { window.seek(0); window.READY = true; });
+});
+</script></body></html>

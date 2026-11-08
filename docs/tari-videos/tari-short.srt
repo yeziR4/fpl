@@ -1,0 +1,103 @@
+1
+00:00:00,600 --> 00:00:02,765
+You checked an app's code.
+
+2
+00:00:02,765 --> 00:00:05,240
+Could that code change later?
+
+3
+00:00:05,490 --> 00:00:06,553
+On Tari Ootle,
+
+4
+00:00:06,553 --> 00:00:08,822
+every component gets an upgrade
+
+5
+00:00:08,822 --> 00:00:10,523
+rule when it's created.
+
+6
+00:00:10,523 --> 00:00:13,650
+And that rule can't be changed afterwards.
+
+7
+00:00:14,000 --> 00:00:15,531
+Locked, the default,
+
+8
+00:00:15,531 --> 00:00:18,160
+means nobody can upgrade its code.
+
+9
+00:00:18,410 --> 00:00:20,802
+Owner means the component's owner
+
+10
+00:00:20,802 --> 00:00:22,570
+can approve an upgrade.
+
+11
+00:00:22,820 --> 00:00:24,824
+And an access rule hands
+
+12
+00:00:24,824 --> 00:00:27,068
+that power to someone else,
+
+13
+00:00:27,068 --> 00:00:28,500
+like a multisig.
+
+14
+00:00:28,750 --> 00:00:31,170
+So before using an app, ask:
+
+15
+00:00:31,170 --> 00:00:33,841
+can this component be upgraded,
+
+16
+00:00:33,841 --> 00:00:35,910
+and who can approve it?
+
+17
+00:00:36,360 --> 00:00:37,436
+One more thing.
+
+18
+00:00:37,436 --> 00:00:40,193
+Locked code is not a safety certificate.
+
+19
+00:00:40,193 --> 00:00:41,336
+Bugs can remain,
+
+20
+00:00:41,336 --> 00:00:43,622
+and owner-controlled settings can
+
+21
+00:00:43,622 --> 00:00:45,520
+still change its behavior.
+
+22
+00:00:45,870 --> 00:00:49,404
+The real question isn't just, is it on-chain?
+
+23
+00:00:49,404 --> 00:00:49,866
+It's:
+
+24
+00:00:49,866 --> 00:00:53,550
+what can change, and who controls that change?
+
+25
+00:00:53,800 --> 00:00:54,954
+Independent explainer.
+
+26
+00:00:54,954 --> 00:00:56,960
+Tari's documentation is linked below.
